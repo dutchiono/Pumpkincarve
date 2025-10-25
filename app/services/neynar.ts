@@ -47,7 +47,7 @@ export class NeynarService {
 
       return {
         posts,
-        pfp: user.pfp?.url || '',
+        pfp: user.pfp_url || '',
         username: user.username || '',
       };
     } catch (error) {
@@ -62,7 +62,7 @@ export class NeynarService {
       const response = await this.client.fetchCastsForUser({ fid: fid, limit: limit });
 
       // Format posts for AI analysis
-      return response.result.casts.map((cast) => ({
+      return response.casts.map((cast: any) => ({
         text: cast.text || '',
         hash: cast.hash,
         timestamp: cast.timestamp,
