@@ -2,15 +2,21 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   const manifest = {
-    version: "1",
-    name: "Pumpkin Carving NFTs",
-    iconUrl: "https://your-domain.com/icon.png",
-    homeUrl: "https://your-domain.com",
-    appUrl: "https://your-domain.com",
     accountAssociation: {
-      header: "",
-      payload: "",
-      signature: ""
+      header: "eyJmaWQiOjQ3NDg2NywidHlwZSI6ImF1dGgiLCJrZXkiOiIweDhERkJkRUVDOGM1ZDQ5NzBCQjVGNDgxQzZlYzdmNzNmYTFDNjViZTUifQ",
+      payload: "eyJkb21haW4iOiJidXNobGVhZ3VlLnh5eiJ9",
+      signature: "McO07o0YtMBQZvJRWdpN4RtmbF1pRauMwIy5H+f/fT4nMbSJOHxVgi3QxK8lmgJApxm8q4VtfXF63Ta3m3kFDBs="
+    },
+    miniapp: {
+      version: "1",
+      name: "Pumpkin Carving!",
+      description: "Carve your personality into a spooky NFT",
+      iconUrl: "https://bushleague.xyz/digitalpumpkin.png",
+      homeUrl: "https://bushleague.xyz",
+      imageUrl: "https://bushleague.xyz/digitalpumpkin.png",
+      buttonTitle: "Carve",
+      splashImageUrl: "https://bushleague.xyz/digitalpumpkin.png",
+      splashBackgroundColor: "#0F1535"
     }
   };
 

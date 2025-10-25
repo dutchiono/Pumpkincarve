@@ -238,9 +238,13 @@ export function PumpkinCarvingApp() {
     }
 
     try {
+      // Include both the image and the Mini App URL to trigger the embed
       const result = await sdk.actions.composeCast({
-        text: `🎃 Just minted my personalized Pumpkin NFT on Base!`,
-        embeds: [pumpkinDesign.imageUrl || ipfsUrl],
+        text: `🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nMint your own:`,
+        embeds: [
+          pumpkinDesign.imageUrl || ipfsUrl,
+          'https://bushleague.xyz'
+        ],
       });
 
       if (result?.cast) {
