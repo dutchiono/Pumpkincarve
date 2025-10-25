@@ -68,11 +68,10 @@ export async function POST(request: NextRequest) {
     console.log('📝 Fetching casts for FID:', fid);
     const castsResponse = await client.fetchCastsForUser({ fid: fid, limit: 100 });
     console.log('🔍 Raw casts response structure:', Object.keys(castsResponse));
-    console.log('🔍 castsResponse.result:', castsResponse?.result ? Object.keys(castsResponse.result) : 'No result');
-    console.log('✅ Casts fetched, count:', castsResponse?.result?.casts?.length || 0);
+    console.log('✅ Casts fetched, count:', castsResponse?.casts?.length || 0);
 
     // Format posts for display - handle different response structures
-    const casts = castsResponse?.result?.casts || castsResponse?.casts || [];
+    const casts = castsResponse?.casts || [];
     const posts = casts.map((cast: any) => ({
       text: cast.text || '',
       hash: cast.hash,
