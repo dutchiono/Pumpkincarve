@@ -39,6 +39,8 @@ next-env.d.ts
 cache
 artifacts
 typechain
+scripts
+contracts
 
 # IDE
 .vscode
