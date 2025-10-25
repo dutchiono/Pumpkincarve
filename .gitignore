@@ -41,6 +41,8 @@ artifacts
 typechain
 scripts
 contracts
+test-mint
+app/admin
 
 # IDE
 .vscode
