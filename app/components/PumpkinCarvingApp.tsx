@@ -232,28 +232,40 @@ export function PumpkinCarvingApp() {
   };
 
   const handleShareToFarcaster = async () => {
-    if (!mintSuccess || !hash || !ipfsUrl || !pumpkinDesign) {
+    if (!mintSuccess || !hash || !pumpkinDesign) {
       setError('No successful mint to share yet!');
       return;
     }
 
     try {
-      // Include both the image and the Mini App URL to trigger the embed
+      setLoadingMessage('🚀 Sharing to Farcaster...');
+
+      // Use the generated image URL (not IPFS) to avoid CSP errors
+      const imageUrl = pumpkinDesign.imageUrl;
+
+      console.log('📤 Sharing cast with image:', imageUrl);
+
+      // Simplified share - just text with URL, no embeds to avoid CSP issues
       const result = await sdk.actions.composeCast({
-        text: `🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nMint your own:`,
-        embeds: [
-          pumpkinDesign.imageUrl || ipfsUrl,
-          'https://bushleague.xyz'
-        ],
+        text: `🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nMint your own: https://bushleague.xyz`,
       });
+
+      console.log('✅ Cast result:', result);
 
       if (result?.cast) {
         setError(null);
         setLoadingMessage('🎉 Cast posted to Farcaster!');
-        setTimeout(() => setLoadingMessage(''), 3000);
+        setTimeout(() => {
+          setLoadingMessage('');
+          setError(null);
+        }, 3000);
+      } else {
+        throw new Error('Failed to create cast - no cast returned');
       }
     } catch (err: any) {
+      console.error('❌ Share error:', err);
       setError('Failed to share: ' + (err.message || String(err)));
+      setLoadingMessage('');
     }
   };
 
