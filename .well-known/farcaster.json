@@ -1,17 +1,17 @@
 {
   "accountAssociation": {
-    "header": "",
-    "payload": "",
-    "signature": ""
+    "header": "eyJmaWQiOjQ3NDg2NywidHlwZSI6ImF1dGgiLCJrZXkiOiIweDhERkJkRUVDOGM1ZDQ5NzBCQjVGNDgxQzZlYzdmNzNmYTFDNjViZTUifQ",
+    "payload": "eyJkb21haW4iOiJidXNobGVhZ3VlLnh5eiJ9",
+    "signature": "McO07o0YtMBQZvJRWdpN4RtmbF1pRauMwIy5H+f/fT4nMbSJOHxVgi3QxK8lmgJApxm8q4VtfXF63Ta3m3kFDBs="
   },
   "miniapp": {
     "version": "1",
-    "name": "Pumpkin Carving NFT",
-    "description": "Carve your personality into a spooky NFT on Base",
+    "name": "Pumpkin Carving!",
+    "description": "Carve your personality into a spooky NFT",
     "iconUrl": "https://bushleague.xyz/digitalpumpkin.png",
     "homeUrl": "https://bushleague.xyz",
     "imageUrl": "https://bushleague.xyz/digitalpumpkin.png",
-    "buttonTitle": "Carve Your NFT",
+    "buttonTitle": "Carve",
     "splashImageUrl": "https://bushleague.xyz/digitalpumpkin.png",
     "splashBackgroundColor": "#0F1535"
   }
