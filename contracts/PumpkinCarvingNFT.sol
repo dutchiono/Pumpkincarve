@@ -28,7 +28,7 @@ contract PumpkinCarvingNFT is ERC721, Ownable {
     constructor(
         uint256 _mintPrice,
         address _paymentRecipient
-    ) ERC721("Pumpkin Carving NFT", "PCNFT") Ownable(msg.sender) {
+    ) ERC721("Based Pumpkins 2025", "BP2025") Ownable(msg.sender) {
         mintPrice = _mintPrice;
         paymentRecipient = _paymentRecipient;
         nextTokenId = 1; // Start at 1 for better UX

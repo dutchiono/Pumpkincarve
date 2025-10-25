@@ -1,7 +1,7 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  console.log("Deploying PumpkinCarvingNFT contract...");
+  console.log("Deploying Based Pumpkins 2025 contract...");
 
   const signers = await ethers.getSigners();
   if (!signers || signers.length === 0) {
@@ -34,10 +34,14 @@ async function main() {
   await pumpkinNFT.waitForDeployment();
 
   const address = await pumpkinNFT.getAddress();
-  console.log("PumpkinCarvingNFT deployed to:", address);
+  console.log("Based Pumpkins 2025 deployed to:", address);
 
-  console.log("Contract verification command:");
-  console.log(`npx hardhat verify --network base-sepolia ${address}`);
+  // Detect network from provider
+  const network = await ethers.provider.getNetwork();
+  const networkName = network.chainId === 84532n ? 'base-sepolia' : 'base';
+
+  console.log("\nContract verification command:");
+  console.log(`npx hardhat verify --network ${networkName} ${address} ${MINT_PRICE} ${PAYMENT_RECIPIENT}`);
 }
 
 main()
