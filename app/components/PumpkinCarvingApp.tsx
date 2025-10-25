@@ -232,7 +232,7 @@ export function PumpkinCarvingApp() {
   };
 
   const handleShareToFarcaster = async () => {
-    if (!mintSuccess || !hash || !ipfsUrl) {
+    if (!mintSuccess || !hash || !ipfsUrl || !pumpkinDesign) {
       setError('No successful mint to share yet!');
       return;
     }
