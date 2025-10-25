@@ -1,18 +1,15 @@
-// Using the correct package for the latest Gemini API
-// Install with: npm install @google/genai
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// Using OpenAI for all AI operations
+// Install with: npm install openai
 
 export class AIService {
-  private genAI: GoogleGenerativeAI;
+  private openaiApiKey: string;
 
   constructor() {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+    this.openaiApiKey = process.env.OPENAI_API_KEY || '';
 
-    if (!apiKey) {
-      console.warn('NEXT_PUBLIC_GEMINI_API_KEY not found. Get one from https://aistudio.google.com/apikey');
+    if (!this.openaiApiKey) {
+      console.warn('OPENAI_API_KEY not found. Get one from https://platform.openai.com/api-keys');
     }
-
-    this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
   async generatePumpkinDesign(userData: {
@@ -65,6 +62,29 @@ export class AIService {
     }
   }
 
+  private async callOpenAI(messages: any[], model: string = 'gpt-4o-mini'): Promise<string> {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.openaiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  }
+
   private async analyzeUserPosts(posts: any[], pfp: string, bio: string): Promise<{
     themes: string[];
     interests: string[];
@@ -103,13 +123,13 @@ export class AIService {
     }
     `;
 
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const response = await this.callOpenAI([
+      { role: 'system', content: 'You are a helpful AI assistant that analyzes social media presence and returns JSON responses.' },
+      { role: 'user', content: prompt }
+    ]);
 
     // Try to extract JSON from the response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { themes: [], interests: [], personality: 'Balanced', mood: 'Neutral' };
     return analysis;
   }
@@ -130,12 +150,12 @@ export class AIService {
     Return just the theme name (max 3 words):
     `;
 
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const response = await this.callOpenAI([
+      { role: 'system', content: 'You are a creative AI assistant that generates unique pumpkin carving themes.' },
+      { role: 'user', content: prompt }
+    ]);
 
-    return text.trim() || 'Personalized Pumpkin';
+    return response.trim() || 'Personalized Pumpkin';
   }
 
   private async generateThoughtProcess(analysis: any, username: string): Promise<string> {
@@ -156,10 +176,12 @@ export class AIService {
     Make it conversational and insightful, like you're explaining your creative process to a friend.
     `;
 
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text().trim();
+    const response = await this.callOpenAI([
+      { role: 'system', content: 'You are a thoughtful AI assistant that explains creative decisions in a conversational way.' },
+      { role: 'user', content: prompt }
+    ]);
+
+    return response.trim();
   }
 
   private async generateDescription(theme: string, analysis: any): Promise<string> {
@@ -184,12 +206,12 @@ export class AIService {
     Description:
     `;
 
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const response = await this.callOpenAI([
+      { role: 'system', content: 'You are a creative AI assistant that writes detailed descriptions of pumpkin carvings.' },
+      { role: 'user', content: prompt }
+    ]);
 
-    return text.trim() || 'A unique pumpkin carving design tailored to your personality.';
+    return response.trim() || 'A unique pumpkin carving design tailored to your personality.';
   }
 
   private async generateImage(theme: string, description: string): Promise<string> {

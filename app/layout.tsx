@@ -5,9 +5,9 @@ const miniappEmbed = {
   version: "1",
   imageUrl: "https://bushleague.xyz/digitalpumpkin.png",
   button: {
-    title: "Carve Your NFT",
+    title: "🎃 Carve Your NFT",
     action: {
-      type: "launch_frame",
+      type: "launch_miniapp",
       name: "Pumpkin Carving NFT",
       splashImageUrl: "https://bushleague.xyz/digitalpumpkin.png",
       splashBackgroundColor: "#0F1535"

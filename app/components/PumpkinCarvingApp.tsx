@@ -240,31 +240,38 @@ export function PumpkinCarvingApp() {
     try {
       setLoadingMessage('🚀 Sharing to Farcaster...');
 
-      // Use the generated image URL (not IPFS) to avoid CSP errors
-      const imageUrl = pumpkinDesign.imageUrl;
+      // Use the system share sheet with the Mini App URL
+      // This ensures the link opens inside Farcaster as a Mini App
+      const shareData = {
+        title: '🎃 Check out my Pumpkin NFT!',
+        text: '🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nMint your own:',
+        url: 'https://bushleague.xyz',
+      };
 
-      console.log('📤 Sharing cast with image:', imageUrl);
-
-      // Simplified share - just text with URL, no embeds to avoid CSP issues
-      const result = await sdk.actions.composeCast({
-        text: `🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nMint your own: https://bushleague.xyz`,
-      });
-
-      console.log('✅ Cast result:', result);
-
-      if (result?.cast) {
+      if (navigator.share) {
+        await navigator.share(shareData);
         setError(null);
-        setLoadingMessage('🎉 Cast posted to Farcaster!');
+        setLoadingMessage('🎉 Shared to Farcaster!');
         setTimeout(() => {
           setLoadingMessage('');
           setError(null);
         }, 3000);
       } else {
-        throw new Error('Failed to create cast - no cast returned');
+        // Fallback: Copy to clipboard
+        await navigator.clipboard.writeText('https://bushleague.xyz');
+        setError(null);
+        setLoadingMessage('✅ Link copied! Paste it in Farcaster');
+        setTimeout(() => {
+          setLoadingMessage('');
+          setError(null);
+        }, 3000);
       }
     } catch (err: any) {
-      console.error('❌ Share error:', err);
-      setError('Failed to share: ' + (err.message || String(err)));
+      // User cancelled or error occurred
+      if (err.name !== 'AbortError') {
+        console.error('❌ Share error:', err);
+        setError('Failed to share: ' + (err.message || String(err)));
+      }
       setLoadingMessage('');
     }
   };
