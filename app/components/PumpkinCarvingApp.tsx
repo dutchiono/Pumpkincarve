@@ -52,12 +52,12 @@ export function PumpkinCarvingApp() {
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
-  // const [showDebugInfo, setShowDebugInfo] = useState(false); // Commented out - debug info removed
   const [generatingImage, setGeneratingImage] = useState(false);
   const [minting, setMinting] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [mintSuccess, setMintSuccess] = useState(false);
   const [ipfsUrl, setIpfsUrl] = useState<string>('');
+  const [personalityInsights, setPersonalityInsights] = useState<string[]>([]);
 
   const { writeContract, data: hash, isPending, error: contractError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -82,12 +82,37 @@ export function PumpkinCarvingApp() {
     initializeSDK();
   }, []);
 
+
+
   // Get random Halloween message
   const getRandomMessage = () => {
     return HALLOWEEN_MESSAGES[Math.floor(Math.random() * HALLOWEEN_MESSAGES.length)];
   };
 
+  // Generate personality insights from analysis
+  const generatePersonalityInsights = (analysis: any, username: string) => {
+    const insights: string[] = [];
 
+    if (analysis.themes && analysis.themes.length > 0) {
+      insights.push(`We noticed you love talking about ${analysis.themes[0]}! 🎃`);
+    }
+
+    if (analysis.interests && analysis.interests.length > 0) {
+      insights.push(`Your passion for ${analysis.interests[0]} is carving into this design! 🔪`);
+    }
+
+    if (analysis.personality) {
+      insights.push(`Your ${analysis.personality.toLowerCase()} vibes are perfect for Halloween! 👻`);
+    }
+
+    if (analysis.mood) {
+      insights.push(`That ${analysis.mood.toLowerCase()} energy is so spooky cool! 🦇`);
+    }
+
+    insights.push(`@${username}, your Halloween spirit is about to shine! 🎃✨`);
+
+    return insights;
+  };
 
   // Handle mint success
   useEffect(() => {
@@ -172,7 +197,18 @@ export function PumpkinCarvingApp() {
 
     setLoading(true);
     setError(null);
-    setLoadingMessage('🎃 Analyzing your personality and carving your pumpkin...');
+
+    // Set initial loading message
+    setLoadingMessage('🎃 Analyzing your posts for personality insights...');
+
+    // Store insights for later use during image generation
+    let generatedInsights: string[] = [];
+
+    // Rotate loading messages during analysis
+    const messageInterval = setInterval(() => {
+      const randomMessage = HALLOWEEN_MESSAGES[Math.floor(Math.random() * HALLOWEEN_MESSAGES.length)];
+      setLoadingMessage(randomMessage);
+    }, 2000);
 
     try {
       const response = await fetch('/api/generate-design', {
@@ -192,8 +228,17 @@ export function PumpkinCarvingApp() {
       }
 
       const design = await response.json();
+
+      // Generate personality insights from the design
+      if (design.personalityAnalysis) {
+        generatedInsights = generatePersonalityInsights(design.personalityAnalysis, userData.username);
+        setPersonalityInsights(generatedInsights);
+      }
+
       setPumpkinDesign(design);
+      clearInterval(messageInterval);
     } catch (err: any) {
+      clearInterval(messageInterval);
       setError(err.message || 'Failed to generate design');
     } finally {
       setLoading(false);
@@ -206,6 +251,19 @@ export function PumpkinCarvingApp() {
 
     setGeneratingImage(true);
     setLoadingMessage('🎨 Painting your pumpkin with AI magic...');
+
+    // Rotate through Halloween messages and insights during image generation
+    const messageInterval = setInterval(() => {
+      if (personalityInsights.length > 0 && Math.random() > 0.5) {
+        // Show personality insight
+        const insight = personalityInsights[Math.floor(Math.random() * personalityInsights.length)];
+        setLoadingMessage(insight);
+      } else {
+        // Show Halloween message
+        const randomMessage = HALLOWEEN_MESSAGES[Math.floor(Math.random() * HALLOWEEN_MESSAGES.length)];
+        setLoadingMessage(randomMessage);
+      }
+    }, 2500);
 
     try {
       const response = await fetch('/api/generate-image', {
@@ -223,7 +281,9 @@ export function PumpkinCarvingApp() {
 
       const { imageUrl } = await response.json();
       setPumpkinDesign({ ...pumpkinDesign, imageUrl });
+      clearInterval(messageInterval);
     } catch (err: any) {
+      clearInterval(messageInterval);
       setError('Failed to generate pumpkin image');
     } finally {
       setGeneratingImage(false);
@@ -403,7 +463,12 @@ export function PumpkinCarvingApp() {
             <div className="space-y-4">
               {!pumpkinDesign.imageUrl ? (
                 <div className="space-y-4">
-                  <p className="text-center text-white/90 text-lg">Generating image...</p>
+                  {/* Just show the loading message, no separate insight box */}
+                  {generatingImage && loadingMessage && (
+                    <div className="bg-orange-500/20 border-2 border-orange-400 rounded-2xl p-4 text-center">
+                      <p className="text-lg font-bold text-white">{loadingMessage}</p>
+                    </div>
+                  )}
                 </div>
               ) : mintSuccess ? (
                 <div className="space-y-4">
