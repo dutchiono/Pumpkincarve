@@ -61,6 +61,20 @@ const Gen2App: React.FC = () => {
         particleMinSize,
         particleMaxSize,
         particleChaosFactor,
+        // Wavefield parameters
+        enableDensityFields,
+        enableFlowFields,
+        enableContourMapping,
+        wavefieldBaseFreq,
+        wavefieldAmplitude,
+        wavefieldOctaves,
+        wavefieldScale,
+        densityThreshold,
+        densityIntensity,
+        flowLineLength,
+        flowLineDensity,
+        contourLevels,
+        contourSmoothness,
       },
       dataSources: {
         enableFarcasterMood,
@@ -87,6 +101,23 @@ const Gen2App: React.FC = () => {
       setParticleMinSize(presetToLoad.visualParams.particleMinSize);
       setParticleMaxSize(presetToLoad.visualParams.particleMaxSize);
       setParticleChaosFactor(presetToLoad.visualParams.particleChaosFactor);
+
+      // Load wavefield parameters if they exist
+      if (presetToLoad.visualParams.enableDensityFields !== undefined) {
+        setEnableDensityFields(presetToLoad.visualParams.enableDensityFields);
+        setEnableFlowFields(presetToLoad.visualParams.enableFlowFields);
+        setEnableContourMapping(presetToLoad.visualParams.enableContourMapping);
+        setWavefieldBaseFreq(presetToLoad.visualParams.wavefieldBaseFreq);
+        setWavefieldAmplitude(presetToLoad.visualParams.wavefieldAmplitude);
+        setWavefieldOctaves(presetToLoad.visualParams.wavefieldOctaves);
+        setWavefieldScale(presetToLoad.visualParams.wavefieldScale);
+        setDensityThreshold(presetToLoad.visualParams.densityThreshold);
+        setDensityIntensity(presetToLoad.visualParams.densityIntensity);
+        setFlowLineLength(presetToLoad.visualParams.flowLineLength);
+        setFlowLineDensity(presetToLoad.visualParams.flowLineDensity);
+        setContourLevels(presetToLoad.visualParams.contourLevels);
+        setContourSmoothness(presetToLoad.visualParams.contourSmoothness);
+      }
 
       setEnableFarcasterMood(presetToLoad.dataSources.enableFarcasterMood);
       setEnableNeighborAssociations(presetToLoad.dataSources.enableNeighborAssociations);
@@ -133,12 +164,238 @@ const Gen2App: React.FC = () => {
   // Movement pattern
   const [particlePattern, setParticlePattern] = useState<'circle' | 'swirl' | 'spiral' | 'wave' | 'random'>('circle');
 
+  // Harmonic Wavefield Layer Controls
+  const [enableDensityFields, setEnableDensityFields] = useState(true);
+  const [enableFlowFields, setEnableFlowFields] = useState(true);
+  const [enableContourMapping, setEnableContourMapping] = useState(true);
+  
+  // Wavefield Parameters
+  const [wavefieldBaseFreq, setWavefieldBaseFreq] = useState(0.01);
+  const [wavefieldAmplitude, setWavefieldAmplitude] = useState(1.0);
+  const [wavefieldOctaves, setWavefieldOctaves] = useState(4);
+  const [wavefieldScale, setWavefieldScale] = useState('major'); // major, minor, pentatonic, etc.
+  
+  // Density Fields specific
+  const [densityThreshold, setDensityThreshold] = useState(0.5);
+  const [densityIntensity, setDensityIntensity] = useState(0.8);
+  
+  // Flow Fields specific  
+  const [flowLineLength, setFlowLineLength] = useState(20);
+  const [flowLineDensity, setFlowLineDensity] = useState(0.1);
+  
+  // Contour Mapping specific
+  const [contourLevels, setContourLevels] = useState(5);
+  const [contourSmoothness, setContourSmoothness] = useState(0.3);
+
   const { writeContract } = useWriteContract();
   const { data: mintPrice } = useReadContract({
     address: GEN2_CONTRACT_ADDRESS,
     abi: gen2ABI,
     functionName: 'mintPrice',
   });
+
+  // Harmonic Wavefield Functions
+  const musicalScales = {
+    major: [1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8], // C Major scale ratios
+    minor: [1, 9/8, 6/5, 4/3, 3/2, 8/5, 9/5], // A Minor scale ratios
+    pentatonic: [1, 9/8, 5/4, 3/2, 5/3], // Pentatonic scale ratios
+    chromatic: [1, 16/15, 9/8, 6/5, 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 9/5, 15/8] // Chromatic scale ratios
+  };
+
+  // Simple noise function (can be replaced with Perlin/Simplex later)
+  const noise = (x: number, y: number, t: number = 0): number => {
+    return Math.sin(x * 0.01) * Math.cos(y * 0.01) * Math.sin(t * 0.1);
+  };
+
+  // Calculate particle count based on wallet count (simulated for now)
+  const getWalletBasedParticleCount = () => {
+    // For now, simulate wallet count based on current particle count slider
+    // In production, this would come from on-chain data or API calls
+    const simulatedWalletCount = Math.floor(particleCount / 10); // Simulate 1 wallet per 10 particles
+    return Math.max(10, Math.min(200, simulatedWalletCount * 5)); // 5 particles per wallet, min 10, max 200
+  };
+
+  // Data-driven parameter adjustments
+  const getDataAdjustedParams = () => {
+    let adjustedFreq = wavefieldBaseFreq;
+    let adjustedAmplitude = wavefieldAmplitude;
+    let adjustedScale = wavefieldScale;
+    
+    // Adjust based on Farcaster mood/sentiment
+    if (enableFarcasterMood && farcasterMood) {
+      const mood = farcasterMood.toLowerCase();
+      
+      // Frequency adjustments based on sentiment
+      if (mood.includes('positive') || mood.includes('happy') || mood.includes('excited')) {
+        adjustedFreq *= 1.2; // Higher frequency for positive moods
+        adjustedScale = 'major';
+      } else if (mood.includes('negative') || mood.includes('sad') || mood.includes('angry')) {
+        adjustedFreq *= 0.8; // Lower frequency for negative moods
+        adjustedScale = 'minor';
+      } else if (mood.includes('neutral') || mood.includes('calm')) {
+        adjustedScale = 'pentatonic';
+      }
+      
+      // Amplitude adjustments based on energy level
+      if (mood.includes('high') || mood.includes('intense') || mood.includes('energetic')) {
+        adjustedAmplitude *= 1.5;
+      } else if (mood.includes('low') || mood.includes('tired') || mood.includes('calm')) {
+        adjustedAmplitude *= 0.7;
+      }
+    }
+    
+    return { adjustedFreq, adjustedAmplitude, adjustedScale };
+  };
+
+  // Generate harmonic wavefield value at point (x, y, t)
+  const getWavefieldValue = (x: number, y: number, t: number): number => {
+    const { adjustedFreq, adjustedAmplitude, adjustedScale } = getDataAdjustedParams();
+    const scale = musicalScales[adjustedScale as keyof typeof musicalScales] || musicalScales.major;
+    let value = 0;
+    
+    for (let octave = 0; octave < wavefieldOctaves; octave++) {
+      const freq = adjustedFreq * Math.pow(2, octave);
+      const amplitude = adjustedAmplitude / Math.pow(2, octave);
+      
+      for (let i = 0; i < scale.length; i++) {
+        const harmonicFreq = freq * scale[i];
+        const phase = t * 0.01;
+        value += amplitude * Math.sin(x * harmonicFreq + phase) * Math.cos(y * harmonicFreq + phase);
+      }
+    }
+    
+    return value;
+  };
+
+  // Density Fields: Probability-based dots
+  const renderDensityFields = (ctx: CanvasRenderingContext2D, size: number, t: number) => {
+    if (!enableDensityFields) return;
+    
+    const gridSize = 4; // Resolution for density calculation
+    const cellSize = size / gridSize;
+    
+    for (let py = 0; py < gridSize; py++) {
+      for (let px = 0; px < gridSize; px++) {
+        const x = px * cellSize;
+        const y = py * cellSize;
+        const centerX = x + cellSize / 2;
+        const centerY = y + cellSize / 2;
+        
+        const waveValue = getWavefieldValue(centerX, centerY, t);
+        const probability = (waveValue + 1) / 2; // Normalize to 0-1
+        const density = probability * densityIntensity;
+        
+        if (probability > densityThreshold) {
+          const numDots = Math.floor(density * 20);
+          for (let i = 0; i < numDots; i++) {
+            const dotX = x + Math.random() * cellSize;
+            const dotY = y + Math.random() * cellSize;
+            const dotSize = Math.random() * 2 + 0.5;
+            
+            ctx.fillStyle = `rgba(255, 255, 255, ${probability * 0.8})`;
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, dotSize, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+    }
+  };
+
+  // Flow Fields: Vector-based lines
+  const renderFlowFields = (ctx: CanvasRenderingContext2D, size: number, t: number) => {
+    if (!enableFlowFields) return;
+    
+    const gridSize = Math.floor(size * flowLineDensity);
+    const cellSize = size / gridSize;
+    
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 1;
+    
+    for (let py = 0; py < gridSize; py++) {
+      for (let px = 0; px < gridSize; px++) {
+        const x = px * cellSize;
+        const y = py * cellSize;
+        
+        // Calculate gradient (flow direction)
+        const eps = 1;
+        const waveValue = getWavefieldValue(x, y, t);
+        const gradX = getWavefieldValue(x + eps, y, t) - waveValue;
+        const gradY = getWavefieldValue(x, y + eps, t) - waveValue;
+        
+        // Normalize gradient to get direction
+        const length = Math.sqrt(gradX * gradX + gradY * gradY);
+        if (length > 0) {
+          const dirX = gradX / length;
+          const dirY = gradY / length;
+          
+          // Draw line in flow direction
+          const startX = x + cellSize / 2;
+          const startY = y + cellSize / 2;
+          const endX = startX + dirX * flowLineLength;
+          const endY = startY + dirY * flowLineLength;
+          
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+        }
+      }
+    }
+  };
+
+  // Contour Mapping: Threshold-based solid shapes
+  const renderContourMapping = (ctx: CanvasRenderingContext2D, size: number, t: number) => {
+    if (!enableContourMapping) return;
+    
+    const gridSize = 32;
+    const cellSize = size / gridSize;
+    
+    // Create contour levels
+    const levels = [];
+    for (let i = 0; i < contourLevels; i++) {
+      levels.push((i / contourLevels) * 2 - 1); // -1 to 1 range
+    }
+    
+    // Render each contour level
+    levels.forEach((level, levelIndex) => {
+      const alpha = (levelIndex + 1) / contourLevels * 0.3;
+      ctx.fillStyle = `rgba(100, 150, 255, ${alpha})`;
+      
+      for (let py = 0; py < gridSize; py++) {
+        for (let px = 0; px < gridSize; px++) {
+          const x = px * cellSize;
+          const y = py * cellSize;
+          const centerX = x + cellSize / 2;
+          const centerY = y + cellSize / 2;
+          
+          const waveValue = getWavefieldValue(centerX, centerY, t);
+          
+          // Check if this cell is within the contour level
+          const nextLevel = levelIndex < levels.length - 1 ? levels[levelIndex + 1] : 1;
+          if (waveValue >= level && waveValue < nextLevel) {
+            // Apply smoothness by checking neighboring cells
+            let smoothFactor = 1;
+            if (contourSmoothness > 0) {
+              const neighborValues = [
+                getWavefieldValue(centerX - cellSize, centerY, t),
+                getWavefieldValue(centerX + cellSize, centerY, t),
+                getWavefieldValue(centerX, centerY - cellSize, t),
+                getWavefieldValue(centerX, centerY + cellSize, t)
+              ];
+              const avgNeighbor = neighborValues.reduce((a, b) => a + b, 0) / neighborValues.length;
+              smoothFactor = Math.abs(waveValue - avgNeighbor) < contourSmoothness ? 1 : 0.3;
+            }
+            
+            ctx.globalAlpha = alpha * smoothFactor;
+            ctx.fillRect(x, y, cellSize, cellSize);
+          }
+        }
+      }
+    });
+    
+    ctx.globalAlpha = 1; // Reset alpha
+  };
 
 
   const generateImage = async () => {
@@ -287,7 +544,9 @@ const Gen2App: React.FC = () => {
     const finalParticleColor1 = particleColor1;
     const finalParticleColor2 = particleColor2;
 
-    for (let i = 0; i < particleCount; i++) {
+    // Use wallet-based particle count
+    const actualParticleCount = getWalletBasedParticleCount();
+    for (let i = 0; i < actualParticleCount; i++) {
       particles.push({
         x: Math.random() * size,
         y: Math.random() * size,
@@ -341,6 +600,11 @@ const Gen2App: React.FC = () => {
 
       // Normalize frame to 0-1 for seamless looping
       const t = (frame % LOOP_DURATION) / LOOP_DURATION;
+
+      // Render Harmonic Wavefield Layers
+      renderDensityFields(ctx, size, frame);
+      renderFlowFields(ctx, size, frame);
+      renderContourMapping(ctx, size, frame);
 
       particles.forEach((p, i) => {
         const phase = (i / particleCount) * Math.PI * 2;
@@ -412,7 +676,7 @@ const Gen2App: React.FC = () => {
     };
 
     render();
-  }, [particleCount, particleBaseSpeed, particleMinSize, particleMaxSize, particleChaosFactor, enableFarcasterMood, farcasterMood, flowColor1, flowColor2, particleColor1, particleColor2, particleFadeSpeed, particlePattern]);
+  }, [particleCount, particleBaseSpeed, particleMinSize, particleMaxSize, particleChaosFactor, enableFarcasterMood, farcasterMood, flowColor1, flowColor2, particleColor1, particleColor2, particleFadeSpeed, particlePattern, enableDensityFields, enableFlowFields, enableContourMapping, wavefieldBaseFreq, wavefieldAmplitude, wavefieldOctaves, wavefieldScale, densityThreshold, densityIntensity, flowLineLength, flowLineDensity, contourLevels, contourSmoothness]);
 
   useEffect(() => {
     fetchFarcasterMood();
@@ -589,6 +853,143 @@ const Gen2App: React.FC = () => {
             </div>
           </div>
 
+          <h2 className="text-xl font-bold mb-4 mt-6 text-cyan-300">Data Integration Status</h2>
+          <div className="bg-slate-800 p-4 rounded-lg mb-6">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-400">Simulated Wallet Count:</span>
+                <span className="ml-2 text-cyan-300 font-mono">{Math.floor(particleCount / 10)}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Actual Particle Count:</span>
+                <span className="ml-2 text-cyan-300 font-mono">{getWalletBasedParticleCount()}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Farcaster Mood:</span>
+                <span className="ml-2 text-cyan-300">{farcasterMood || 'None'}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Wavefield Scale:</span>
+                <span className="ml-2 text-cyan-300 capitalize">{getDataAdjustedParams().adjustedScale}</span>
+              </div>
+            </div>
+          </div>
+
+          <h2 className="text-xl font-bold mb-4 mt-6 text-cyan-300">Harmonic Wavefield Layers</h2>
+          <div className="space-y-4 mb-6">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-slate-300">Layer Controls</h3>
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <input
+                    id="enable-density-fields"
+                    type="checkbox"
+                    checked={enableDensityFields}
+                    onChange={e => setEnableDensityFields(e.target.checked)}
+                    className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="enable-density-fields" className="ml-2 block text-sm text-gray-400">
+                    Density Fields (probability-based dots)
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    id="enable-flow-fields"
+                    type="checkbox"
+                    checked={enableFlowFields}
+                    onChange={e => setEnableFlowFields(e.target.checked)}
+                    className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="enable-flow-fields" className="ml-2 block text-sm text-gray-400">
+                    Flow Fields (vector-based lines)
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    id="enable-contour-mapping"
+                    type="checkbox"
+                    checked={enableContourMapping}
+                    onChange={e => setEnableContourMapping(e.target.checked)}
+                    className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="enable-contour-mapping" className="ml-2 block text-sm text-gray-400">
+                    Contour Mapping (threshold-based shapes)
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-300">Wavefield Parameters</h3>
+              <div>
+                <label htmlFor="wavefield-base-freq" className="block text-sm font-medium text-gray-400 mb-1">Base Frequency ({wavefieldBaseFreq.toFixed(3)})</label>
+                <input type="range" id="wavefield-base-freq" min="0.001" max="0.05" step="0.001" value={wavefieldBaseFreq} onChange={e => setWavefieldBaseFreq(parseFloat(e.target.value))} className="w-full" />
+                <p className="text-xs text-gray-500 mt-1">Fundamental frequency of the harmonic wavefield</p>
+              </div>
+              <div>
+                <label htmlFor="wavefield-amplitude" className="block text-sm font-medium text-gray-400 mb-1">Amplitude ({wavefieldAmplitude.toFixed(1)})</label>
+                <input type="range" id="wavefield-amplitude" min="0.1" max="3.0" step="0.1" value={wavefieldAmplitude} onChange={e => setWavefieldAmplitude(parseFloat(e.target.value))} className="w-full" />
+                <p className="text-xs text-gray-500 mt-1">Overall strength of the wavefield</p>
+              </div>
+              <div>
+                <label htmlFor="wavefield-octaves" className="block text-sm font-medium text-gray-400 mb-1">Octaves ({wavefieldOctaves})</label>
+                <input type="range" id="wavefield-octaves" min="1" max="8" step="1" value={wavefieldOctaves} onChange={e => setWavefieldOctaves(parseInt(e.target.value))} className="w-full" />
+                <p className="text-xs text-gray-500 mt-1">Number of harmonic layers</p>
+              </div>
+              <div>
+                <label htmlFor="wavefield-scale" className="block text-sm font-medium text-gray-400 mb-1">Musical Scale</label>
+                <select id="wavefield-scale" value={wavefieldScale} onChange={e => setWavefieldScale(e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-md p-2 text-white">
+                  <option value="major">Major Scale (happy, bright)</option>
+                  <option value="minor">Minor Scale (sad, dark)</option>
+                  <option value="pentatonic">Pentatonic Scale (simple, clean)</option>
+                  <option value="chromatic">Chromatic Scale (complex, dissonant)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-300">Density Fields</h3>
+              <div>
+                <label htmlFor="density-threshold" className="block text-sm font-medium text-gray-400 mb-1">Threshold ({densityThreshold.toFixed(2)})</label>
+                <input type="range" id="density-threshold" min="0" max="1" step="0.05" value={densityThreshold} onChange={e => setDensityThreshold(parseFloat(e.target.value))} className="w-full" />
+                <p className="text-xs text-gray-500 mt-1">Minimum wave value to show dots</p>
+              </div>
+              <div>
+                <label htmlFor="density-intensity" className="block text-sm font-medium text-gray-400 mb-1">Intensity ({densityIntensity.toFixed(2)})</label>
+                <input type="range" id="density-intensity" min="0" max="2" step="0.1" value={densityIntensity} onChange={e => setDensityIntensity(parseFloat(e.target.value))} className="w-full" />
+                <p className="text-xs text-gray-500 mt-1">Density of dots when threshold is met</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-300">Flow Fields</h3>
+              <div>
+                <label htmlFor="flow-line-length" className="block text-sm font-medium text-gray-400 mb-1">Line Length ({flowLineLength})</label>
+                <input type="range" id="flow-line-length" min="5" max="50" step="1" value={flowLineLength} onChange={e => setFlowLineLength(parseInt(e.target.value))} className="w-full" />
+                <p className="text-xs text-gray-500 mt-1">Length of flow direction lines</p>
+              </div>
+              <div>
+                <label htmlFor="flow-line-density" className="block text-sm font-medium text-gray-400 mb-1">Line Density ({flowLineDensity.toFixed(2)})</label>
+                <input type="range" id="flow-line-density" min="0.02" max="0.3" step="0.01" value={flowLineDensity} onChange={e => setFlowLineDensity(parseFloat(e.target.value))} className="w-full" />
+                <p className="text-xs text-gray-500 mt-1">Density of flow field grid</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-300">Contour Mapping</h3>
+              <div>
+                <label htmlFor="contour-levels" className="block text-sm font-medium text-gray-400 mb-1">Contour Levels ({contourLevels})</label>
+                <input type="range" id="contour-levels" min="2" max="10" step="1" value={contourLevels} onChange={e => setContourLevels(parseInt(e.target.value))} className="w-full" />
+                <p className="text-xs text-gray-500 mt-1">Number of contour bands</p>
+              </div>
+              <div>
+                <label htmlFor="contour-smoothness" className="block text-sm font-medium text-gray-400 mb-1">Smoothness ({contourSmoothness.toFixed(2)})</label>
+                <input type="range" id="contour-smoothness" min="0" max="1" step="0.05" value={contourSmoothness} onChange={e => setContourSmoothness(parseFloat(e.target.value))} className="w-full" />
+                <p className="text-xs text-gray-500 mt-1">Smoothness of contour edges</p>
+              </div>
+            </div>
+          </div>
+
           <h2 className="text-xl font-bold mb-4 mt-6 text-cyan-300">Visual Presets</h2>
           <div className="space-y-4">
             <div>
@@ -643,14 +1044,77 @@ const Gen2App: React.FC = () => {
               style={{ backgroundColor: '#1e293b' }}
             />
           </div>
-          <div className="mt-6 flex justify-between">
-            <button
-              type="button"
-              onClick={generateImage}
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-            >
-              Refresh Preview
-            </button>
+          <div className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-slate-300">Quick Wavefield Presets</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    setEnableDensityFields(true);
+                    setEnableFlowFields(false);
+                    setEnableContourMapping(false);
+                    setWavefieldScale('major');
+                    setWavefieldBaseFreq(0.02);
+                    setDensityThreshold(0.3);
+                    setDensityIntensity(1.2);
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white text-sm py-2 px-3 rounded transition-colors"
+                >
+                  Dots Only
+                </button>
+                <button
+                  onClick={() => {
+                    setEnableDensityFields(false);
+                    setEnableFlowFields(true);
+                    setEnableContourMapping(false);
+                    setWavefieldScale('minor');
+                    setWavefieldBaseFreq(0.015);
+                    setFlowLineLength(30);
+                    setFlowLineDensity(0.15);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded transition-colors"
+                >
+                  Flow Lines
+                </button>
+                <button
+                  onClick={() => {
+                    setEnableDensityFields(false);
+                    setEnableFlowFields(false);
+                    setEnableContourMapping(true);
+                    setWavefieldScale('pentatonic');
+                    setWavefieldBaseFreq(0.01);
+                    setContourLevels(7);
+                    setContourSmoothness(0.5);
+                  }}
+                  className="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-3 rounded transition-colors"
+                >
+                  Contours
+                </button>
+                <button
+                  onClick={() => {
+                    setEnableDensityFields(true);
+                    setEnableFlowFields(true);
+                    setEnableContourMapping(true);
+                    setWavefieldScale('chromatic');
+                    setWavefieldBaseFreq(0.008);
+                    setWavefieldOctaves(6);
+                    setWavefieldAmplitude(1.5);
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700 text-white text-sm py-2 px-3 rounded transition-colors"
+                >
+                  All Layers
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex justify-between">
+              <button
+                type="button"
+                onClick={generateImage}
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+              >
+                Refresh Preview
+              </button>
             <button
               type="button"
               onClick={handleMint}
