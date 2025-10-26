@@ -1,0 +1,314 @@
+[1mdiff --cc app/gen2-creator/Gen2App.tsx[m
+[1mindex 7b62c48,364c23d..0000000[m
+[1m--- a/app/gen2-creator/Gen2App.tsx[m
+[1m+++ b/app/gen2-creator/Gen2App.tsx[m
+[36m@@@ -168,21 -168,21 +168,37 @@@[m [mconst Gen2App: React.FC = () => [m
+    const [enableDensityFields, setEnableDensityFields] = useState(true);[m
+    const [enableFlowFields, setEnableFlowFields] = useState(true);[m
+    const [enableContourMapping, setEnableContourMapping] = useState(true);[m
+[32m++<<<<<<< Updated upstream[m
+[32m +  [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+    // Wavefield Parameters[m
+    const [wavefieldBaseFreq, setWavefieldBaseFreq] = useState(0.01);[m
+    const [wavefieldAmplitude, setWavefieldAmplitude] = useState(1.0);[m
+    const [wavefieldOctaves, setWavefieldOctaves] = useState(4);[m
+    const [wavefieldScale, setWavefieldScale] = useState('major'); // major, minor, pentatonic, etc.[m
+[32m++<<<<<<< Updated upstream[m
+[32m +  [m
+[32m +  // Density Fields specific[m
+[32m +  const [densityThreshold, setDensityThreshold] = useState(0.5);[m
+[32m +  const [densityIntensity, setDensityIntensity] = useState(0.8);[m
+[32m +  [m
+[32m +  // Flow Fields specific  [m
+[32m +  const [flowLineLength, setFlowLineLength] = useState(20);[m
+[32m +  const [flowLineDensity, setFlowLineDensity] = useState(0.1);[m
+[32m +  [m
+[32m++=======[m
+[32m+ [m
+[32m+   // Density Fields specific[m
+[32m+   const [densityThreshold, setDensityThreshold] = useState(0.5);[m
+[32m+   const [densityIntensity, setDensityIntensity] = useState(0.8);[m
+[32m+ [m
+[32m+   // Flow Fields specific[m
+[32m+   const [flowLineLength, setFlowLineLength] = useState(20);[m
+[32m+   const [flowLineDensity, setFlowLineDensity] = useState(0.1);[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+    // Contour Mapping specific[m
+    const [contourLevels, setContourLevels] = useState(5);[m
+    const [contourSmoothness, setContourSmoothness] = useState(0.3);[m
+[36m@@@ -220,11 -220,11 +236,19 @@@[m
+      let adjustedFreq = wavefieldBaseFreq;[m
+      let adjustedAmplitude = wavefieldAmplitude;[m
+      let adjustedScale = wavefieldScale;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +    [m
+[32m +    // Adjust based on Farcaster mood/sentiment[m
+[32m +    if (enableFarcasterMood && farcasterMood) {[m
+[32m +      const mood = farcasterMood.toLowerCase();[m
+[32m +      [m
+[32m++=======[m
+[32m+ [m
+[32m+     // Adjust based on Farcaster mood/sentiment[m
+[32m+     if (enableFarcasterMood && farcasterMood) {[m
+[32m+       const mood = farcasterMood.toLowerCase();[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+        // Frequency adjustments based on sentiment[m
+        if (mood.includes('positive') || mood.includes('happy') || mood.includes('excited')) {[m
+          adjustedFreq *= 1.2; // Higher frequency for positive moods[m
+[36m@@@ -235,7 -235,7 +259,11 @@@[m
+        } else if (mood.includes('neutral') || mood.includes('calm')) {[m
+          adjustedScale = 'pentatonic';[m
+        }[m
+[32m++<<<<<<< Updated upstream[m
+[32m +      [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+        // Amplitude adjustments based on energy level[m
+        if (mood.includes('high') || mood.includes('intense') || mood.includes('energetic')) {[m
+          adjustedAmplitude *= 1.5;[m
+[36m@@@ -243,7 -243,7 +271,11 @@@[m
+          adjustedAmplitude *= 0.7;[m
+        }[m
+      }[m
+[32m++<<<<<<< Updated upstream[m
+[32m +    [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+      return { adjustedFreq, adjustedAmplitude, adjustedScale };[m
+    };[m
+  [m
+[36m@@@ -252,46 -252,46 +284,77 @@@[m
+      const { adjustedFreq, adjustedAmplitude, adjustedScale } = getDataAdjustedParams();[m
+      const scale = musicalScales[adjustedScale as keyof typeof musicalScales] || musicalScales.major;[m
+      let value = 0;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +    [m
+[32m +    for (let octave = 0; octave < wavefieldOctaves; octave++) {[m
+[32m +      const freq = adjustedFreq * Math.pow(2, octave);[m
+[32m +      const amplitude = adjustedAmplitude / Math.pow(2, octave);[m
+[32m +      [m
+[32m++=======[m
+[32m+ [m
+[32m+     for (let octave = 0; octave < wavefieldOctaves; octave++) {[m
+[32m+       const freq = adjustedFreq * Math.pow(2, octave);[m
+[32m+       const amplitude = adjustedAmplitude / Math.pow(2, octave);[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+        for (let i = 0; i < scale.length; i++) {[m
+          const harmonicFreq = freq * scale[i];[m
+          const phase = t * 0.01;[m
+          value += amplitude * Math.sin(x * harmonicFreq + phase) * Math.cos(y * harmonicFreq + phase);[m
+        }[m
+      }[m
+[32m++<<<<<<< Updated upstream[m
+[32m +    [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+      return value;[m
+    };[m
+  [m
+    // Density Fields: Probability-based dots[m
+    const renderDensityFields = (ctx: CanvasRenderingContext2D, size: number, t: number) => {[m
+      if (!enableDensityFields) return;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +    [m
+[32m +    const gridSize = 4; // Resolution for density calculation[m
+[32m +    const cellSize = size / gridSize;[m
+[32m +    [m
+[32m++=======[m
+[32m+ [m
+[32m+     const gridSize = 4; // Resolution for density calculation[m
+[32m+     const cellSize = size / gridSize;[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+      for (let py = 0; py < gridSize; py++) {[m
+        for (let px = 0; px < gridSize; px++) {[m
+          const x = px * cellSize;[m
+          const y = py * cellSize;[m
+          const centerX = x + cellSize / 2;[m
+          const centerY = y + cellSize / 2;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +        [m
+[32m +        const waveValue = getWavefieldValue(centerX, centerY, t);[m
+[32m +        const probability = (waveValue + 1) / 2; // Normalize to 0-1[m
+[32m +        const density = probability * densityIntensity;[m
+[32m +        [m
+[32m++=======[m
+[32m+ [m
+[32m+         const waveValue = getWavefieldValue(centerX, centerY, t);[m
+[32m+         const probability = (waveValue + 1) / 2; // Normalize to 0-1[m
+[32m+         const density = probability * densityIntensity;[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+          if (probability > densityThreshold) {[m
+            const numDots = Math.floor(density * 20);[m
+            for (let i = 0; i < numDots; i++) {[m
+              const dotX = x + Math.random() * cellSize;[m
+              const dotY = y + Math.random() * cellSize;[m
+              const dotSize = Math.random() * 2 + 0.5;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +            [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+              ctx.fillStyle = `rgba(255, 255, 255, ${probability * 0.8})`;[m
+              ctx.beginPath();[m
+              ctx.arc(dotX, dotY, dotSize, 0, Math.PI * 2);[m
+[36m@@@ -305,36 -305,36 +368,62 @@@[m
+    // Flow Fields: Vector-based lines[m
+    const renderFlowFields = (ctx: CanvasRenderingContext2D, size: number, t: number) => {[m
+      if (!enableFlowFields) return;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +    [m
+[32m +    const gridSize = Math.floor(size * flowLineDensity);[m
+[32m +    const cellSize = size / gridSize;[m
+[32m +    [m
+[32m +    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';[m
+[32m +    ctx.lineWidth = 1;[m
+[32m +    [m
+[32m++=======[m
+[32m+ [m
+[32m+     const gridSize = Math.floor(size * flowLineDensity);[m
+[32m+     const cellSize = size / gridSize;[m
+[32m+ [m
+[32m+     ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';[m
+[32m+     ctx.lineWidth = 1;[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+      for (let py = 0; py < gridSize; py++) {[m
+        for (let px = 0; px < gridSize; px++) {[m
+          const x = px * cellSize;[m
+          const y = py * cellSize;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +        [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+          // Calculate gradient (flow direction)[m
+          const eps = 1;[m
+          const waveValue = getWavefieldValue(x, y, t);[m
+          const gradX = getWavefieldValue(x + eps, y, t) - waveValue;[m
+          const gradY = getWavefieldValue(x, y + eps, t) - waveValue;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +        [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+          // Normalize gradient to get direction[m
+          const length = Math.sqrt(gradX * gradX + gradY * gradY);[m
+          if (length > 0) {[m
+            const dirX = gradX / length;[m
+            const dirY = gradY / length;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +          [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+            // Draw line in flow direction[m
+            const startX = x + cellSize / 2;[m
+            const startY = y + cellSize / 2;[m
+            const endX = startX + dirX * flowLineLength;[m
+            const endY = startY + dirY * flowLineLength;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +          [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+            ctx.beginPath();[m
+            ctx.moveTo(startX, startY);[m
+            ctx.lineTo(endX, endY);[m
+[36m@@@ -347,30 -347,30 +436,51 @@@[m
+    // Contour Mapping: Threshold-based solid shapes[m
+    const renderContourMapping = (ctx: CanvasRenderingContext2D, size: number, t: number) => {[m
+      if (!enableContourMapping) return;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +    [m
+[32m +    const gridSize = 32;[m
+[32m +    const cellSize = size / gridSize;[m
+[32m +    [m
+[32m++=======[m
+[32m+ [m
+[32m+     const gridSize = 32;[m
+[32m+     const cellSize = size / gridSize;[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+      // Create contour levels[m
+      const levels = [];[m
+      for (let i = 0; i < contourLevels; i++) {[m
+        levels.push((i / contourLevels) * 2 - 1); // -1 to 1 range[m
+      }[m
+[32m++<<<<<<< Updated upstream[m
+[32m +    [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+      // Render each contour level[m
+      levels.forEach((level, levelIndex) => {[m
+        const alpha = (levelIndex + 1) / contourLevels * 0.3;[m
+        ctx.fillStyle = `rgba(100, 150, 255, ${alpha})`;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +      [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+        for (let py = 0; py < gridSize; py++) {[m
+          for (let px = 0; px < gridSize; px++) {[m
+            const x = px * cellSize;[m
+            const y = py * cellSize;[m
+            const centerX = x + cellSize / 2;[m
+            const centerY = y + cellSize / 2;[m
+[32m++<<<<<<< Updated upstream[m
+[32m +          [m
+[32m +          const waveValue = getWavefieldValue(centerX, centerY, t);[m
+[32m +          [m
+[32m++=======[m
+[32m+ [m
+[32m+           const waveValue = getWavefieldValue(centerX, centerY, t);[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+            // Check if this cell is within the contour level[m
+            const nextLevel = levelIndex < levels.length - 1 ? levels[levelIndex + 1] : 1;[m
+            if (waveValue >= level && waveValue < nextLevel) {[m
+[36m@@@ -386,14 -386,14 +496,22 @@@[m
+                const avgNeighbor = neighborValues.reduce((a, b) => a + b, 0) / neighborValues.length;[m
+                smoothFactor = Math.abs(waveValue - avgNeighbor) < contourSmoothness ? 1 : 0.3;[m
+              }[m
+[32m++<<<<<<< Updated upstream[m
+[32m +            [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+              ctx.globalAlpha = alpha * smoothFactor;[m
+              ctx.fillRect(x, y, cellSize, cellSize);[m
+            }[m
+          }[m
+        }[m
+      });[m
+[32m++<<<<<<< Updated upstream[m
+[32m +    [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+      ctx.globalAlpha = 1; // Reset alpha[m
+    };[m
+  [m
+[36m@@@ -1106,7 -1106,7 +1224,11 @@@[m
+                  </button>[m
+                </div>[m
+              </div>[m
+[32m++<<<<<<< Updated upstream[m
+[32m +            [m
+[32m++=======[m
+[32m+ [m
+[32m++>>>>>>> Stashed changes[m
+              <div className="flex justify-between">[m
+                <button[m
+                  type="button"[m

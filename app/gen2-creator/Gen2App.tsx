@@ -168,21 +168,21 @@ const Gen2App: React.FC = () => {
   const [enableDensityFields, setEnableDensityFields] = useState(true);
   const [enableFlowFields, setEnableFlowFields] = useState(true);
   const [enableContourMapping, setEnableContourMapping] = useState(true);
-  
+
   // Wavefield Parameters
   const [wavefieldBaseFreq, setWavefieldBaseFreq] = useState(0.01);
   const [wavefieldAmplitude, setWavefieldAmplitude] = useState(1.0);
   const [wavefieldOctaves, setWavefieldOctaves] = useState(4);
   const [wavefieldScale, setWavefieldScale] = useState('major'); // major, minor, pentatonic, etc.
-  
+
   // Density Fields specific
   const [densityThreshold, setDensityThreshold] = useState(0.5);
   const [densityIntensity, setDensityIntensity] = useState(0.8);
-  
-  // Flow Fields specific  
+
+  // Flow Fields specific
   const [flowLineLength, setFlowLineLength] = useState(20);
   const [flowLineDensity, setFlowLineDensity] = useState(0.1);
-  
+
   // Contour Mapping specific
   const [contourLevels, setContourLevels] = useState(5);
   const [contourSmoothness, setContourSmoothness] = useState(0.3);
@@ -220,11 +220,11 @@ const Gen2App: React.FC = () => {
     let adjustedFreq = wavefieldBaseFreq;
     let adjustedAmplitude = wavefieldAmplitude;
     let adjustedScale = wavefieldScale;
-    
+<<<<<<< Updated upstream
+
     // Adjust based on Farcaster mood/sentiment
     if (enableFarcasterMood && farcasterMood) {
       const mood = farcasterMood.toLowerCase();
-      
       // Frequency adjustments based on sentiment
       if (mood.includes('positive') || mood.includes('happy') || mood.includes('excited')) {
         adjustedFreq *= 1.2; // Higher frequency for positive moods
@@ -235,7 +235,11 @@ const Gen2App: React.FC = () => {
       } else if (mood.includes('neutral') || mood.includes('calm')) {
         adjustedScale = 'pentatonic';
       }
-      
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
       // Amplitude adjustments based on energy level
       if (mood.includes('high') || mood.includes('intense') || mood.includes('energetic')) {
         adjustedAmplitude *= 1.5;
@@ -243,7 +247,11 @@ const Gen2App: React.FC = () => {
         adjustedAmplitude *= 0.7;
       }
     }
-    
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
     return { adjustedFreq, adjustedAmplitude, adjustedScale };
   };
 
@@ -252,46 +260,68 @@ const Gen2App: React.FC = () => {
     const { adjustedFreq, adjustedAmplitude, adjustedScale } = getDataAdjustedParams();
     const scale = musicalScales[adjustedScale as keyof typeof musicalScales] || musicalScales.major;
     let value = 0;
-    
+
     for (let octave = 0; octave < wavefieldOctaves; octave++) {
       const freq = adjustedFreq * Math.pow(2, octave);
       const amplitude = adjustedAmplitude / Math.pow(2, octave);
-      
       for (let i = 0; i < scale.length; i++) {
         const harmonicFreq = freq * scale[i];
         const phase = t * 0.01;
         value += amplitude * Math.sin(x * harmonicFreq + phase) * Math.cos(y * harmonicFreq + phase);
       }
     }
-    
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
     return value;
   };
 
   // Density Fields: Probability-based dots
   const renderDensityFields = (ctx: CanvasRenderingContext2D, size: number, t: number) => {
     if (!enableDensityFields) return;
-    
+<<<<<<< Updated upstream
+
     const gridSize = 4; // Resolution for density calculation
     const cellSize = size / gridSize;
-    
+
+=======
+
+    const gridSize = 4; // Resolution for density calculation
+    const cellSize = size / gridSize;
+
+>>>>>>> Stashed changes
     for (let py = 0; py < gridSize; py++) {
       for (let px = 0; px < gridSize; px++) {
         const x = px * cellSize;
         const y = py * cellSize;
         const centerX = x + cellSize / 2;
         const centerY = y + cellSize / 2;
-        
+<<<<<<< Updated upstream
+
         const waveValue = getWavefieldValue(centerX, centerY, t);
         const probability = (waveValue + 1) / 2; // Normalize to 0-1
         const density = probability * densityIntensity;
-        
+
+=======
+
+        const waveValue = getWavefieldValue(centerX, centerY, t);
+        const probability = (waveValue + 1) / 2; // Normalize to 0-1
+        const density = probability * densityIntensity;
+
+>>>>>>> Stashed changes
         if (probability > densityThreshold) {
           const numDots = Math.floor(density * 20);
           for (let i = 0; i < numDots; i++) {
             const dotX = x + Math.random() * cellSize;
             const dotY = y + Math.random() * cellSize;
             const dotSize = Math.random() * 2 + 0.5;
-            
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
             ctx.fillStyle = `rgba(255, 255, 255, ${probability * 0.8})`;
             ctx.beginPath();
             ctx.arc(dotX, dotY, dotSize, 0, Math.PI * 2);
@@ -305,36 +335,62 @@ const Gen2App: React.FC = () => {
   // Flow Fields: Vector-based lines
   const renderFlowFields = (ctx: CanvasRenderingContext2D, size: number, t: number) => {
     if (!enableFlowFields) return;
-    
+<<<<<<< Updated upstream
+
     const gridSize = Math.floor(size * flowLineDensity);
     const cellSize = size / gridSize;
-    
+
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.lineWidth = 1;
-    
+
+=======
+
+    const gridSize = Math.floor(size * flowLineDensity);
+    const cellSize = size / gridSize;
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 1;
+
+>>>>>>> Stashed changes
     for (let py = 0; py < gridSize; py++) {
       for (let px = 0; px < gridSize; px++) {
         const x = px * cellSize;
         const y = py * cellSize;
-        
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
         // Calculate gradient (flow direction)
         const eps = 1;
         const waveValue = getWavefieldValue(x, y, t);
         const gradX = getWavefieldValue(x + eps, y, t) - waveValue;
         const gradY = getWavefieldValue(x, y + eps, t) - waveValue;
-        
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
         // Normalize gradient to get direction
         const length = Math.sqrt(gradX * gradX + gradY * gradY);
         if (length > 0) {
           const dirX = gradX / length;
           const dirY = gradY / length;
-          
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
           // Draw line in flow direction
           const startX = x + cellSize / 2;
           const startY = y + cellSize / 2;
           const endX = startX + dirX * flowLineLength;
           const endY = startY + dirY * flowLineLength;
-          
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
           ctx.beginPath();
           ctx.moveTo(startX, startY);
           ctx.lineTo(endX, endY);
@@ -347,30 +403,51 @@ const Gen2App: React.FC = () => {
   // Contour Mapping: Threshold-based solid shapes
   const renderContourMapping = (ctx: CanvasRenderingContext2D, size: number, t: number) => {
     if (!enableContourMapping) return;
-    
+<<<<<<< Updated upstream
+
     const gridSize = 32;
     const cellSize = size / gridSize;
-    
+
+=======
+
+    const gridSize = 32;
+    const cellSize = size / gridSize;
+
+>>>>>>> Stashed changes
     // Create contour levels
     const levels = [];
     for (let i = 0; i < contourLevels; i++) {
       levels.push((i / contourLevels) * 2 - 1); // -1 to 1 range
     }
-    
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
     // Render each contour level
     levels.forEach((level, levelIndex) => {
       const alpha = (levelIndex + 1) / contourLevels * 0.3;
       ctx.fillStyle = `rgba(100, 150, 255, ${alpha})`;
-      
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
       for (let py = 0; py < gridSize; py++) {
         for (let px = 0; px < gridSize; px++) {
           const x = px * cellSize;
           const y = py * cellSize;
           const centerX = x + cellSize / 2;
           const centerY = y + cellSize / 2;
-          
+<<<<<<< Updated upstream
+
           const waveValue = getWavefieldValue(centerX, centerY, t);
-          
+
+=======
+
+          const waveValue = getWavefieldValue(centerX, centerY, t);
+
+>>>>>>> Stashed changes
           // Check if this cell is within the contour level
           const nextLevel = levelIndex < levels.length - 1 ? levels[levelIndex + 1] : 1;
           if (waveValue >= level && waveValue < nextLevel) {
@@ -386,14 +463,22 @@ const Gen2App: React.FC = () => {
               const avgNeighbor = neighborValues.reduce((a, b) => a + b, 0) / neighborValues.length;
               smoothFactor = Math.abs(waveValue - avgNeighbor) < contourSmoothness ? 1 : 0.3;
             }
-            
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
             ctx.globalAlpha = alpha * smoothFactor;
             ctx.fillRect(x, y, cellSize, cellSize);
           }
         }
       }
     });
-    
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
     ctx.globalAlpha = 1; // Reset alpha
   };
 
@@ -1106,7 +1191,11 @@ const Gen2App: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+<<<<<<< Updated upstream
+
+=======
+
+>>>>>>> Stashed changes
             <div className="flex justify-between">
               <button
                 type="button"
