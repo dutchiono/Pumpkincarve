@@ -393,40 +393,48 @@ export function PumpkinCarvingApp() {
     }
 
     try {
-      setLoadingMessage('🚀 Sharing to Farcaster...');
+      // Upload to IPFS first to get a permanent URL for sharing
+      setLoadingMessage('🌐 Uploading to IPFS...');
 
-      // Use the system share sheet with the Mini App URL
-      // This ensures the link opens inside Farcaster as a Mini App
-      const shareData = {
-        title: '🎃 Check out my Pumpkin NFT!',
-        text: '🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nMint your own:',
-        url: 'https://bushleague.xyz',
-      };
+      const uploadResponse = await fetch('/api/ipfs/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: pumpkinDesign.imageUrl }),
+      });
 
-      if (navigator.share) {
-        await navigator.share(shareData);
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Failed to upload to IPFS');
+      }
+
+      const { gatewayUrl } = await uploadResponse.json();
+      console.log('✅ Image uploaded to IPFS for sharing:', gatewayUrl);
+
+      // Create dynamic embed URL with the IPFS gateway URL
+      // This URL contains the fc:miniapp meta tag that tells Farcaster this is a miniapp
+      const embedUrl = `https://bushleague.xyz/embed?image=${encodeURIComponent(gatewayUrl)}`;
+
+      setLoadingMessage('📤 Sharing to Farcaster...');
+
+      const result = await sdk.actions.composeCast({
+        text: '🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nMint your own: @bushleague.xyz',
+        embeds: [embedUrl] as [string],
+      });
+
+      if (result?.cast) {
         setError(null);
-        setLoadingMessage('🎉 Shared to Farcaster!');
+        setLoadingMessage('🎉 Cast posted to Farcaster!');
         setTimeout(() => {
           setLoadingMessage('');
           setError(null);
         }, 3000);
       } else {
-        // Fallback: Copy to clipboard
-        await navigator.clipboard.writeText('https://bushleague.xyz');
-        setError(null);
-        setLoadingMessage('✅ Link copied! Paste it in Farcaster');
-        setTimeout(() => {
-          setLoadingMessage('');
-          setError(null);
-        }, 3000);
+        // User cancelled
+        setLoadingMessage('');
       }
     } catch (err: any) {
-      // User cancelled or error occurred
-      if (err.name !== 'AbortError') {
-        console.error('❌ Share error:', err);
-        setError('Failed to share: ' + (err.message || String(err)));
-      }
+      console.error('❌ Share error:', err);
+      setError('Failed to share: ' + (err.message || String(err)));
       setLoadingMessage('');
     }
   };
