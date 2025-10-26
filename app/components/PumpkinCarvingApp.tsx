@@ -567,21 +567,42 @@ export function PumpkinCarvingApp() {
         </p>
 
         {loading && loadingMessage && (
-          <div className="bg-orange-500/20 border-2 border-orange-400 rounded-2xl p-4 md:p-6 text-center mb-6 animate-pulse">
-            <p className="text-lg md:text-2xl font-bold text-white">{loadingMessage}</p>
+          <div style={{
+            backgroundColor: 'rgba(234, 88, 12, 0.2)',
+            border: '2px solid rgba(234, 88, 12, 0.5)',
+            borderRadius: '16px',
+            padding: '24px',
+            textAlign: 'center',
+            marginBottom: '24px',
+            animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+          }}>
+            <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>{loadingMessage}</p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-500/20 border-2 border-red-400 rounded-2xl p-4 md:p-6 text-center mb-6">
-            <p className="text-base md:text-xl font-bold text-white">❌ {error}</p>
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+            border: '2px solid rgba(239, 68, 68, 0.5)',
+            borderRadius: '16px',
+            padding: '24px',
+            textAlign: 'center',
+            marginBottom: '24px'
+          }}>
+            <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>❌ {error}</p>
           </div>
         )}
 
         {mounted && !isConnected && (
-          <div className="bg-yellow-500/20 border-2 border-yellow-400 rounded-2xl p-6 md:p-8 text-center">
-            <p className="text-xl md:text-2xl font-bold text-white mb-4">🔗 Connect Your Wallet</p>
-            <p className="text-sm md:text-base text-white/80">Waiting for wallet connection...</p>
+          <div style={{
+            backgroundColor: 'rgba(234, 179, 8, 0.2)',
+            border: '2px solid rgba(234, 179, 8, 0.5)',
+            borderRadius: '16px',
+            padding: '32px',
+            textAlign: 'center'
+          }}>
+            <p style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px' }}>🔗 Connect Your Wallet</p>
+            <p style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.8)' }}>Waiting for wallet connection...</p>
           </div>
         )}
 
@@ -611,25 +632,26 @@ export function PumpkinCarvingApp() {
                   <div style={{
                     position: 'relative',
                     zIndex: 10,
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                    backdropFilter: 'blur(10px)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    backdropFilter: 'blur(20px)',
                     borderRadius: '16px',
                     padding: '24px',
                     border: '2px solid rgba(255, 255, 255, 0.2)',
                     maxWidth: '95%',
                     margin: '0 auto',
                     textAlign: 'center',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
                   }}>
                     <h3 style={{ color: '#ea580c', fontSize: '20px', fontWeight: 'bold', marginBottom: '12px' }}>
                       🎃 Behind the Scenes
                     </h3>
-                    <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '14px', lineHeight: '1.6', marginBottom: '16px' }}>
+                    <p style={{ color: '#ffffff', fontSize: '14px', lineHeight: '1.6', marginBottom: '16px', fontWeight: '400' }}>
                       We use AI to analyze your Farcaster posts, extracting your personality and interests to create a unique pumpkin design perfectly tailored to you.
                     </p>
-                    <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '14px', lineHeight: '1.6', marginBottom: '16px' }}>
+                    <p style={{ color: '#ffffff', fontSize: '14px', lineHeight: '1.6', marginBottom: '16px', fontWeight: '400' }}>
                       The AI then generates a custom pumpkin image, uploads it to IPFS for permanent storage, and mints your one-of-a-kind NFT on Base blockchain.
                     </p>
-                    <p style={{ color: 'rgba(168, 85, 247, 1)', fontSize: '12px', fontStyle: 'italic', margin: 0 }}>
+                    <p style={{ color: 'rgba(168, 85, 247, 1)', fontSize: '12px', fontStyle: 'italic', margin: 0, fontWeight: '400' }}>
                       Your digital personality, carved into a spooky NFT.
                     </p>
                   </div>
@@ -663,12 +685,29 @@ export function PumpkinCarvingApp() {
             )}
 
             {pumpkinDesign && pumpkinDesign.imageUrl && (mintSuccess ? (
-              <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-lg rounded-3xl p-6 border border-green-500/30">
+              <div style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '24px',
+                padding: '32px',
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+              }}>
                 <div className="text-6xl text-center mb-4">🎃</div>
-                <h2 className="text-2xl font-bold text-white mb-2 text-center">Minted Successfully!</h2>
-                <p className="text-white/80 mb-6 text-center">Your pumpkin is now on Base</p>
+                <h2 style={{ textAlign: 'center', fontSize: '28px', fontWeight: 'bold', color: '#ffffff', marginBottom: '12px' }}>Minted Successfully!</h2>
+                <p style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.9)', fontSize: '16px', marginBottom: '24px' }}>Your pumpkin is now on Base</p>
                 {hash && (
-                  <div className="bg-black/50 rounded-xl p-3 text-xs text-white/60 break-all mb-4 font-mono">
+                  <div style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    fontSize: '12px',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    wordBreak: 'break-all',
+                    marginBottom: '16px',
+                    fontFamily: 'monospace',
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
                     {hash}
                   </div>
                 )}
@@ -741,9 +780,16 @@ export function PumpkinCarvingApp() {
         )}
 
         {activeTab === 'leaderboard' && (
-          <div className="bg-gradient-to-br from-yellow-500/20 to-orange-600/20 backdrop-blur-lg rounded-3xl p-6 border border-white/20">
+          <div style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            padding: '32px',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+          }}>
             <div className="text-5xl mb-4 text-center">🏆</div>
-            <h2 className="text-2xl font-bold text-white mb-4 text-center">Leaderboard</h2>
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px', textAlign: 'center' }}>Leaderboard</h2>
 
             {/* Sub-tabs - Modern segmented control */}
             <div style={{
@@ -790,13 +836,18 @@ export function PumpkinCarvingApp() {
             {leaderboardSubTab === 'minters' && (
               <>
                 {topMinters.length === 0 ? (
-                  <div className="text-center py-8 text-white/70">
+                  <div style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px', color: 'rgba(255, 255, 255, 0.7)' }}>
                     <p>No mints yet! Be the first to carve a pumpkin!</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {topMinters.map((minter, index) => (
-                      <div key={minter.address} className="bg-black/30 rounded-2xl p-4 border border-white/10">
+                      <div key={minter.address} style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '16px',
+                        padding: '16px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexDirection: 'row' }} onClick={() => setExpandedUser(minter.address)}>
                           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f97316', width: '32px' }}>{index + 1}</div>
                           {minter.pfp && <img src={minter.pfp} alt={minter.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
@@ -844,13 +895,18 @@ export function PumpkinCarvingApp() {
             {leaderboardSubTab === 'holders' && (
               <>
                 {topHolders.length === 0 ? (
-                  <div className="text-center py-8 text-white/70">
+                  <div style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px', color: 'rgba(255, 255, 255, 0.7)' }}>
                     <p>No holders yet!</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {topHolders.map((holder, index) => (
-                      <div key={holder.address} className="bg-black/30 rounded-2xl p-4 border border-white/10">
+                      <div key={holder.address} style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '16px',
+                        padding: '16px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexDirection: 'row' }} onClick={() => setExpandedUser(holder.address)}>
                           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#a855f7', width: '32px' }}>{index + 1}</div>
                           {holder.pfp && <img src={holder.pfp} alt={holder.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
@@ -898,20 +954,37 @@ export function PumpkinCarvingApp() {
         )}
 
         {activeTab === 'profile' && userData && (
-          <div className="bg-gradient-to-br from-purple-500/20 to-pink-600/20 backdrop-blur-lg rounded-3xl p-6 border border-white/20">
+          <div style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            padding: '32px',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+          }}>
             <div className="flex flex-col items-center mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">{userData.displayName || userData.username}</h2>
-              <p className="text-white/70">@{userData.username}</p>
+              <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '8px' }}>{userData.displayName || userData.username}</h2>
+              <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>@{userData.username}</p>
             </div>
             <div className="space-y-3">
-              <div className="bg-black/30 rounded-2xl p-4 border border-white/10">
-                <p className="text-xs text-white/50 mb-1">FID</p>
-                <p className="text-white font-mono">{userData.fid}</p>
+              <div style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '16px',
+                padding: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '4px' }}>FID</p>
+                <p style={{ color: '#ffffff', fontFamily: 'monospace', fontSize: '16px' }}>{userData.fid}</p>
               </div>
               {userData.bio && (
-                <div className="bg-black/30 rounded-2xl p-4 border border-white/10">
-                  <p className="text-xs text-white/50 mb-2">Bio</p>
-                  <p className="text-white">{userData.bio}</p>
+                <div style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>Bio</p>
+                  <p style={{ color: '#ffffff', fontSize: '14px', lineHeight: '1.6' }}>{userData.bio}</p>
                 </div>
               )}
             </div>

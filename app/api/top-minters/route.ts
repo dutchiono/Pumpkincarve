@@ -42,18 +42,42 @@ export async function GET() {
       transport: http('https://1rpc.io/base'),
     });
 
-    // Use recent block instead of 'earliest' for speed
+    // Get current block
     const currentBlock = await mainnetClient.getBlockNumber();
-    const fromBlock = currentBlock - BigInt(10000); // Last ~10k blocks (~3 days)
 
-    const logs = await mainnetClient.getLogs({
-      address: CONTRACT_ADDRESS as `0x${string}`,
-      event: PUMPKIN_MINT_ABI[0],
-      fromBlock: fromBlock,
-      toBlock: 'latest',
-    });
+    // RPC providers limit to 10,000 blocks per query, so we need to query in chunks
+    const MAX_BLOCK_RANGE = BigInt(10000);
+    const allLogs = [];
 
-    console.log(`Found ${logs.length} logs on Base mainnet`);
+    // Start from 50k blocks ago or go back as far as needed
+    let fromBlock = currentBlock - BigInt(50000);
+
+    console.log(`Searching from block ${fromBlock} to latest (${currentBlock}) in chunks`);
+
+    // Query in batches of 10k blocks
+    while (fromBlock < currentBlock) {
+      const toBlock = fromBlock + MAX_BLOCK_RANGE > currentBlock ? currentBlock : fromBlock + MAX_BLOCK_RANGE;
+
+      console.log(`Querying blocks ${fromBlock} to ${toBlock}`);
+
+      const logs = await mainnetClient.getLogs({
+        address: CONTRACT_ADDRESS as `0x${string}`,
+        event: PUMPKIN_MINT_ABI[0],
+        fromBlock: fromBlock,
+        toBlock: toBlock,
+      });
+
+      allLogs.push(...logs);
+      console.log(`Found ${logs.length} logs in this batch, total: ${allLogs.length}`);
+
+      fromBlock = toBlock + BigInt(1);
+
+      // Add a small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    console.log(`Found ${allLogs.length} total logs on Base mainnet`);
+    const logs = allLogs;
 
     // Count mints per address
     const mintCounts: Record<string, number> = {};
