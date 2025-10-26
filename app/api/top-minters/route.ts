@@ -44,7 +44,7 @@ export async function GET() {
 
     // Use recent block instead of 'earliest' for speed
     const currentBlock = await mainnetClient.getBlockNumber();
-    const fromBlock = currentBlock - 10000n; // Last ~10k blocks (~3 days)
+    const fromBlock = currentBlock - BigInt(10000); // Last ~10k blocks (~3 days)
 
     const logs = await mainnetClient.getLogs({
       address: CONTRACT_ADDRESS as `0x${string}`,
