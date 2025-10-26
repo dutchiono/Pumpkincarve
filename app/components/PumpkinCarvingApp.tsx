@@ -407,8 +407,12 @@ export function PumpkinCarvingApp() {
         throw new Error(errorData.error || 'Failed to upload to IPFS');
       }
 
-      const { gatewayUrl } = await uploadResponse.json();
-      console.log('✅ Image uploaded to IPFS for sharing:', gatewayUrl);
+      const { ipfsUrl, cid } = await uploadResponse.json();
+      console.log('✅ Image uploaded to IPFS:', { ipfsUrl, cid });
+
+      // Convert IPFS URL to a gateway URL that can be embedded
+      const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+      console.log('✅ Gateway URL:', gatewayUrl);
 
       setLoadingMessage('📤 Sharing to Farcaster...');
 
