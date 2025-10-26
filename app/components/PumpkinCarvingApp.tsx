@@ -58,6 +58,8 @@ export function PumpkinCarvingApp() {
   const [mintSuccess, setMintSuccess] = useState(false);
   const [ipfsUrl, setIpfsUrl] = useState<string>('');
   const [personalityInsights, setPersonalityInsights] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'home' | 'leaderboard' | 'profile'>('home');
+  const [topMinters, setTopMinters] = useState<{ address: string; count: number }[]>([]);
 
   const { writeContract, data: hash, isPending, error: contractError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -69,17 +71,31 @@ export function PumpkinCarvingApp() {
     setMounted(true);
   }, []);
 
-  // Initialize Farcaster SDK and call ready
+  // Initialize Farcaster SDK and call ready - CRITICAL for dismissing splash screen
   useEffect(() => {
     const initializeSDK = async () => {
       try {
+        console.log('🔄 Attempting to call sdk.actions.ready()...');
         await sdk.actions.ready();
-        console.log('✅ Farcaster SDK ready');
-      } catch (error) {
-        console.error('SDK init error:', error);
+        console.log('✅ Farcaster SDK ready() called successfully');
+        console.log('✅ Splash screen should be dismissed now');
+      } catch (error: any) {
+        console.error('❌ SDK ready() error:', error);
+        // Try calling it again as a fallback
+        try {
+          console.log('🔄 Retrying sdk.actions.ready()...');
+          await sdk.actions.ready();
+          console.log('✅ SDK ready() succeeded on retry');
+        } catch (retryError) {
+          console.error('❌ Retry also failed:', retryError);
+        }
       }
     };
+
+    // Call immediately and also after a short delay
     initializeSDK();
+    const timer = setTimeout(initializeSDK, 500);
+    return () => clearTimeout(timer);
   }, []);
 
 
@@ -133,60 +149,100 @@ export function PumpkinCarvingApp() {
     }
   }, [contractError]);
 
-  // Auto-fetch user data and generate design when wallet is connected
+  // Fetch top minters when leaderboard tab is active
   useEffect(() => {
-    if (isConnected && address && !userData && !pumpkinDesign && !loading) {
-      console.log('✅ Wallet connected:', address);
-      fetchUserDataOnly();
-    }
-  }, [isConnected, address]);
+    const fetchTopMinters = async () => {
+      if (activeTab === 'leaderboard') {
+        try {
+          const response = await fetch('/api/top-minters');
+          if (response.ok) {
+            const data = await response.json();
+            setTopMinters(data);
+          }
+        } catch (err) {
+          console.error('Failed to fetch top minters:', err);
+        }
+      }
+    };
+    fetchTopMinters();
+  }, [activeTab]);
 
-  // Auto-generate design after user data is loaded
+  // Auto-fetch profile when wallet connects
   useEffect(() => {
-    if (userData && !pumpkinDesign && !loading && !generatingImage) {
-      console.log('✅ User data loaded, auto-generating design...');
-      generateDesign();
-    }
-  }, [userData]);
+    const fetchProfile = async () => {
+      if (isConnected && address && !userData && !loading) {
+        setLoading(true);
+        setLoadingMessage('👻 Loading your profile...');
+        try {
+          const response = await fetch('/api/neynar/user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address }),
+          });
+          if (!response.ok) throw new Error('Profile fetch failed');
+          const data = await response.json();
+          setUserData(data);
+        } catch (err: any) {
+          console.error('Profile fetch error:', err);
+          setError('Could not load profile - ensure you have a Farcaster account connected to this wallet');
+        } finally {
+          setLoading(false);
+          setLoadingMessage('');
+        }
+      }
+    };
+    fetchProfile();
+  }, [isConnected, address, userData, loading]);
 
-  // Auto-generate image after design is created
-  useEffect(() => {
-    if (pumpkinDesign && !pumpkinDesign.imageUrl && !generatingImage && !loading) {
-      console.log('✅ Design loaded, auto-generating image...');
-      generateImage();
-    }
-  }, [pumpkinDesign]);
+  // One button to generate design + image
+  const handleGeneratePumpkin = async () => {
+    if (!userData) return;
 
-  const fetchUserDataOnly = async () => {
-    if (!address) {
-      console.log('❌ No address available for fetchUserDataOnly');
-      return;
-    }
-
-    console.log('🔍 Fetching Farcaster profile for address:', address);
     setLoading(true);
     setError(null);
-    setLoadingMessage('👻 Fetching your Farcaster profile...');
+    setPumpkinDesign(null);
 
     try {
-      const response = await fetch('/api/neynar/user', {
+      setLoadingMessage('🎃 Analyzing your personality...');
+      const designResponse = await fetch('/api/generate-design', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address }),
+        body: JSON.stringify({
+          posts: userData.posts,
+          pfp: userData.pfp,
+          username: userData.username,
+          bio: userData.bio,
+        }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch user data');
+      if (!designResponse.ok) throw new Error('Failed to generate design');
+      const design = await designResponse.json();
+
+      if (design.personalityAnalysis) {
+        const insights = generatePersonalityInsights(design.personalityAnalysis, userData.username);
+        setPersonalityInsights(insights);
       }
 
-      const data = await response.json();
-      console.log('✅ User data fetched:', data.username);
-      setUserData(data);
+      setLoadingMessage('🎨 Creating your pumpkin...');
+      const imageResponse = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          theme: design.theme,
+          description: design.description,
+        }),
+      });
+
+      if (!imageResponse.ok) throw new Error('Failed to generate image');
+      const { imageUrl } = await imageResponse.json();
+      console.log('✅ Generated image URL:', imageUrl);
+      const fullDesign = { ...design, imageUrl };
+      console.log('✅ Setting pumpkinDesign:', fullDesign);
+      setPumpkinDesign(fullDesign);
+      setLoadingMessage('');
+      setLoading(false);
     } catch (err: any) {
-      console.error('❌ Error fetching user data:', err);
-      setError(err.message || 'Failed to load Farcaster profile');
-    } finally {
+      setError(err.message || 'Generation failed');
       setLoading(false);
       setLoadingMessage('');
     }
@@ -409,143 +465,171 @@ export function PumpkinCarvingApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-purple-600 p-4 overflow-hidden">
-      <div className="max-w-2xl mx-auto h-screen overflow-y-auto">
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl">
-          <h1 className="text-4xl font-bold text-center mb-2 text-white drop-shadow-lg">
-            🎃 Carve a Pumpkin
-          </h1>
-          <p className="text-center text-white/90 text-sm mb-6">
-            Your personality, carved into a spooky NFT
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-purple-600 pb-20" style={{ width: '100vw', maxWidth: '100vw', overflowX: 'hidden' }}>
+      <div className="max-w-2xl mx-auto p-4 pb-20" style={{ width: '100%', maxWidth: '100%' }}>
+        <h1 className="text-3xl md:text-4xl font-bold text-center mb-3 text-white drop-shadow-lg">
+          🎃 Carve a Pumpkin
+        </h1>
+        <p className="text-center text-white/90 text-sm md:text-base mb-6">
+          Your personality, carved into a spooky NFT
+        </p>
 
-          {loading && loadingMessage && (
-            <div className="bg-orange-500/20 border-2 border-orange-400 rounded-2xl p-6 text-center mb-6 animate-pulse">
-              <p className="text-2xl font-bold text-white">{loadingMessage}</p>
-            </div>
-          )}
+        {loading && loadingMessage && (
+          <div className="bg-orange-500/20 border-2 border-orange-400 rounded-2xl p-4 md:p-6 text-center mb-6 animate-pulse">
+            <p className="text-lg md:text-2xl font-bold text-white">{loadingMessage}</p>
+          </div>
+        )}
 
-          {error && (
-            <div className="bg-red-500/20 border-2 border-red-400 rounded-2xl p-6 text-center mb-6">
-              <p className="text-xl font-bold text-white">❌ {error}</p>
-            </div>
-          )}
+        {error && (
+          <div className="bg-red-500/20 border-2 border-red-400 rounded-2xl p-4 md:p-6 text-center mb-6">
+            <p className="text-base md:text-xl font-bold text-white">❌ {error}</p>
+          </div>
+        )}
 
-          {mounted && !isConnected && (
-            <div className="bg-yellow-500/20 border-2 border-yellow-400 rounded-2xl p-8 text-center">
-              <p className="text-2xl font-bold text-white mb-4">🔗 Connect Your Wallet</p>
-              <p className="text-white/80">Waiting for wallet connection...</p>
-            </div>
-          )}
+        {mounted && !isConnected && (
+          <div className="bg-yellow-500/20 border-2 border-yellow-400 rounded-2xl p-6 md:p-8 text-center">
+            <p className="text-xl md:text-2xl font-bold text-white mb-4">🔗 Connect Your Wallet</p>
+            <p className="text-sm md:text-base text-white/80">Waiting for wallet connection...</p>
+          </div>
+        )}
 
-          {mounted && isConnected && !userData && !loading && (
-            <div className="bg-blue-500/20 border-2 border-blue-400 rounded-2xl p-8 text-center">
-              <p className="text-2xl font-bold text-white mb-4">👻 Loading Farcaster Profile...</p>
-              <p className="text-white/80">Connected to: {address}</p>
-            </div>
-          )}
-
-          {userData && !pumpkinDesign && !loading && (
-            <div className="space-y-4">
-              <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl p-4 border-2 border-purple-400">
-                <div className="flex items-center gap-3">
-                  {userData.pfp && (
-                    <img
-                      src={userData.pfp}
-                      alt={userData.username}
-                      className="w-12 h-12 rounded-full border-2 border-white/50"
-                    />
-                  )}
-                  <div>
-                    <h2 className="text-lg font-bold text-white">{userData.displayName || userData.username}</h2>
-                    <p className="text-sm text-white/80">@{userData.username}</p>
-                  </div>
+        {activeTab === 'home' && (
+          <div className="space-y-4">
+            {mounted && isConnected && userData && !pumpkinDesign && !loading && (
+              <>
+                {/* Example pumpkins splash */}
+                <div className="bg-black/30 backdrop-blur-lg rounded-3xl p-4 border border-white/10 overflow-hidden">
+                  <img
+                    src="/digitalpumpkin.png"
+                    alt="Example Pumpkin"
+                    className="w-full h-auto rounded-2xl"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto' }}
+                  />
                 </div>
+                <div className="bg-gradient-to-br from-orange-500/20 to-red-600/20 backdrop-blur-lg rounded-3xl p-6 border border-white/30">
+                  <button
+                    onClick={handleGeneratePumpkin}
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 text-white text-lg font-bold py-5 rounded-2xl hover:shadow-2xl hover:shadow-orange-500/50 disabled:opacity-50 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                  >
+                    <span className="text-2xl">🎃</span>
+                    <span>Generate My Pumpkin</span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {pumpkinDesign && pumpkinDesign.imageUrl && (mintSuccess ? (
+              <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-lg rounded-3xl p-6 border border-green-500/30">
+                <div className="text-6xl text-center mb-4">🎃</div>
+                <h2 className="text-2xl font-bold text-white mb-2 text-center">Minted Successfully!</h2>
+                <p className="text-white/80 mb-6 text-center">Your pumpkin is now on Base</p>
+                {hash && (
+                  <div className="bg-black/50 rounded-xl p-3 text-xs text-white/60 break-all mb-4 font-mono">
+                    {hash}
+                  </div>
+                )}
+                {ipfsUrl && (
+                  <button
+                    onClick={handleShareToFarcaster}
+                    className="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white font-bold py-4 rounded-2xl hover:shadow-2xl hover:shadow-purple-600/50 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    🚀 Share on Farcaster
+                  </button>
+                )}
               </div>
-              <p className="text-center text-white/90 text-lg">Generating your pumpkin design...</p>
-            </div>
-          )}
-
-          {pumpkinDesign && (
-            <div className="space-y-4">
-              {!pumpkinDesign.imageUrl ? (
-                <div className="space-y-4">
-                  {/* Just show the loading message, no separate insight box */}
-                  {generatingImage && loadingMessage && (
-                    <div className="bg-orange-500/20 border-2 border-orange-400 rounded-2xl p-4 text-center">
-                      <p className="text-lg font-bold text-white">{loadingMessage}</p>
-                    </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-black/30 backdrop-blur-lg rounded-3xl p-4 border border-white/10 overflow-hidden">
+                  <img
+                    src={pumpkinDesign.imageUrl}
+                    alt="Your Pumpkin"
+                    className="rounded-2xl"
+                    style={{ maxWidth: '100%', width: '100%', height: 'auto', display: 'block', margin: '0 auto' }}
+                  />
+                </div>
+                <button
+                  onClick={handleMintNFT}
+                  disabled={minting || isPending || isConfirming}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg font-bold py-5 rounded-2xl hover:shadow-2xl hover:shadow-green-500/50 disabled:opacity-50 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  {minting || isPending || isConfirming ? (
+                    loadingMessage || '⏳ Processing...'
+                  ) : (
+                    <>
+                      <span className="text-2xl">🎃</span>
+                      <span>Mint NFT (0.0003 ETH)</span>
+                    </>
                   )}
-                </div>
-              ) : mintSuccess ? (
-                <div className="space-y-4">
-                  <div className="bg-green-500/20 border-2 border-green-500 rounded-2xl p-6 text-center">
-                    <div className="text-5xl mb-4">🎃</div>
-                    <h2 className="text-2xl font-bold text-white mb-2">NFT Minted Successfully!</h2>
-                    <p className="text-white/80 mb-4">Your pumpkin has been carved and minted on Base</p>
-                    {hash && (
-                      <div className="bg-gray-900/50 rounded-lg p-3 text-xs text-white/60 break-all mb-4">
-                        {hash}
-                      </div>
-                    )}
-                    {ipfsUrl && (
-                      <button
-                        onClick={handleShareToFarcaster}
-                        className="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white text-lg font-bold py-3 rounded-xl hover:from-purple-700 hover:to-purple-900 transition-all shadow-lg mt-4"
-                      >
-                        🚀 Share on Farcaster
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="bg-black/50 rounded-2xl p-2 flex justify-center items-center w-full overflow-hidden">
-                    <img
-                      src={pumpkinDesign.imageUrl}
-                      alt="Your Pumpkin"
-                      className="max-w-full h-auto rounded-xl object-contain block"
-                      style={{ maxWidth: '100%', maxHeight: '60vh' }}
-                    />
-                  </div>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
-                  <div className="flex justify-center">
-                    <button
-                      onClick={handleMintNFT}
-                      disabled={minting || isPending || isConfirming}
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xl font-bold py-4 px-8 rounded-xl hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-lg transform hover:scale-105"
-                    >
-                      {minting || isPending || isConfirming
-                        ? (loadingMessage || '⏳ Processing...')
-                        : '🎃 Mint NFT (0.0003 ETH)'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+        {activeTab === 'leaderboard' && (
+          <div className="bg-gradient-to-br from-yellow-500/20 to-orange-600/20 backdrop-blur-lg rounded-3xl p-6 border border-white/20">
+            <div className="text-5xl mb-4 text-center">🏆</div>
+            <h2 className="text-2xl font-bold text-white mb-6 text-center">Top Minters</h2>
 
-          {/* Debug info commented out - TODO: remove entirely soon
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => setShowDebugInfo(!showDebugInfo)}
-              className="text-white/60 hover:text-white text-sm"
-            >
-              {showDebugInfo ? '🔽' : '▶️'} Debug Info
-            </button>
-            {showDebugInfo && (
-              <div className="mt-4 bg-black/30 rounded-lg p-4 text-left text-xs text-white/80 font-mono overflow-auto max-h-60">
-                <p>Connected: {isConnected ? '✅' : '❌'}</p>
-                <p>Address: {address || 'N/A'}</p>
-                <p>User Data: {userData ? '✅ Loaded' : '❌ Not loaded'}</p>
-                <p>Posts/Casts: {userData ? `${userData.posts?.length || 0}` : 'N/A'}</p>
-                <p>Design: {pumpkinDesign ? '✅ Generated' : '❌ Not generated'}</p>
-                <p>Image: {pumpkinDesign?.imageUrl ? '✅ Generated' : '❌ Not generated'}</p>
+            {topMinters.length === 0 ? (
+              <div className="text-center py-8 text-white/70">
+                <p>No mints yet! Be the first to carve a pumpkin!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {topMinters.map((minter, index) => (
+                  <div key={minter.address} className="bg-black/30 rounded-2xl p-4 border border-white/10 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl font-bold text-white/50 w-8">{index + 1}</div>
+                      <div className="font-mono text-white text-sm break-all">{minter.address.slice(0, 10)}...{minter.address.slice(-8)}</div>
+                    </div>
+                    <div className="bg-orange-500/20 px-4 py-2 rounded-full border border-orange-500/30">
+                      <span className="font-bold text-orange-400">{minter.count}</span>
+                      <span className="text-white/70 text-sm ml-1">mints</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-          */}
+        )}
+
+        {activeTab === 'profile' && userData && (
+          <div className="bg-gradient-to-br from-purple-500/20 to-pink-600/20 backdrop-blur-lg rounded-3xl p-6 border border-white/20">
+            <div className="flex flex-col items-center mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">{userData.displayName || userData.username}</h2>
+              <p className="text-white/70">@{userData.username}</p>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-black/30 rounded-2xl p-4 border border-white/10">
+                <p className="text-xs text-white/50 mb-1">FID</p>
+                <p className="text-white font-mono">{userData.fid}</p>
+              </div>
+              {userData.bio && (
+                <div className="bg-black/30 rounded-2xl p-4 border border-white/10">
+                  <p className="text-xs text-white/50 mb-2">Bio</p>
+                  <p className="text-white">{userData.bio}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         </div>
+
+      {/* Bottom Navigation */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#dc2626', height: '64px', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '48px' }}>
+        <button onClick={() => setActiveTab('home')} style={{ fontSize: '32px', border: 'none', background: 'transparent', cursor: 'pointer' }}>
+          🎃
+        </button>
+        <button onClick={() => setActiveTab('leaderboard')} style={{ fontSize: '32px', border: 'none', background: 'transparent', cursor: 'pointer' }}>
+          🏆
+        </button>
+        {userData && userData.pfp && (
+          <button onClick={() => setActiveTab('profile')} style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', border: 'none', padding: 0, cursor: 'pointer' }}>
+            <img src={userData.pfp} alt={userData.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </button>
+        )}
       </div>
     </div>
   );
