@@ -1,0 +1,35 @@
+{
+  "flowField": {
+    "enabled": true,
+    "baseFreq": 0.02,
+    "amplitude": 1.0,
+    "octaves": 4,
+    "color1": "#4ade80",
+    "color2": "#22d3ee"
+  },
+  "flowFields": {
+    "enabled": true,
+    "baseFreq": 0.01,
+    "amplitude": 1.0,
+    "octaves": 4,
+    "lineLength": 20,
+    "lineDensity": 0.1
+  },
+  "contour": {
+    "enabled": true,
+    "baseFreq": 0.01,
+    "amplitude": 1.0,
+    "octaves": 4,
+    "levels": 5,
+    "smoothness": 0.3
+  },
+  "dataSources": {
+    "farcasterMood": false,
+    "neighborAssociations": false,
+    "tokenTransactions": false,
+    "walletHoldings": false
+  },
+  "contourAffectsFlow": true,
+  "_instructions": "This is your BASE template. Modify color1/color2 based on holder Farcaster data, adjust other params based on on-chain activity."
+}
+

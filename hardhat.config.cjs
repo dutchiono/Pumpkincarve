@@ -19,7 +19,7 @@ const config = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     "base-sepolia": {
-      url: "https://sepolia.base.org",
+      url: "https://base-sepolia-rpc.publicnode.com",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
   },

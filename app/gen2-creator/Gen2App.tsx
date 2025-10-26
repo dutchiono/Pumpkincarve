@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -38,145 +37,6 @@ const Gen2App: React.FC = () => {
   const [presets, setPresets] = useState<any[]>([]);
   const [newPresetName, setNewPresetName] = useState('');
 
-  useEffect(() => {
-    const storedPresets = localStorage.getItem('gen2-visual-presets');
-    if (storedPresets) {
-      setPresets(JSON.parse(storedPresets));
-    }
-  }, []);
-
-  const savePreset = () => {
-    if (!newPresetName) {
-      alert('Please enter a preset name.');
-      return;
-    }
-    const newPreset = {
-      name: newPresetName,
-      visualParams: {
-        flowBaseFrequency,
-        flowNumOctaves,
-        flowDisplacementScale,
-        particleCount,
-        particleBaseSpeed,
-        particleMinSize,
-        particleMaxSize,
-        particleChaosFactor,
-        // Layer toggles
-        enableFlowFieldLayer,
-        enableParticleLayer,
-        enableDensityFields,
-        enableFlowFields,
-        enableContourMapping,
-        // Density Fields parameters
-        densityBaseFreq,
-        densityAmplitude,
-        densityOctaves,
-        densityScale,
-        densityThreshold,
-        densityIntensity,
-        // Flow Fields parameters
-        flowFieldBaseFreq,
-        flowFieldAmplitude,
-        flowFieldOctaves,
-        flowFieldScale,
-        flowLineLength,
-        flowLineDensity,
-        // Contour Mapping parameters
-        contourBaseFreq,
-        contourAmplitude,
-        contourOctaves,
-        contourScale,
-        contourLevels,
-        contourSmoothness,
-      },
-      dataSources: {
-        enableFarcasterMood,
-        enableNeighborAssociations,
-        enableTokenTransactions,
-        enableWalletHoldings,
-      },
-    };
-    const updatedPresets = [...presets, newPreset];
-    setPresets(updatedPresets);
-    localStorage.setItem('gen2-visual-presets', JSON.stringify(updatedPresets));
-    setNewPresetName('');
-    alert(`Preset '${newPresetName}' saved!`);
-  };
-
-  const loadPreset = (presetName: string) => {
-    const presetToLoad = presets.find(p => p.name === presetName);
-    if (presetToLoad) {
-      setFlowBaseFrequency(presetToLoad.visualParams.flowBaseFrequency);
-      setFlowNumOctaves(presetToLoad.visualParams.flowNumOctaves);
-      setFlowDisplacementScale(presetToLoad.visualParams.flowDisplacementScale);
-      setParticleCount(presetToLoad.visualParams.particleCount);
-      setParticleBaseSpeed(presetToLoad.visualParams.particleBaseSpeed);
-      setParticleMinSize(presetToLoad.visualParams.particleMinSize);
-      setParticleMaxSize(presetToLoad.visualParams.particleMaxSize);
-      setParticleChaosFactor(presetToLoad.visualParams.particleChaosFactor);
-
-      // Load layer toggles and parameters if they exist
-      if (presetToLoad.visualParams.enableDensityFields !== undefined) {
-        // Layer toggles
-        if (presetToLoad.visualParams.enableFlowFieldLayer !== undefined) {
-          setEnableFlowFieldLayer(presetToLoad.visualParams.enableFlowFieldLayer);
-        }
-        if (presetToLoad.visualParams.enableParticleLayer !== undefined) {
-          setEnableParticleLayer(presetToLoad.visualParams.enableParticleLayer);
-        }
-        setEnableDensityFields(presetToLoad.visualParams.enableDensityFields);
-        setEnableFlowFields(presetToLoad.visualParams.enableFlowFields);
-        setEnableContourMapping(presetToLoad.visualParams.enableContourMapping);
-
-        // Density Fields parameters
-        if (presetToLoad.visualParams.densityBaseFreq !== undefined) {
-          setDensityBaseFreq(presetToLoad.visualParams.densityBaseFreq);
-          setDensityAmplitude(presetToLoad.visualParams.densityAmplitude);
-          setDensityOctaves(presetToLoad.visualParams.densityOctaves);
-          setDensityScale(presetToLoad.visualParams.densityScale);
-        }
-        setDensityThreshold(presetToLoad.visualParams.densityThreshold);
-        setDensityIntensity(presetToLoad.visualParams.densityIntensity);
-
-        // Flow Fields parameters
-        if (presetToLoad.visualParams.flowFieldBaseFreq !== undefined) {
-          setFlowFieldBaseFreq(presetToLoad.visualParams.flowFieldBaseFreq);
-          setFlowFieldAmplitude(presetToLoad.visualParams.flowFieldAmplitude);
-          setFlowFieldOctaves(presetToLoad.visualParams.flowFieldOctaves);
-          setFlowFieldScale(presetToLoad.visualParams.flowFieldScale);
-        }
-        setFlowLineLength(presetToLoad.visualParams.flowLineLength);
-        setFlowLineDensity(presetToLoad.visualParams.flowLineDensity);
-
-        // Contour Mapping parameters
-        if (presetToLoad.visualParams.contourBaseFreq !== undefined) {
-          setContourBaseFreq(presetToLoad.visualParams.contourBaseFreq);
-          setContourAmplitude(presetToLoad.visualParams.contourAmplitude);
-          setContourOctaves(presetToLoad.visualParams.contourOctaves);
-          setContourScale(presetToLoad.visualParams.contourScale);
-        }
-        setContourLevels(presetToLoad.visualParams.contourLevels);
-        setContourSmoothness(presetToLoad.visualParams.contourSmoothness);
-      }
-
-      setEnableFarcasterMood(presetToLoad.dataSources.enableFarcasterMood);
-      setEnableNeighborAssociations(presetToLoad.dataSources.enableNeighborAssociations);
-      setEnableTokenTransactions(presetToLoad.dataSources.enableTokenTransactions);
-      setEnableWalletHoldings(presetToLoad.dataSources.enableWalletHoldings);
-
-      generateImage(); // Regenerate image with loaded preset
-    }
-  };
-
-  const deletePreset = () => {
-    const presetName = (document.getElementById('load-preset') as HTMLSelectElement).value;
-    if (!presetName) return;
-    const updatedPresets = presets.filter(p => p.name !== presetName);
-    setPresets(updatedPresets);
-    localStorage.setItem('gen2-visual-presets', JSON.stringify(updatedPresets));
-    alert(`Preset '${presetName}' deleted!`);
-  };
-
   // Data Source Enable/Disable
   const [enableFarcasterMood, setEnableFarcasterMood] = useState(false);
   const [enableNeighborAssociations, setEnableNeighborAssociations] = useState(false);
@@ -207,23 +67,22 @@ const Gen2App: React.FC = () => {
   // Visual Layer Toggles
   const [enableFlowFieldLayer, setEnableFlowFieldLayer] = useState(true);
   const [enableParticleLayer, setEnableParticleLayer] = useState(true);
-  const [enableDensityFields, setEnableDensityFields] = useState(true);
   const [enableFlowFields, setEnableFlowFields] = useState(true);
   const [enableContourMapping, setEnableContourMapping] = useState(true);
+  const [contourAffectsFlow, setContourAffectsFlow] = useState(true);
+  const [enableNoisePattern, setEnableNoisePattern] = useState(false);
 
-  // Density Fields Layer Parameters
-  const [densityBaseFreq, setDensityBaseFreq] = useState(0.01);
-  const [densityAmplitude, setDensityAmplitude] = useState(1.0);
-  const [densityOctaves, setDensityOctaves] = useState(4);
-  const [densityScale, setDensityScale] = useState('major');
-  const [densityThreshold, setDensityThreshold] = useState(0.5);
-  const [densityIntensity, setDensityIntensity] = useState(0.8);
+  // Noise Pattern Layer Parameters
+  const [noiseBaseFreq, setNoiseBaseFreq] = useState(0.01);
+  const [noiseAmplitude, setNoiseAmplitude] = useState(1.0);
+  const [noiseOctaves, setNoiseOctaves] = useState(4);
+  const [noiseThreshold, setNoiseThreshold] = useState(0.5);
+  const [noiseIntensity, setNoiseIntensity] = useState(1.0);
 
   // Flow Fields Layer Parameters
   const [flowFieldBaseFreq, setFlowFieldBaseFreq] = useState(0.01);
   const [flowFieldAmplitude, setFlowFieldAmplitude] = useState(1.0);
   const [flowFieldOctaves, setFlowFieldOctaves] = useState(4);
-  const [flowFieldScale, setFlowFieldScale] = useState('major');
   const [flowLineLength, setFlowLineLength] = useState(20);
   const [flowLineDensity, setFlowLineDensity] = useState(0.1);
 
@@ -231,9 +90,79 @@ const Gen2App: React.FC = () => {
   const [contourBaseFreq, setContourBaseFreq] = useState(0.01);
   const [contourAmplitude, setContourAmplitude] = useState(1.0);
   const [contourOctaves, setContourOctaves] = useState(4);
-  const [contourScale, setContourScale] = useState('major');
   const [contourLevels, setContourLevels] = useState(5);
   const [contourSmoothness, setContourSmoothness] = useState(0.3);
+
+  useEffect(() => {
+    const storedPresets = localStorage.getItem('gen2-visual-presets');
+    if (storedPresets) {
+      setPresets(JSON.parse(storedPresets));
+    }
+  }, []);
+
+  const savePreset = () => {
+    if (!newPresetName) {
+      alert('Please enter a preset name.');
+      return;
+    }
+    const newPreset = {
+      name: newPresetName,
+      visualParams: {
+        flowBaseFrequency,
+        flowNumOctaves,
+        flowDisplacementScale,
+        particleCount,
+        particleBaseSpeed,
+        particleMinSize,
+        particleMaxSize,
+        particleChaosFactor,
+        // Layer toggles
+        enableFlowFieldLayer,
+        enableParticleLayer,
+        enableNoisePattern,
+        enableFlowFields,
+        enableContourMapping,
+        // Noise Pattern parameters
+        noiseBaseFreq,
+        noiseAmplitude,
+        noiseOctaves,
+        noiseThreshold,
+        noiseIntensity,
+        // Flow Fields parameters
+        flowFieldBaseFreq,
+        flowFieldAmplitude,
+        flowFieldOctaves,
+        flowLineLength,
+        flowLineDensity,
+        // Contour Mapping parameters
+        contourBaseFreq,
+        contourAmplitude,
+        contourOctaves,
+        contourLevels,
+        contourSmoothness,
+      },
+      dataSources: {
+        enableFarcasterMood,
+        enableNeighborAssociations,
+        enableTokenTransactions,
+        enableWalletHoldings,
+      },
+    };
+    const updatedPresets = [...presets, newPreset];
+    setPresets(updatedPresets);
+    localStorage.setItem('gen2-visual-presets', JSON.stringify(updatedPresets));
+    setNewPresetName('');
+    alert(`Preset '${newPresetName}' saved!`);
+  };
+
+  const deletePreset = () => {
+    const presetName = (document.getElementById('load-preset') as HTMLSelectElement).value;
+    if (!presetName) return;
+    const updatedPresets = presets.filter(p => p.name !== presetName);
+    setPresets(updatedPresets);
+    localStorage.setItem('gen2-visual-presets', JSON.stringify(updatedPresets));
+    alert(`Preset '${presetName}' deleted!`);
+  };
 
   const { writeContract } = useWriteContract();
   const { data: mintPrice } = useReadContract({
@@ -241,14 +170,6 @@ const Gen2App: React.FC = () => {
     abi: gen2ABI,
     functionName: 'mintPrice',
   });
-
-  // Harmonic Wavefield Functions
-  const musicalScales = {
-    major: [1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8], // C Major scale ratios
-    minor: [1, 9/8, 6/5, 4/3, 3/2, 8/5, 9/5], // A Minor scale ratios
-    pentatonic: [1, 9/8, 5/4, 3/2, 5/3], // Pentatonic scale ratios
-    chromatic: [1, 16/15, 9/8, 6/5, 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 9/5, 15/8] // Chromatic scale ratios
-  };
 
   // Simple noise function (can be replaced with Perlin/Simplex later)
   const noise = (x: number, y: number, t: number = 0): number => {
@@ -263,47 +184,15 @@ const Gen2App: React.FC = () => {
     return Math.max(10, Math.min(200, simulatedWalletCount * 5)); // 5 particles per wallet, min 10, max 200
   };
 
-  // Density Fields wavefield value function
-  const getDensityWavefieldValue = (x: number, y: number, t: number): number => {
-    const scale = musicalScales[densityScale as keyof typeof musicalScales] || musicalScales.major;
-    let value = 0;
-
-    for (let octave = 0; octave < densityOctaves; octave++) {
-      const freq = densityBaseFreq * Math.pow(2, octave);
-      const amplitude = densityAmplitude / Math.pow(2, octave);
-      for (let i = 0; i < scale.length; i++) {
-        const harmonicFreq = freq * scale[i];
-        const phase = t * 0.01;
-        value += amplitude * Math.sin(x * harmonicFreq + phase) * Math.cos(y * harmonicFreq + phase);
-      }
-    }
-
-    // Apply Farcaster mood adjustments if enabled
-    if (enableFarcasterMood && farcasterMood) {
-      const mood = farcasterMood.toLowerCase();
-      if (mood.includes('positive') || mood.includes('happy') || mood.includes('excited')) {
-        value *= 1.2;
-      } else if (mood.includes('negative') || mood.includes('sad') || mood.includes('angry')) {
-        value *= 0.8;
-      }
-    }
-
-    return value;
-  };
-
   // Flow Fields wavefield value function
   const getFlowFieldWavefieldValue = (x: number, y: number, t: number): number => {
-    const scale = musicalScales[flowFieldScale as keyof typeof musicalScales] || musicalScales.major;
     let value = 0;
 
     for (let octave = 0; octave < flowFieldOctaves; octave++) {
       const freq = flowFieldBaseFreq * Math.pow(2, octave);
       const amplitude = flowFieldAmplitude / Math.pow(2, octave);
-      for (let i = 0; i < scale.length; i++) {
-        const harmonicFreq = freq * scale[i];
-        const phase = t * 0.01;
-        value += amplitude * Math.sin(x * harmonicFreq + phase) * Math.cos(y * harmonicFreq + phase);
-      }
+      const phase = t * 0.01;
+      value += amplitude * Math.sin(x * freq + phase) * Math.cos(y * freq + phase);
     }
 
     // Apply Farcaster mood adjustments if enabled
@@ -321,17 +210,13 @@ const Gen2App: React.FC = () => {
 
   // Contour Mapping wavefield value function
   const getContourWavefieldValue = (x: number, y: number, t: number): number => {
-    const scale = musicalScales[contourScale as keyof typeof musicalScales] || musicalScales.major;
     let value = 0;
 
     for (let octave = 0; octave < contourOctaves; octave++) {
       const freq = contourBaseFreq * Math.pow(2, octave);
       const amplitude = contourAmplitude / Math.pow(2, octave);
-      for (let i = 0; i < scale.length; i++) {
-        const harmonicFreq = freq * scale[i];
-        const phase = t * 0.01;
-        value += amplitude * Math.sin(x * harmonicFreq + phase) * Math.cos(y * harmonicFreq + phase);
-      }
+      const phase = t * 0.01;
+      value += amplitude * Math.sin(x * freq + phase) * Math.cos(y * freq + phase);
     }
 
     // Apply Farcaster mood adjustments if enabled
@@ -345,37 +230,6 @@ const Gen2App: React.FC = () => {
     }
 
     return value;
-  };
-
-  // Density Fields: Probability-based dots
-  const renderDensityFields = (ctx: CanvasRenderingContext2D, size: number, t: number) => {
-    if (!enableDensityFields) return;
-
-    const gridSize = 4; // Resolution for density calculation
-    const cellSize = size / gridSize;
-    for (let py = 0; py < gridSize; py++) {
-      for (let px = 0; px < gridSize; px++) {
-        const x = px * cellSize;
-        const y = py * cellSize;
-        const centerX = x + cellSize / 2;
-        const centerY = y + cellSize / 2;
-        const waveValue = getDensityWavefieldValue(centerX, centerY, t);
-        const probability = (waveValue + 1) / 2; // Normalize to 0-1
-        const density = probability * densityIntensity;
-        if (probability > densityThreshold) {
-          const numDots = Math.floor(density * 20);
-          for (let i = 0; i < numDots; i++) {
-            const dotX = x + Math.random() * cellSize;
-            const dotY = y + Math.random() * cellSize;
-            const dotSize = Math.random() * 2 + 0.5;
-            ctx.fillStyle = `rgba(255, 255, 255, ${probability * 0.8})`;
-            ctx.beginPath();
-            ctx.arc(dotX, dotY, dotSize, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      }
-    }
   };
 
   // Flow Fields: Vector-based lines
@@ -393,9 +247,29 @@ const Gen2App: React.FC = () => {
         const y = py * cellSize;
         // Calculate gradient (flow direction)
         const eps = 1;
-        const waveValue = getFlowFieldWavefieldValue(x, y, t);
-        const gradX = getFlowFieldWavefieldValue(x + eps, y, t) - waveValue;
-        const gradY = getFlowFieldWavefieldValue(x, y + eps, t) - waveValue;
+        let waveValue, gradX, gradY;
+
+        if (contourAffectsFlow && enableContourMapping) {
+          // Use contour values to influence flow field
+          waveValue = getContourWavefieldValue(x, y, t);
+          gradX = getContourWavefieldValue(x + eps, y, t) - waveValue;
+          gradY = getContourWavefieldValue(x, y + eps, t) - waveValue;
+
+          // Blend with flow field for more control
+          const flowValue = getFlowFieldWavefieldValue(x, y, t);
+          const flowGradX = getFlowFieldWavefieldValue(x + eps, y, t) - flowValue;
+          const flowGradY = getFlowFieldWavefieldValue(x, y + eps, t) - flowValue;
+
+          // Combine gradients
+          gradX = (gradX + flowGradX) / 2;
+          gradY = (gradY + flowGradY) / 2;
+        } else {
+          // Use only flow field
+          waveValue = getFlowFieldWavefieldValue(x, y, t);
+          gradX = getFlowFieldWavefieldValue(x + eps, y, t) - waveValue;
+          gradY = getFlowFieldWavefieldValue(x, y + eps, t) - waveValue;
+        }
+
         // Normalize gradient to get direction
         const length = Math.sqrt(gradX * gradX + gradY * gradY);
         if (length > 0) {
@@ -422,7 +296,7 @@ const Gen2App: React.FC = () => {
     const gridSize = 32;
     const cellSize = size / gridSize;
     // Create contour levels
-    const levels = [];
+    const levels: number[] = [];
     for (let i = 0; i < contourLevels; i++) {
       levels.push((i / contourLevels) * 2 - 1); // -1 to 1 range
     }
@@ -576,6 +450,45 @@ const Gen2App: React.FC = () => {
     }
   };
 
+  const loadPreset = (presetName: string) => {
+    const presetToLoad = presets.find(p => p.name === presetName);
+    if (presetToLoad) {
+      setFlowBaseFrequency(presetToLoad.visualParams.flowBaseFrequency);
+      setFlowNumOctaves(presetToLoad.visualParams.flowNumOctaves);
+      setFlowDisplacementScale(presetToLoad.visualParams.flowDisplacementScale);
+      setParticleCount(presetToLoad.visualParams.particleCount);
+      setParticleBaseSpeed(presetToLoad.visualParams.particleBaseSpeed);
+      setParticleMinSize(presetToLoad.visualParams.particleMinSize);
+      setParticleMaxSize(presetToLoad.visualParams.particleMaxSize);
+      setParticleChaosFactor(presetToLoad.visualParams.particleChaosFactor);
+
+      // Load layer toggles and parameters if they exist
+      if (presetToLoad.visualParams.enableNoisePattern !== undefined) {
+        // Layer toggles
+        if (presetToLoad.visualParams.enableFlowFieldLayer !== undefined) {
+          setEnableFlowFieldLayer(presetToLoad.visualParams.enableFlowFieldLayer);
+        }
+        if (presetToLoad.visualParams.enableParticleLayer !== undefined) {
+          setEnableParticleLayer(presetToLoad.visualParams.enableParticleLayer);
+        }
+      }
+      setEnableFlowFields(presetToLoad.visualParams.enableFlowFields);
+      setEnableContourMapping(presetToLoad.visualParams.enableContourMapping);
+      setContourAffectsFlow(presetToLoad.visualParams.contourAffectsFlow ?? true);
+
+      // Flow Fields parameters
+      if (presetToLoad.visualParams.flowFieldBaseFreq !== undefined) {
+        setFlowFieldBaseFreq(presetToLoad.visualParams.flowFieldBaseFreq);
+        setFlowFieldAmplitude(presetToLoad.visualParams.flowFieldAmplitude);
+        setFlowFieldOctaves(presetToLoad.visualParams.flowFieldOctaves);
+      }
+      setFlowLineLength(presetToLoad.visualParams.flowLineLength);
+      setFlowLineDensity(presetToLoad.visualParams.flowLineDensity);
+
+      generateImage(); // Regenerate image with loaded preset
+    }
+  };
+
   // Live canvas rendering
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -628,49 +541,53 @@ const Gen2App: React.FC = () => {
     const render = () => {
       ctx.clearRect(0, 0, size, size);
 
-      // Create animated gradient background with noise distortion - OPTIMIZED
-      // Only compute noise at lower resolution for performance
-      const noiseResolution = 32; // Compute noise at 32x32 grid instead of full resolution
-      const cellSize = size / noiseResolution;
+      // Render flow field gradient background if enabled
+      if (enableFlowFieldLayer) {
+        // Create animated gradient background with noise distortion - OPTIMIZED
+        // Only compute noise at lower resolution for performance
+        const noiseResolution = 32; // Compute noise at 32x32 grid instead of full resolution
+        const cellSize = size / noiseResolution;
 
-      for (let py = 0; py < noiseResolution; py++) {
-        for (let px = 0; px < noiseResolution; px++) {
-          const nx = px / noiseResolution;
-          const ny = py / noiseResolution;
+        for (let py = 0; py < noiseResolution; py++) {
+          for (let px = 0; px < noiseResolution; px++) {
+            const nx = px / noiseResolution;
+            const ny = py / noiseResolution;
 
-          // Animated noise using flow field parameters
-          const noise = Math.sin(nx * flowBaseFrequency * 20 * flowNumOctaves + frame * 0.1) *
-                       Math.cos(ny * flowBaseFrequency * 20 * flowNumOctaves + frame * 0.1);
+            // Animated noise using flow field parameters
+            const noise = Math.sin(nx * flowBaseFrequency * 20 * flowNumOctaves + frame * 0.1) *
+                         Math.cos(ny * flowBaseFrequency * 20 * flowNumOctaves + frame * 0.1);
 
-          const gradientFactor = (noise + 1) / 2;
+            const gradientFactor = (noise + 1) / 2;
 
-          // Interpolate between flow colors
-          const r1 = parseInt(palette.flow.color1.slice(1, 3), 16);
-          const g1 = parseInt(palette.flow.color1.slice(3, 5), 16);
-          const b1 = parseInt(palette.flow.color1.slice(5, 7), 16);
-          const r2 = parseInt(palette.flow.color2.slice(1, 3), 16);
-          const g2 = parseInt(palette.flow.color2.slice(3, 5), 16);
-          const b2 = parseInt(palette.flow.color2.slice(5, 7), 16);
+            // Interpolate between flow colors
+            const r1 = parseInt(palette.flow.color1.slice(1, 3), 16);
+            const g1 = parseInt(palette.flow.color1.slice(3, 5), 16);
+            const b1 = parseInt(palette.flow.color1.slice(5, 7), 16);
+            const r2 = parseInt(palette.flow.color2.slice(1, 3), 16);
+            const g2 = parseInt(palette.flow.color2.slice(3, 5), 16);
+            const b2 = parseInt(palette.flow.color2.slice(5, 7), 16);
 
-          const r = Math.round(r1 + (r2 - r1) * gradientFactor);
-          const g = Math.round(g1 + (g2 - g1) * gradientFactor);
-          const b = Math.round(b1 + (b2 - b1) * gradientFactor);
+            const r = Math.round(r1 + (r2 - r1) * gradientFactor);
+            const g = Math.round(g1 + (g2 - g1) * gradientFactor);
+            const b = Math.round(b1 + (b2 - b1) * gradientFactor);
 
-          // Fill cell with color
-          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-          ctx.fillRect(px * cellSize, py * cellSize, cellSize, cellSize);
+            // Fill cell with color
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.fillRect(px * cellSize, py * cellSize, cellSize, cellSize);
+          }
         }
       }
 
       // Normalize frame to 0-1 for seamless looping
       const t = (frame % LOOP_DURATION) / LOOP_DURATION;
 
-      // Render Harmonic Wavefield Layers
-      renderDensityFields(ctx, size, frame);
+      // Render Wavefield Layers
       renderFlowFields(ctx, size, frame);
       renderContourMapping(ctx, size, frame);
 
-      particles.forEach((p, i) => {
+      // Render particles if enabled
+      if (enableParticleLayer) {
+        particles.forEach((p, i) => {
         const phase = (i / particleCount) * Math.PI * 2;
         let x, y;
 
@@ -733,14 +650,15 @@ const Gen2App: React.FC = () => {
         ctx.beginPath();
         ctx.arc(x, y, p.size, 0, Math.PI * 2);
         ctx.fill();
-      });
+        });
+      }
 
       frame++;
       window.requestAnimationFrame(render);
     };
 
     render();
-  }, [particleCount, particleBaseSpeed, particleMinSize, particleMaxSize, particleChaosFactor, enableFarcasterMood, farcasterMood, flowColor1, flowColor2, particleColor1, particleColor2, particleFadeSpeed, particlePattern, enableFlowFieldLayer, enableParticleLayer, enableDensityFields, enableFlowFields, enableContourMapping, densityBaseFreq, densityAmplitude, densityOctaves, densityScale, densityThreshold, densityIntensity, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowFieldScale, flowLineLength, flowLineDensity, contourBaseFreq, contourAmplitude, contourOctaves, contourScale, contourLevels, contourSmoothness]);
+  }, [particleCount, particleBaseSpeed, particleMinSize, particleMaxSize, particleChaosFactor, enableFarcasterMood, farcasterMood, flowColor1, flowColor2, particleColor1, particleColor2, particleFadeSpeed, particlePattern, enableFlowFieldLayer, enableParticleLayer, enableNoisePattern, enableFlowFields, enableContourMapping, contourAffectsFlow, noiseBaseFreq, noiseAmplitude, noiseOctaves, noiseThreshold, noiseIntensity, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowLineLength, flowLineDensity, contourBaseFreq, contourAmplitude, contourOctaves, contourLevels, contourSmoothness]);
 
   useEffect(() => {
     fetchFarcasterMood();
@@ -855,13 +773,13 @@ const Gen2App: React.FC = () => {
             </div>
             <div className="flex items-center">
               <input
-                id="enable-density-fields"
+                id="enable-noise-pattern"
                 type="checkbox"
-                checked={enableDensityFields}
-                onChange={e => setEnableDensityFields(e.target.checked)}
+                checked={enableNoisePattern}
+                onChange={e => setEnableNoisePattern(e.target.checked)}
                 className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
               />
-              <label htmlFor="enable-density-fields" className="ml-2 block text-sm text-gray-400">
+              <label htmlFor="enable-noise-pattern" className="ml-2 block text-sm text-gray-400">
                 Density Fields Layer
               </label>
             </div>
@@ -995,61 +913,52 @@ const Gen2App: React.FC = () => {
               <div>
                 <span className="text-gray-400">Active Layers:</span>
                 <span className="ml-2 text-cyan-300">
-                  {[enableDensityFields && 'Density', enableFlowFields && 'Flow', enableContourMapping && 'Contour'].filter(Boolean).join(', ') || 'None'}
+                  {[enableNoisePattern && 'Density', enableFlowFields && 'Flow', enableContourMapping && 'Contour'].filter(Boolean).join(', ') || 'None'}
                 </span>
               </div>
             </div>
           </div>
 
-          {enableDensityFields && (
+          {enableNoisePattern && (
             <>
-              <h2 className="text-xl font-bold mb-4 mt-6 text-cyan-300">Density Fields Layer Controls</h2>
+              <h2 className="text-xl font-bold mb-4 mt-6 text-cyan-300">Noise Pattern Layer Controls</h2>
               <div className="space-y-4 mb-6">
                 <div className="flex items-center">
                   <input
-                    id="enable-density-fields-toggle"
+                    id="enable-noise-pattern-toggle"
                     type="checkbox"
-                    checked={enableDensityFields}
-                    onChange={e => setEnableDensityFields(e.target.checked)}
+                    checked={enableNoisePattern}
+                    onChange={e => setEnableNoisePattern(e.target.checked)}
                     className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="enable-density-fields-toggle" className="ml-2 block text-sm text-gray-400">
+                  <label htmlFor="enable-noise-pattern-toggle" className="ml-2 block text-sm text-gray-400">
                     Enable/Disable
                   </label>
                 </div>
                 <div>
-                  <label htmlFor="density-base-freq" className="block text-sm font-medium text-gray-400 mb-1">Base Frequency ({densityBaseFreq.toFixed(3)})</label>
-                  <input type="range" id="density-base-freq" min="0.001" max="0.05" step="0.001" value={densityBaseFreq} onChange={e => setDensityBaseFreq(parseFloat(e.target.value))} className="w-full" />
-                  <p className="text-xs text-gray-500 mt-1">Fundamental frequency of the density wavefield</p>
+                  <label htmlFor="noise-pattern-base-freq" className="block text-sm font-medium text-gray-400 mb-1">Base Frequency ({noiseBaseFreq.toFixed(3)})</label>
+                  <input type="range" id="noise-pattern-base-freq" min="0.001" max="0.05" step="0.001" value={noiseBaseFreq} onChange={e => setNoiseBaseFreq(parseFloat(e.target.value))} className="w-full" />
+                  <p className="text-xs text-gray-500 mt-1">Fundamental frequency of the noise pattern</p>
                 </div>
                 <div>
-                  <label htmlFor="density-amplitude" className="block text-sm font-medium text-gray-400 mb-1">Amplitude ({densityAmplitude.toFixed(1)})</label>
-                  <input type="range" id="density-amplitude" min="0.1" max="3.0" step="0.1" value={densityAmplitude} onChange={e => setDensityAmplitude(parseFloat(e.target.value))} className="w-full" />
-                  <p className="text-xs text-gray-500 mt-1">Overall strength of the density wavefield</p>
+                  <label htmlFor="noise-pattern-amplitude" className="block text-sm font-medium text-gray-400 mb-1">Amplitude ({noiseAmplitude.toFixed(1)})</label>
+                  <input type="range" id="noise-pattern-amplitude" min="0.1" max="3.0" step="0.1" value={noiseAmplitude} onChange={e => setNoiseAmplitude(parseFloat(e.target.value))} className="w-full" />
+                  <p className="text-xs text-gray-500 mt-1">Overall strength of the noise pattern</p>
                 </div>
                 <div>
-                  <label htmlFor="density-octaves" className="block text-sm font-medium text-gray-400 mb-1">Octaves ({densityOctaves})</label>
-                  <input type="range" id="density-octaves" min="1" max="8" step="1" value={densityOctaves} onChange={e => setDensityOctaves(parseInt(e.target.value))} className="w-full" />
+                  <label htmlFor="noise-pattern-octaves" className="block text-sm font-medium text-gray-400 mb-1">Octaves ({noiseOctaves})</label>
+                  <input type="range" id="noise-pattern-octaves" min="1" max="8" step="1" value={noiseOctaves} onChange={e => setNoiseOctaves(parseInt(e.target.value))} className="w-full" />
                   <p className="text-xs text-gray-500 mt-1">Number of harmonic layers</p>
                 </div>
                 <div>
-                  <label htmlFor="density-scale" className="block text-sm font-medium text-gray-400 mb-1">Musical Scale</label>
-                  <select id="density-scale" value={densityScale} onChange={e => setDensityScale(e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-md p-2 text-white">
-                    <option value="major">Major Scale (happy, bright)</option>
-                    <option value="minor">Minor Scale (sad, dark)</option>
-                    <option value="pentatonic">Pentatonic Scale (simple, clean)</option>
-                    <option value="chromatic">Chromatic Scale (complex, dissonant)</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="density-threshold" className="block text-sm font-medium text-gray-400 mb-1">Threshold ({densityThreshold.toFixed(2)})</label>
-                  <input type="range" id="density-threshold" min="0" max="1" step="0.05" value={densityThreshold} onChange={e => setDensityThreshold(parseFloat(e.target.value))} className="w-full" />
+                  <label htmlFor="noise-pattern-threshold" className="block text-sm font-medium text-gray-400 mb-1">Threshold ({noiseThreshold.toFixed(2)})</label>
+                  <input type="range" id="noise-pattern-threshold" min="0" max="1" step="0.05" value={noiseThreshold} onChange={e => setNoiseThreshold(parseFloat(e.target.value))} className="w-full" />
                   <p className="text-xs text-gray-500 mt-1">Minimum wave value to show dots</p>
                 </div>
                 <div>
-                  <label htmlFor="density-intensity" className="block text-sm font-medium text-gray-400 mb-1">Intensity ({densityIntensity.toFixed(2)})</label>
-                  <input type="range" id="density-intensity" min="0" max="2" step="0.1" value={densityIntensity} onChange={e => setDensityIntensity(parseFloat(e.target.value))} className="w-full" />
-                  <p className="text-xs text-gray-500 mt-1">Density of dots when threshold is met</p>
+                  <label htmlFor="noise-pattern-intensity" className="block text-sm font-medium text-gray-400 mb-1">Intensity ({noiseIntensity.toFixed(2)})</label>
+                  <input type="range" id="noise-pattern-intensity" min="0" max="2" step="0.1" value={noiseIntensity} onChange={e => setNoiseIntensity(parseFloat(e.target.value))} className="w-full" />
+                  <p className="text-xs text-gray-500 mt-1">Intensity of dots when threshold is met</p>
                 </div>
               </div>
             </>
@@ -1085,15 +994,6 @@ const Gen2App: React.FC = () => {
                   <label htmlFor="flow-field-octaves" className="block text-sm font-medium text-gray-400 mb-1">Octaves ({flowFieldOctaves})</label>
                   <input type="range" id="flow-field-octaves" min="1" max="8" step="1" value={flowFieldOctaves} onChange={e => setFlowFieldOctaves(parseInt(e.target.value))} className="w-full" />
                   <p className="text-xs text-gray-500 mt-1">Number of harmonic layers</p>
-                </div>
-                <div>
-                  <label htmlFor="flow-field-scale" className="block text-sm font-medium text-gray-400 mb-1">Musical Scale</label>
-                  <select id="flow-field-scale" value={flowFieldScale} onChange={e => setFlowFieldScale(e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-md p-2 text-white">
-                    <option value="major">Major Scale (happy, bright)</option>
-                    <option value="minor">Minor Scale (sad, dark)</option>
-                    <option value="pentatonic">Pentatonic Scale (simple, clean)</option>
-                    <option value="chromatic">Chromatic Scale (complex, dissonant)</option>
-                  </select>
                 </div>
                 <div>
                   <label htmlFor="flow-line-length" className="block text-sm font-medium text-gray-400 mb-1">Line Length ({flowLineLength})</label>
@@ -1139,15 +1039,6 @@ const Gen2App: React.FC = () => {
                   <label htmlFor="contour-octaves" className="block text-sm font-medium text-gray-400 mb-1">Octaves ({contourOctaves})</label>
                   <input type="range" id="contour-octaves" min="1" max="8" step="1" value={contourOctaves} onChange={e => setContourOctaves(parseInt(e.target.value))} className="w-full" />
                   <p className="text-xs text-gray-500 mt-1">Number of harmonic layers</p>
-                </div>
-                <div>
-                  <label htmlFor="contour-scale" className="block text-sm font-medium text-gray-400 mb-1">Musical Scale</label>
-                  <select id="contour-scale" value={contourScale} onChange={e => setContourScale(e.target.value)} className="w-full bg-slate-700 border border-slate-600 rounded-md p-2 text-white">
-                    <option value="major">Major Scale (happy, bright)</option>
-                    <option value="minor">Minor Scale (sad, dark)</option>
-                    <option value="pentatonic">Pentatonic Scale (simple, clean)</option>
-                    <option value="chromatic">Chromatic Scale (complex, dissonant)</option>
-                  </select>
                 </div>
                 <div>
                   <label htmlFor="contour-levels" className="block text-sm font-medium text-gray-400 mb-1">Contour Levels ({contourLevels})</label>
@@ -1223,13 +1114,12 @@ const Gen2App: React.FC = () => {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => {
-                    setEnableDensityFields(true);
+                    setEnableNoisePattern(true);
                     setEnableFlowFields(false);
                     setEnableContourMapping(false);
-                    setDensityScale('major');
-                    setDensityBaseFreq(0.02);
-                    setDensityThreshold(0.3);
-                    setDensityIntensity(1.2);
+                    setNoiseBaseFreq(0.02);
+                    setNoiseThreshold(0.3);
+                    setNoiseIntensity(1.2);
                   }}
                   className="bg-green-600 hover:bg-green-700 text-white text-sm py-2 px-3 rounded transition-colors"
                 >
@@ -1237,10 +1127,9 @@ const Gen2App: React.FC = () => {
                 </button>
                 <button
                   onClick={() => {
-                    setEnableDensityFields(false);
+                    setEnableNoisePattern(false);
                     setEnableFlowFields(true);
                     setEnableContourMapping(false);
-                    setFlowFieldScale('minor');
                     setFlowFieldBaseFreq(0.015);
                     setFlowLineLength(30);
                     setFlowLineDensity(0.15);
@@ -1251,10 +1140,9 @@ const Gen2App: React.FC = () => {
                 </button>
                 <button
                   onClick={() => {
-                    setEnableDensityFields(false);
+                    setEnableNoisePattern(false);
                     setEnableFlowFields(false);
                     setEnableContourMapping(true);
-                    setContourScale('pentatonic');
                     setContourBaseFreq(0.01);
                     setContourLevels(7);
                     setContourSmoothness(0.5);
@@ -1265,19 +1153,16 @@ const Gen2App: React.FC = () => {
                 </button>
                 <button
                   onClick={() => {
-                    setEnableDensityFields(true);
+                    setEnableNoisePattern(true);
                     setEnableFlowFields(true);
                     setEnableContourMapping(true);
-                    setDensityScale('major');
-                    setFlowFieldScale('minor');
-                    setContourScale('chromatic');
-                    setDensityBaseFreq(0.01);
+                    setNoiseBaseFreq(0.01);
                     setFlowFieldBaseFreq(0.015);
                     setContourBaseFreq(0.008);
-                    setDensityOctaves(4);
+                    setNoiseOctaves(4);
                     setFlowFieldOctaves(4);
                     setContourOctaves(6);
-                    setDensityAmplitude(1.5);
+                    setNoiseAmplitude(1.5);
                     setFlowFieldAmplitude(1.5);
                     setContourAmplitude(1.5);
                   }}
@@ -1295,13 +1180,14 @@ const Gen2App: React.FC = () => {
               >
                 Refresh Preview
               </button>
-            <button
-              type="button"
-              onClick={handleMint}
-              className="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-            >
-              Mint NFT
-            </button>
+              <button
+                type="button"
+                onClick={handleMint}
+                className="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+              >
+                Mint NFT
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -1310,4 +1196,3 @@ const Gen2App: React.FC = () => {
 };
 
 export default Gen2App;
-

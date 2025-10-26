@@ -4,7 +4,7 @@ import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 
 // Initialize Neynar client
 const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY;
-const neynarClient = NEYNAR_API_KEY ? new NeynarAPIClient(NEYNAR_API_KEY) : null;
+const neynarClient = NEYNAR_API_KEY ? new NeynarAPIClient({ apiKey: NEYNAR_API_KEY }) : null;
 
 export async function POST(req: NextRequest) {
   try {

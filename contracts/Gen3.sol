@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/interfaces/IERC4906.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-contract Gen2 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, IERC4906, ReentrancyGuardUpgradeable {
+contract Gen3 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, IERC4906, ReentrancyGuardUpgradeable {
     // Storage variables - MUST NOT CHANGE ORDER for upgrade compatibility
     uint256 public nextTokenId;
     uint256 public mintPrice;
@@ -59,7 +59,7 @@ contract Gen2 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
     event RelationRemoved(uint256 indexed a, uint256 indexed b, bytes32 relationType);
 
     // Events
-    event Gen2Minted(
+    event Gen3Minted(
         address indexed to,
         uint256 indexed tokenId,
         string imageUrl
@@ -72,10 +72,7 @@ contract Gen2 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
     // Living NFT action events
     event ActionPerformed(uint256 indexed tokenId, uint256 newEnergy);
 
-    // Prevent direct initialization
-    constructor() {
-        _disableInitializers();
-    }
+    
 
     /**
      * @dev Initialize the contract (called by proxy)
@@ -86,7 +83,7 @@ contract Gen2 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 _mintPrice,
         address _paymentRecipient
     ) public initializer {
-        __ERC721_init("Gen2", "G2");
+        __ERC721_init("Gen3", "G3");
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
@@ -119,7 +116,7 @@ contract Gen2 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
         _tokenMetadata[tokenId] = metadataJSON;
         _tokenExists[tokenId] = true;
 
-        emit Gen2Minted(msg.sender, tokenId, imageUrl);
+        emit Gen3Minted(msg.sender, tokenId, imageUrl);
     }
 
     /**
@@ -129,11 +126,11 @@ contract Gen2 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
         // Auto-generate basic metadata
         uint256 tokenId = nextTokenId;
         string memory metadata = string(abi.encodePacked(
-            '{"name":"Gen2 #',
+            '{"name":"Gen3 #',
             _toString(tokenId),
-            '","description":"AI-generated NFT Generation 2","image":"',
+            '","description":"AI-generated NFT Generation 3","image":"',
             imageUrl,
-            '","attributes":[{"trait_type":"Type","value":"Gen2"},{"trait_type":"Token ID","value":',
+            '","attributes":[{"trait_type":"Type","value":"Gen3"},{"trait_type":"Token ID","value":',
             _toString(tokenId),
             '}]}'
         ));
@@ -156,11 +153,11 @@ contract Gen2 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
         // Fallback: generate basic metadata
         string memory imageUrl = _tokenImageUrl[tokenId];
         return string(abi.encodePacked(
-            '{"name":"Gen2 #',
+            '{"name":"Gen3 #',
             _toString(tokenId),
-            '","description":"AI-generated NFT Generation 2","image":"',
+            '","description":"AI-generated NFT Generation 3","image":"',
             imageUrl,
-            '","attributes":[{"trait_type":"Type","value":"Gen2"},{"trait_type":"Token ID","value":',
+            '","attributes":[{"trait_type":"Type","value":"Gen3"},{"trait_type":"Token ID","value":',
             _toString(tokenId),
             '}]}'
         ));
