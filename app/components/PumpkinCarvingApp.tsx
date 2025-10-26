@@ -59,7 +59,12 @@ export function PumpkinCarvingApp() {
   const [ipfsUrl, setIpfsUrl] = useState<string>('');
   const [personalityInsights, setPersonalityInsights] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'home' | 'leaderboard' | 'profile'>('home');
-  const [topMinters, setTopMinters] = useState<{ address: string; count: number }[]>([]);
+  const [topMinters, setTopMinters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
+  const [topHolders, setTopHolders] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
+  const [leaderboardSubTab, setLeaderboardSubTab] = useState<'minters' | 'holders'>('minters');
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [userNFTs, setUserNFTs] = useState<Record<string, { tokenId: number; imageUrl: string }[]>>({});
+  const [loadingNFTs, setLoadingNFTs] = useState<Record<string, boolean>>({});
 
   const { writeContract, data: hash, isPending, error: contractError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -149,22 +154,56 @@ export function PumpkinCarvingApp() {
     }
   }, [contractError]);
 
+  // Fetch NFTs when user is expanded
+  useEffect(() => {
+    const fetchUserNFTs = async (address: string) => {
+      // Don't fetch if already loaded
+      if (userNFTs[address] || loadingNFTs[address]) return;
+
+      setLoadingNFTs((prev) => ({ ...prev, [address]: true }));
+
+      try {
+        const response = await fetch(`/api/user-nfts?address=${address}`);
+        if (response.ok) {
+          const nfts = await response.json();
+          setUserNFTs((prev) => ({ ...prev, [address]: nfts }));
+        }
+      } catch (error) {
+        console.error('Error fetching user NFTs:', error);
+      } finally {
+        setLoadingNFTs((prev) => ({ ...prev, [address]: false }));
+      }
+    };
+
+    if (expandedUser) {
+      fetchUserNFTs(expandedUser);
+    }
+  }, [expandedUser, userNFTs, loadingNFTs]);
+
   // Fetch top minters when leaderboard tab is active
   useEffect(() => {
-    const fetchTopMinters = async () => {
+    const fetchData = async () => {
       if (activeTab === 'leaderboard') {
         try {
-          const response = await fetch('/api/top-minters');
-          if (response.ok) {
-            const data = await response.json();
-            setTopMinters(data);
+          // Fetch minters
+          const mintersResponse = await fetch('/api/top-minters');
+          if (mintersResponse.ok) {
+            const mintersData = await mintersResponse.json();
+            setTopMinters(mintersData);
+          }
+
+          // Fetch holders
+          const holdersResponse = await fetch('/api/top-holders');
+          if (holdersResponse.ok) {
+            const holdersData = await holdersResponse.json();
+            setTopHolders(holdersData);
           }
         } catch (err) {
-          console.error('Failed to fetch top minters:', err);
+          console.error('Failed to fetch leaderboard data:', err);
         }
       }
     };
-    fetchTopMinters();
+    fetchData();
   }, [activeTab]);
 
   // Auto-fetch profile when wallet connects
@@ -465,12 +504,65 @@ export function PumpkinCarvingApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-purple-600 pb-20" style={{ width: '100vw', maxWidth: '100vw', overflowX: 'hidden' }}>
+    <div
+      className="min-h-screen pb-20 relative"
+      style={{
+        width: '100vw',
+        maxWidth: '100vw',
+        overflowX: 'hidden',
+        background: 'linear-gradient(180deg, #1a0a2e 0%, #2d1b47 50%, #0f0c29 100%)',
+        backgroundImage: `
+          radial-gradient(ellipse at top, rgba(139, 69, 19, 0.3) 0%, transparent 50%),
+          url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='graveyard' x='0' y='0' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Crect fill='%23000000' opacity='0.2' width='100' height='100'/%3E%3Cpath d='M 20 100 L 25 70 L 22 70 L 27 50 L 25 50 L 23 30 L 25 30 L 20 10 L 15 30 L 17 30 L 15 50 L 13 50 L 18 70 L 15 70 Z' fill='%23ffffff' opacity='0.15'/%3E%3Cpath d='M 80 100 L 85 70 L 82 70 L 87 50 L 85 50 L 83 30 L 85 30 L 80 10 L 75 30 L 77 30 L 75 50 L 73 50 L 78 70 L 75 70 Z' fill='%23ffffff' opacity='0.15'/%3E%3C/pattern%3E%3C/defs%3E%3Crect fill='url(%23graveyard)' width='100' height='100'/%3E%3C/svg%3E")
+        `,
+      }}
+    >
+      {/* Lightning Effect Overlay */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        pointerEvents: 'none',
+        overflow: 'hidden',
+        zIndex: 1,
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: '10%',
+          left: '20%',
+          width: '4px',
+          height: '200px',
+          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%)',
+          filter: 'blur(2px)',
+          animation: 'lightning 3s infinite',
+          boxShadow: '0 0 20px rgba(255, 255, 255, 0.5)',
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: '15%',
+          right: '25%',
+          width: '3px',
+          height: '150px',
+          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%)',
+          filter: 'blur(1px)',
+          animation: 'lightning 4s infinite 1.5s',
+          boxShadow: '0 0 15px rgba(255, 255, 255, 0.4)',
+        }} />
+      </div>
+      <style>{`
+        @keyframes lightning {
+          0%, 100% { opacity: 0; }
+          1%, 2% { opacity: 1; }
+          3% { opacity: 0; }
+        }
+      `}</style>
       <div className="max-w-2xl mx-auto p-4 pb-20" style={{ width: '100%', maxWidth: '100%' }}>
-        <h1 className="text-3xl md:text-4xl font-bold text-center mb-3 text-white drop-shadow-lg">
-          🎃 Carve a Pumpkin
+        <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg" style={{ textAlign: 'center', marginBottom: '12px' }}>
+          Carve a Pumpkin
         </h1>
-        <p className="text-center text-white/90 text-sm md:text-base mb-6">
+        <p className="text-white/90 text-sm md:text-base" style={{ textAlign: 'center', marginBottom: '24px' }}>
           Your personality, carved into a spooky NFT
         </p>
 
@@ -497,22 +589,73 @@ export function PumpkinCarvingApp() {
           <div className="space-y-4">
             {mounted && isConnected && userData && !pumpkinDesign && !loading && (
               <>
-                {/* Example pumpkins splash */}
-                <div className="bg-black/30 backdrop-blur-lg rounded-3xl p-4 border border-white/10 overflow-hidden">
-                  <img
-                    src="/digitalpumpkin.png"
-                    alt="Example Pumpkin"
-                    className="w-full h-auto rounded-2xl"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto' }}
-                  />
+                {/* Behind the Scenes Card with decorative images */}
+                <div className="bg-black/30 backdrop-blur-lg rounded-3xl p-4 md:p-6 border border-white/10 relative" style={{ display: 'flex', flexDirection: 'column' }}>
+                  {/* Background decorative images - Side by side */}
+                  <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', marginBottom: '24px' }}>
+                    <img
+                      src="/digitalpumpkin.png"
+                      alt="Example Pumpkin"
+                      className="hidden md:block"
+                      style={{ width: '120px', height: 'auto', opacity: 0.3 }}
+                    />
+                    <img
+                      src="/gameoverpumpkin.png"
+                      alt="Game Over Pumpkin"
+                      className="hidden md:block"
+                      style={{ width: '120px', height: 'auto', opacity: 0.3 }}
+                    />
+                  </div>
+
+                  {/* Main content card */}
+                  <div style={{
+                    position: 'relative',
+                    zIndex: 10,
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    border: '2px solid rgba(255, 255, 255, 0.2)',
+                    maxWidth: '95%',
+                    margin: '0 auto',
+                    textAlign: 'center',
+                  }}>
+                    <h3 style={{ color: '#ea580c', fontSize: '20px', fontWeight: 'bold', marginBottom: '12px' }}>
+                      🎃 Behind the Scenes
+                    </h3>
+                    <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '14px', lineHeight: '1.6', marginBottom: '16px' }}>
+                      We use AI to analyze your Farcaster posts, extracting your personality and interests to create a unique pumpkin design perfectly tailored to you.
+                    </p>
+                    <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '14px', lineHeight: '1.6', marginBottom: '16px' }}>
+                      The AI then generates a custom pumpkin image, uploads it to IPFS for permanent storage, and mints your one-of-a-kind NFT on Base blockchain.
+                    </p>
+                    <p style={{ color: 'rgba(168, 85, 247, 1)', fontSize: '12px', fontStyle: 'italic', margin: 0 }}>
+                      Your digital personality, carved into a spooky NFT.
+                    </p>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-orange-500/20 to-red-600/20 backdrop-blur-lg rounded-3xl p-6 border border-white/30">
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
                   <button
                     onClick={handleGeneratePumpkin}
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 text-white text-lg font-bold py-5 rounded-2xl hover:shadow-2xl hover:shadow-orange-500/50 disabled:opacity-50 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                    style={{
+                      padding: '16px 48px',
+                      borderRadius: '16px',
+                      fontWeight: '600',
+                      transition: 'all 0.2s',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      border: loading ? '2px solid rgba(255, 255, 255, 0.3)' : '2px solid #991b1b',
+                      background: loading ? 'rgba(234, 88, 12, 0.3)' : 'linear-gradient(135deg, #991b1b 0%, #dc2626 50%, #581c87 100%)',
+                      color: 'white',
+                      fontSize: '18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      opacity: loading ? 0.5 : 1,
+                      boxShadow: loading ? 'none' : '0 8px 32px rgba(234, 88, 12, 0.4)',
+                    }}
                   >
-                    <span className="text-2xl">🎃</span>
+                    <span style={{ fontSize: '24px' }}>🎃</span>
                     <span>Generate My Pumpkin</span>
                   </button>
                 </div>
@@ -530,12 +673,25 @@ export function PumpkinCarvingApp() {
                   </div>
                 )}
                 {ipfsUrl && (
-                  <button
-                    onClick={handleShareToFarcaster}
-                    className="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white font-bold py-4 rounded-2xl hover:shadow-2xl hover:shadow-purple-600/50 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    🚀 Share on Farcaster
-                  </button>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+                    <button
+                      onClick={handleShareToFarcaster}
+                      style={{
+                        padding: '16px 48px',
+                        borderRadius: '16px',
+                        fontWeight: '600',
+                        transition: 'all 0.2s',
+                        cursor: 'pointer',
+                        border: '2px solid #581c87',
+                        background: 'linear-gradient(135deg, #6b21a8 0%, #581c87 50%, #991b1b 100%)',
+                        color: 'white',
+                        fontSize: '18px',
+                        boxShadow: '0 8px 32px rgba(168, 85, 247, 0.4)',
+                      }}
+                    >
+                      🚀 Share on Farcaster
+                    </button>
+                  </div>
                 )}
               </div>
             ) : (
@@ -548,20 +704,37 @@ export function PumpkinCarvingApp() {
                     style={{ maxWidth: '100%', width: '100%', height: 'auto', display: 'block', margin: '0 auto' }}
                   />
                 </div>
-                <button
-                  onClick={handleMintNFT}
-                  disabled={minting || isPending || isConfirming}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg font-bold py-5 rounded-2xl hover:shadow-2xl hover:shadow-green-500/50 disabled:opacity-50 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-                >
-                  {minting || isPending || isConfirming ? (
-                    loadingMessage || '⏳ Processing...'
-                  ) : (
-                    <>
-                      <span className="text-2xl">🎃</span>
-                      <span>Mint NFT (0.0003 ETH)</span>
-                    </>
-                  )}
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+                  <button
+                    onClick={handleMintNFT}
+                    disabled={minting || isPending || isConfirming}
+                    style={{
+                      padding: '16px 48px',
+                      borderRadius: '16px',
+                      fontWeight: '600',
+                      transition: 'all 0.2s',
+                      cursor: (minting || isPending || isConfirming) ? 'not-allowed' : 'pointer',
+                      border: (minting || isPending || isConfirming) ? '2px solid rgba(255, 255, 255, 0.3)' : '2px solid #991b1b',
+                      background: (minting || isPending || isConfirming) ? 'rgba(234, 88, 12, 0.3)' : 'linear-gradient(135deg, #991b1b 0%, #dc2626 50%, #581c87 100%)',
+                      color: 'white',
+                      fontSize: '18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      opacity: (minting || isPending || isConfirming) ? 0.5 : 1,
+                      boxShadow: (minting || isPending || isConfirming) ? 'none' : '0 8px 32px rgba(234, 88, 12, 0.4)',
+                    }}
+                  >
+                    {minting || isPending || isConfirming ? (
+                      loadingMessage || '⏳ Processing...'
+                    ) : (
+                      <>
+                        <span style={{ fontSize: '24px' }}>🎃</span>
+                        <span>Mint NFT (0.0003 ETH)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -570,27 +743,156 @@ export function PumpkinCarvingApp() {
         {activeTab === 'leaderboard' && (
           <div className="bg-gradient-to-br from-yellow-500/20 to-orange-600/20 backdrop-blur-lg rounded-3xl p-6 border border-white/20">
             <div className="text-5xl mb-4 text-center">🏆</div>
-            <h2 className="text-2xl font-bold text-white mb-6 text-center">Top Minters</h2>
+            <h2 className="text-2xl font-bold text-white mb-4 text-center">Leaderboard</h2>
 
-            {topMinters.length === 0 ? (
-              <div className="text-center py-8 text-white/70">
-                <p>No mints yet! Be the first to carve a pumpkin!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {topMinters.map((minter, index) => (
-                  <div key={minter.address} className="bg-black/30 rounded-2xl p-4 border border-white/10 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl font-bold text-white/50 w-8">{index + 1}</div>
-                      <div className="font-mono text-white text-sm break-all">{minter.address.slice(0, 10)}...{minter.address.slice(-8)}</div>
-                    </div>
-                    <div className="bg-orange-500/20 px-4 py-2 rounded-full border border-orange-500/30">
-                      <span className="font-bold text-orange-400">{minter.count}</span>
-                      <span className="text-white/70 text-sm ml-1">mints</span>
-                    </div>
+            {/* Sub-tabs - Modern segmented control */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: '24px',
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: '12px',
+              padding: '4px',
+              gap: '4px'
+            }}>
+              <button
+                onClick={() => setLeaderboardSubTab('minters')}
+                style={{
+                  padding: '8px 24px',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s',
+                  cursor: 'pointer',
+                  border: 'none',
+                  backgroundColor: leaderboardSubTab === 'minters' ? 'white' : 'transparent',
+                  color: leaderboardSubTab === 'minters' ? 'black' : 'rgba(255, 255, 255, 0.6)',
+                }}
+              >
+                Top Minters
+              </button>
+              <button
+                onClick={() => setLeaderboardSubTab('holders')}
+                style={{
+                  padding: '8px 24px',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s',
+                  cursor: 'pointer',
+                  border: 'none',
+                  backgroundColor: leaderboardSubTab === 'holders' ? 'white' : 'transparent',
+                  color: leaderboardSubTab === 'holders' ? 'black' : 'rgba(255, 255, 255, 0.6)',
+                }}
+              >
+                Top Holders
+              </button>
+            </div>
+
+            {leaderboardSubTab === 'minters' && (
+              <>
+                {topMinters.length === 0 ? (
+                  <div className="text-center py-8 text-white/70">
+                    <p>No mints yet! Be the first to carve a pumpkin!</p>
                   </div>
-                ))}
-              </div>
+                ) : (
+                  <div className="space-y-3">
+                    {topMinters.map((minter, index) => (
+                      <div key={minter.address} className="bg-black/30 rounded-2xl p-4 border border-white/10">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexDirection: 'row' }} onClick={() => setExpandedUser(minter.address)}>
+                          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f97316', width: '32px' }}>{index + 1}</div>
+                          {minter.pfp && <img src={minter.pfp} alt={minter.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
+                          <div style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{minter.username || 'Unknown'}</div>
+                          <div style={{ backgroundColor: 'rgba(249, 115, 22, 0.2)', padding: '4px 12px', borderRadius: '9999px', border: '1px solid rgba(249, 115, 22, 0.3)', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontWeight: 'bold', color: 'white', fontSize: '14px' }}>{minter.count}</span>
+                            <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', marginLeft: '4px' }}>mint{minter.count > 1 ? 's' : ''}</span>
+                          </div>
+                          <div style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{expandedUser === minter.address ? '▼' : '▶'}</div>
+                        </div>
+                        {expandedUser === minter.address && (
+                          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                            {loadingNFTs[minter.address] ? (
+                              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>Loading gallery...</p>
+                            ) : userNFTs[minter.address] && userNFTs[minter.address].length > 0 ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px' }}>
+                                {userNFTs[minter.address].map((nft) => (
+                                  <img
+                                    key={nft.tokenId}
+                                    src={nft.imageUrl}
+                                    alt={`NFT #${nft.tokenId}`}
+                                    style={{
+                                      width: '100%',
+                                      aspectRatio: '1',
+                                      objectFit: 'cover',
+                                      borderRadius: '8px',
+                                      cursor: 'pointer'
+                                    }}
+                                    onClick={() => window.open(nft.imageUrl, '_blank')}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>No NFTs found</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {leaderboardSubTab === 'holders' && (
+              <>
+                {topHolders.length === 0 ? (
+                  <div className="text-center py-8 text-white/70">
+                    <p>No holders yet!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {topHolders.map((holder, index) => (
+                      <div key={holder.address} className="bg-black/30 rounded-2xl p-4 border border-white/10">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexDirection: 'row' }} onClick={() => setExpandedUser(holder.address)}>
+                          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#a855f7', width: '32px' }}>{index + 1}</div>
+                          {holder.pfp && <img src={holder.pfp} alt={holder.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
+                          <div style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{holder.username || 'Unknown'}</div>
+                          <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.2)', padding: '4px 12px', borderRadius: '9999px', border: '1px solid rgba(168, 85, 247, 0.3)', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontWeight: 'bold', color: 'white', fontSize: '14px' }}>{holder.count}</span>
+                            <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', marginLeft: '4px' }}>NFT{holder.count > 1 ? 's' : ''}</span>
+                          </div>
+                          <div style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{expandedUser === holder.address ? '▼' : '▶'}</div>
+                        </div>
+                        {expandedUser === holder.address && (
+                          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                            {loadingNFTs[holder.address] ? (
+                              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>Loading gallery...</p>
+                            ) : userNFTs[holder.address] && userNFTs[holder.address].length > 0 ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px' }}>
+                                {userNFTs[holder.address].map((nft) => (
+                                  <img
+                                    key={nft.tokenId}
+                                    src={nft.imageUrl}
+                                    alt={`NFT #${nft.tokenId}`}
+                                    style={{
+                                      width: '100%',
+                                      aspectRatio: '1',
+                                      objectFit: 'cover',
+                                      borderRadius: '8px',
+                                      cursor: 'pointer'
+                                    }}
+                                    onClick={() => window.open(nft.imageUrl, '_blank')}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>No NFTs found</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -617,8 +919,8 @@ export function PumpkinCarvingApp() {
         )}
         </div>
 
-      {/* Bottom Navigation */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#dc2626', height: '64px', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '48px' }}>
+      {/* Bottom Navigation - Halloween Theme */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to right, #dc2626, #6b21a8)', height: '64px', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '48px', boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)' }}>
         <button onClick={() => setActiveTab('home')} style={{ fontSize: '32px', border: 'none', background: 'transparent', cursor: 'pointer' }}>
           🎃
         </button>
