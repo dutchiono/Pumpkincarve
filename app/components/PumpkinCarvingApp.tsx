@@ -393,47 +393,40 @@ export function PumpkinCarvingApp() {
     }
 
     try {
-      // Upload to IPFS first to get a permanent URL for sharing
-      setLoadingMessage('🌐 Uploading to IPFS...');
+      setLoadingMessage('🚀 Sharing to Farcaster...');
 
-      const uploadResponse = await fetch('/api/ipfs/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: pumpkinDesign.imageUrl }),
-      });
+      // Use the system share sheet with the Mini App URL
+      // This ensures the link opens inside Farcaster as a Mini App
+      const shareData = {
+        title: '🎃 Check out my Pumpkin NFT!',
+        text: '🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nMint your own:',
+        url: 'https://bushleague.xyz',
+      };
 
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        throw new Error(errorData.error || 'Failed to upload to IPFS');
-      }
-
-      const { gatewayUrl } = await uploadResponse.json();
-      console.log('✅ Image uploaded to IPFS for sharing:', gatewayUrl);
-
-      // Create dynamic embed URL with the IPFS gateway URL
-      const embedUrl = `https://bushleague.xyz/embed?image=${encodeURIComponent(gatewayUrl)}`;
-
-      setLoadingMessage('📤 Sharing to Farcaster...');
-
-      const result = await sdk.actions.composeCast({
-        text: '🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nMint your own: @bushleague.xyz',
-        embeds: [embedUrl] as [string],
-      });
-
-      if (result?.cast) {
+      if (navigator.share) {
+        await navigator.share(shareData);
         setError(null);
-        setLoadingMessage('🎉 Cast posted to Farcaster!');
+        setLoadingMessage('🎉 Shared to Farcaster!');
         setTimeout(() => {
           setLoadingMessage('');
           setError(null);
         }, 3000);
       } else {
-        // User cancelled
-        setLoadingMessage('');
+        // Fallback: Copy to clipboard
+        await navigator.clipboard.writeText('https://bushleague.xyz');
+        setError(null);
+        setLoadingMessage('✅ Link copied! Paste it in Farcaster');
+        setTimeout(() => {
+          setLoadingMessage('');
+          setError(null);
+        }, 3000);
       }
     } catch (err: any) {
-      console.error('❌ Share error:', err);
-      setError('Failed to share: ' + (err.message || String(err)));
+      // User cancelled or error occurred
+      if (err.name !== 'AbortError') {
+        console.error('❌ Share error:', err);
+        setError('Failed to share: ' + (err.message || String(err)));
+      }
       setLoadingMessage('');
     }
   };
