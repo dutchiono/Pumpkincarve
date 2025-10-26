@@ -1,0 +1,5 @@
+{
+  "name": "Living NFT Visualizer",
+  "description": "An interactive web application to visualize a 'Living NFT' ecosystem. It showcases dynamic NFT evolution through stages based on energy levels and visualizes complex social relationships between them using a force-directed graph. Includes AI-powered creative text generation for NFT evolution concepts.",
+  "requestFramePermissions": []
+}

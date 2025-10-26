@@ -24,16 +24,15 @@
     "next": "^14.2.32",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-<<<<<<< Current (Your changes)
+    "sharp": "^0.34.4",
     "viem": "^2.22.00",
-=======
-    "viem": "^2.22.0",
->>>>>>> Incoming (Background Agent changes)
     "wagmi": "^2.9.32"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
     "@openzeppelin/contracts": "^5.4.0",
+    "@openzeppelin/contracts-upgradeable": "^5.4.0",
+    "@openzeppelin/hardhat-upgrades": "^3.1.0",
     "@types/node": "^22.9.3",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

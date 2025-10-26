@@ -58,7 +58,8 @@ export function PumpkinCarvingApp() {
   const [mintSuccess, setMintSuccess] = useState(false);
   const [ipfsUrl, setIpfsUrl] = useState<string>('');
   const [personalityInsights, setPersonalityInsights] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'home' | 'leaderboard' | 'profile'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'leaderboard' | 'gen2' | 'profile'>('home');
+  const isAdmin = userData?.fid === 474867;
   const [topMinters, setTopMinters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topHolders, setTopHolders] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [leaderboardSubTab, setLeaderboardSubTab] = useState<'minters' | 'holders'>('minters');
@@ -407,8 +408,12 @@ export function PumpkinCarvingApp() {
         throw new Error(errorData.error || 'Failed to upload to IPFS');
       }
 
-      const { gatewayUrl } = await uploadResponse.json();
-      console.log('✅ Image uploaded to IPFS for sharing:', gatewayUrl);
+      const { ipfsUrl, cid } = await uploadResponse.json();
+      console.log('✅ Image uploaded to IPFS:', { ipfsUrl, cid });
+
+      // Convert IPFS URL to a gateway URL that can be embedded
+      const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+      console.log('✅ Gateway URL:', gatewayUrl);
 
       setLoadingMessage('📤 Sharing to Farcaster...');
 
@@ -433,6 +438,34 @@ export function PumpkinCarvingApp() {
     } catch (err: any) {
       console.error('❌ Share error:', err);
       setError('Failed to share: ' + (err.message || String(err)));
+      setLoadingMessage('');
+    }
+  };
+
+  const handleTestComposeCast = async () => {
+    if (!isAdmin) return;
+
+    try {
+      setLoadingMessage('📤 Testing composeCast...');
+
+      const result = await sdk.actions.composeCast({
+        text: '🧪 Testing composeCast from admin panel!\n\nThis is a test message to verify the miniapp share functionality.',
+        embeds: ['https://bushleague.xyz'] as [string],
+      });
+
+      if (result?.cast) {
+        setError(null);
+        setLoadingMessage('🎉 Test cast posted to Farcaster!');
+        setTimeout(() => {
+          setLoadingMessage('');
+          setError(null);
+        }, 3000);
+      } else {
+        setLoadingMessage('');
+      }
+    } catch (err: any) {
+      console.error('❌ Test composeCast error:', err);
+      setError('Failed to test composeCast: ' + (err.message || String(err)));
       setLoadingMessage('');
     }
   };
@@ -952,6 +985,23 @@ export function PumpkinCarvingApp() {
           </div>
         )}
 
+        {activeTab === 'gen2' && (
+          <div style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            padding: '32px',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+          }}>
+            <div className="text-5xl mb-4 text-center">🚀</div>
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px', textAlign: 'center' }}>Generation 2 NFTs</h2>
+            <p style={{ color: 'rgba(255, 255, 255, 0.7)', textAlign: 'center', marginBottom: '24px' }}>
+              Experimental new NFT generation system coming soon...
+            </p>
+          </div>
+        )}
+
         {activeTab === 'profile' && userData && (
           <div style={{
             backgroundColor: 'rgba(0, 0, 0, 0.85)',
@@ -987,20 +1037,48 @@ export function PumpkinCarvingApp() {
                 </div>
               )}
             </div>
+
+            {isAdmin && (
+              <div style={{
+                marginTop: '24px',
+                paddingTop: '24px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: 'rgba(168, 85, 247, 1)', marginBottom: '12px' }}>🔧 Admin Tools</h3>
+                <button
+                  onClick={handleTestComposeCast}
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                    border: '1px solid rgba(168, 85, 247, 0.5)',
+                    color: 'white',
+                    cursor: 'pointer',
+                    width: '100%'
+                  }}
+                >
+                  🧪 Test ComposeCast
+                </button>
+              </div>
+            )}
           </div>
         )}
         </div>
 
       {/* Bottom Navigation - Halloween Theme */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to right, #dc2626, #6b21a8)', height: '64px', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '48px', boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)' }}>
-        <button onClick={() => setActiveTab('home')} style={{ fontSize: '32px', border: 'none', background: 'transparent', cursor: 'pointer' }}>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to right, #dc2626, #6b21a8)', height: '64px', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)' }}>
+        <button onClick={() => setActiveTab('home')} style={{ fontSize: '28px', border: 'none', background: 'transparent', cursor: 'pointer', opacity: activeTab === 'home' ? 1 : 0.6 }}>
           🎃
         </button>
-        <button onClick={() => setActiveTab('leaderboard')} style={{ fontSize: '32px', border: 'none', background: 'transparent', cursor: 'pointer' }}>
+        <button onClick={() => setActiveTab('leaderboard')} style={{ fontSize: '28px', border: 'none', background: 'transparent', cursor: 'pointer', opacity: activeTab === 'leaderboard' ? 1 : 0.6 }}>
           🏆
         </button>
+        <button onClick={() => setActiveTab('gen2')} style={{ fontSize: '28px', border: 'none', background: 'transparent', cursor: 'pointer', opacity: activeTab === 'gen2' ? 1 : 0.6 }}>
+          🚀
+        </button>
         {userData && userData.pfp && (
-          <button onClick={() => setActiveTab('profile')} style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', border: 'none', padding: 0, cursor: 'pointer' }}>
+          <button onClick={() => setActiveTab('profile')} style={{ width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', border: activeTab === 'profile' ? '2px solid white' : '2px solid transparent', padding: 0, cursor: 'pointer' }}>
             <img src={userData.pfp} alt={userData.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </button>
         )}

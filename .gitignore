@@ -40,7 +40,7 @@ cache
 artifacts
 typechain
 scripts
-contracts
+#contracts
 test-mint
 app/admin
 
@@ -49,3 +49,6 @@ app/admin
 .idea
 *.swp
 *.swo
+
+# watcher dependencies
+watcher/node_modules
