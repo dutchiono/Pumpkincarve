@@ -68,13 +68,19 @@ export async function GET() {
     const MAX_BLOCK_RANGE = BigInt(4000);
     
     // If we have a cached result, only scan new blocks since last cache
-    let fromBlock = lastProcessedBlock > 0 ? BigInt(lastProcessedBlock) : currentBlock - BigInt(50000);
-    
-    console.log(`🔍 Scanning blocks from ${fromBlock} to ${currentBlock} (${currentBlock - fromBlock} blocks)`);
+    // First time: scan 200k blocks to get all historical data
+    // After that: only scan new blocks
+    let fromBlock;
+    if (lastProcessedBlock > 0) {
+      fromBlock = BigInt(lastProcessedBlock);
+      console.log(`📊 Incremental update: scanning from block ${fromBlock} to ${currentBlock}`);
+    } else {
+      fromBlock = currentBlock - BigInt(200000);
+      console.log(`🔄 Initial scan: scanning last 200k blocks from ${fromBlock} to ${currentBlock}`);
+    }
     
     const allLogs = [];
-
-    console.log(`🔍 Searching Transfer events from block ${fromBlock} to ${currentBlock} (${currentBlock - fromBlock} blocks)`);
+    console.log(`🔍 Searching Transfer events from block ${fromBlock} to ${currentBlock} (${Number(currentBlock - fromBlock)} blocks)`);
 
     // Query in batches
     while (fromBlock < currentBlock) {
