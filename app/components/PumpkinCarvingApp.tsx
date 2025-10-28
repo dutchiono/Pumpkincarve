@@ -1,7 +1,6 @@
 'use client';
 
 import { sdk } from '@farcaster/miniapp-sdk';
-import { MiniAppProvider, useMiniApp } from '@neynar/react';
 import { useEffect, useState } from 'react';
 import { parseEther } from 'viem';
 import { useAccount, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
@@ -48,7 +47,6 @@ const PUMPKIN_NFT_ABI = [
 
 function PumpkinCarvingAppContent() {
   const { address, isConnected } = useAccount();
-  const { added, actions } = useMiniApp();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [pumpkinDesign, setPumpkinDesign] = useState<PumpkinDesign | null>(null);
   const [loading, setLoading] = useState(false);
@@ -80,14 +78,6 @@ function PumpkinCarvingAppContent() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Auto-trigger "Add App" modal if not added
-  useEffect(() => {
-    if (!added && actions) {
-      console.log('⚠️ App not added, triggering modal...');
-      actions.addMiniApp();
-    }
-  }, [added, actions]);
 
   // Initialize Farcaster SDK and call ready - CRITICAL for dismissing splash screen
   useEffect(() => {
@@ -1246,11 +1236,6 @@ function PumpkinCarvingAppContent() {
   );
 }
 
-// Wrap in MiniAppProvider for notifications and auto-add modal
 export function PumpkinCarvingApp() {
-  return (
-    <MiniAppProvider>
-      <PumpkinCarvingAppContent />
-    </MiniAppProvider>
-  );
+  return <PumpkinCarvingAppContent />;
 }
