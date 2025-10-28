@@ -66,6 +66,7 @@ export function PumpkinCarvingApp() {
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [userNFTs, setUserNFTs] = useState<Record<string, { tokenId: number; imageUrl: string }[]>>({});
   const [loadingNFTs, setLoadingNFTs] = useState<Record<string, boolean>>({});
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true); // Default ON
 
   const { writeContract, data: hash, isPending, error: contractError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -136,15 +137,38 @@ export function PumpkinCarvingApp() {
     return insights;
   };
 
-  // Handle mint success
+  // Handle "Add App" button click
+  const handleAddApp = async () => {
+    try {
+      await sdk.actions.addMiniApp();
+    } catch (error: any) {
+      console.error('Failed to add mini app:', error);
+      alert('Failed to add app: ' + error.message);
+    }
+  };
+
+  // Handle mint success + send notification
   useEffect(() => {
-    if (isConfirmed && hash) {
+    if (isConfirmed && hash && userData) {
       setMintSuccess(true);
       setMinting(false);
       setLoadingMessage('');
-      // Keep the design visible so user can see what they minted
+      
+      // Send Farcaster notification if enabled
+      if (notificationsEnabled && userData.fid) {
+        fetch('/api/notifications/farcaster', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fid: userData.fid,
+            title: '🎃 Your Pumpkin is Ready!',
+            body: `Your personality NFT has been minted! Check it out.`,
+            url: window.location.href
+          })
+        }).catch(err => console.error('Notification failed:', err));
+      }
     }
-  }, [isConfirmed, hash]);
+  }, [isConfirmed, hash, notificationsEnabled, userData]);
 
   // Handle contract errors
   useEffect(() => {
@@ -1038,6 +1062,65 @@ export function PumpkinCarvingApp() {
               <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>@{userData.username}</p>
             </div>
             <div className="space-y-3">
+              {/* Add App Button */}
+              <button
+                onClick={handleAddApp}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  borderRadius: '16px',
+                  backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                  border: '1px solid rgba(59, 130, 246, 0.5)',
+                  color: '#ffffff',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                ➕ Add to Farcaster
+              </button>
+
+              {/* Notifications Toggle */}
+              <div style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '16px',
+                padding: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <p style={{ color: '#ffffff', fontWeight: '600', marginBottom: '4px' }}>🔔 In-App Notifications</p>
+                  <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>Get notified when you mint an NFT</p>
+                </div>
+                <button
+                  onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                  style={{
+                    width: '48px',
+                    height: '24px',
+                    borderRadius: '12px',
+                    backgroundColor: notificationsEnabled ? 'rgba(34, 197, 94, 0.5)' : 'rgba(107, 114, 128, 0.5)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s'
+                  }}
+                >
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    backgroundColor: '#ffffff',
+                    transform: notificationsEnabled ? 'translateX(24px)' : 'translateX(2px)',
+                    transition: 'transform 0.3s'
+                  }} />
+                </button>
+              </div>
+
               <div style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
                 borderRadius: '16px',
