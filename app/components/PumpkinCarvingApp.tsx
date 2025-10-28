@@ -1,6 +1,7 @@
 'use client';
 
 import { sdk } from '@farcaster/miniapp-sdk';
+import { useMiniApp } from '@neynar/react';
 import { useEffect, useState } from 'react';
 import { parseEther } from 'viem';
 import { useAccount, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
@@ -47,6 +48,7 @@ const PUMPKIN_NFT_ABI = [
 
 export function PumpkinCarvingApp() {
   const { address, isConnected } = useAccount();
+  const { isSDKLoaded, actions, added, notificationDetails } = useMiniApp();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [pumpkinDesign, setPumpkinDesign] = useState<PumpkinDesign | null>(null);
   const [loading, setLoading] = useState(false);
@@ -87,21 +89,6 @@ export function PumpkinCarvingApp() {
         await sdk.actions.ready();
         console.log('✅ Farcaster SDK ready() called successfully');
         console.log('✅ Splash screen should be dismissed now');
-
-        // Check if app is added and trigger "Add App" modal if not
-        try {
-          const context = await sdk.context;
-          console.log('📱 Context received:', context);
-
-          if (!context.client.added) {
-            console.log('⚠️ App not added, triggering add modal...');
-            await sdk.actions.addMiniApp();
-          } else {
-            console.log('✅ App is already added');
-          }
-        } catch (contextError) {
-          console.error('❌ Error checking context or adding app:', contextError);
-        }
       } catch (error: any) {
         console.error('❌ SDK ready() error:', error);
         // Try calling it again as a fallback
@@ -120,6 +107,31 @@ export function PumpkinCarvingApp() {
     const timer = setTimeout(initializeSDK, 500);
     return () => clearTimeout(timer);
   }, []);
+
+  // Check if app is added and trigger modal if not (using Neynar hook)
+  useEffect(() => {
+    const checkAndAddApp = async () => {
+      if (!isSDKLoaded || !actions) return;
+      
+      try {
+        console.log('📱 App status - added:', added);
+        
+        if (!added) {
+          console.log('⚠️ App not added, triggering add modal...');
+          await actions.addMiniApp();
+        } else {
+          console.log('✅ App is already added');
+          if (notificationDetails) {
+            console.log('🔔 Notification details available:', !!notificationDetails.token);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error checking or adding app:', error);
+      }
+    };
+
+    checkAndAddApp();
+  }, [isSDKLoaded, actions, added, notificationDetails]);
 
 
 

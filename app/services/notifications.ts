@@ -45,7 +45,6 @@ export async function sendNotification(
     });
 
     console.log('✅ Notification sent successfully:', response);
-    return response;
   } catch (error: any) {
     console.error('❌ Failed to send notification:', error);
     console.error('Error details:', {

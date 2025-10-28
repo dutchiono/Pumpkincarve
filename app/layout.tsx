@@ -1,5 +1,6 @@
 import './globals.css';
 import { Providers } from './providers';
+import { MiniAppProvider } from '@neynar/react';
 
 const miniappEmbed = {
   version: "1",
@@ -40,7 +41,9 @@ export default function RootLayout({
         <meta name="fc:miniapp" content={JSON.stringify(miniappEmbed)} />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        <MiniAppProvider>
+          <Providers>{children}</Providers>
+        </MiniAppProvider>
       </body>
     </html>
   );
