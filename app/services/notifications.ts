@@ -1,10 +1,8 @@
 /**
- * Notification Service using Neynar
+ * Notification Service using Neynar API
  *
- * Flow:
- * 1. User enables notifications in your app
- * 2. Your webhook receives the token (stored in database)
- * 3. Call this function to send notifications
+ * Neynar manages notification tokens automatically via webhook.
+ * We just call publishFrameNotifications to send to users.
  */
 
 import { Configuration, NeynarAPIClient } from '@neynar/nodejs-sdk';
@@ -16,7 +14,7 @@ const client = new NeynarAPIClient(neynarConfig);
 
 /**
  * Send a notification to users via Neynar
- * @param targetFids Array of FIDs (Farcaster IDs) to notify
+ * @param targetFids Array of FIDs to notify (empty array = all users with notifications enabled)
  * @param title Notification title (max 32 chars)
  * @param body Notification body (max 128 chars)
  * @param targetUrl URL to open when clicked
@@ -62,16 +60,16 @@ export async function notifyNFTMinted(
 }
 
 /**
- * Send notification when new features are added
+ * Broadcast notification to all users (empty targetFids)
+ * Used for general announcements
  */
-export async function notifyNewFeature(
-  targetFids: number[],
+export async function broadcastNotification(
   title: string,
   body: string,
   targetUrl: string
 ): Promise<void> {
   await sendNotification(
-    targetFids,
+    [], // Empty array = all users with notifications enabled
     title,
     body,
     targetUrl

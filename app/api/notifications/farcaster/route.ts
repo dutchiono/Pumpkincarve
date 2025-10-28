@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { sendNotification } from '@/app/services/notifications';
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * POST /api/notifications/farcaster
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Send Farcaster notification via Neynar
+    // Send Farcaster notification via Neynar to single user
     const targetUrl = url || process.env.NEXT_PUBLIC_APP_URL || 'https://bushleague.xyz';
     await sendNotification([fid], title, body, targetUrl);
 

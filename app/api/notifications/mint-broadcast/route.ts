@@ -18,28 +18,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Replace with actual list of FIDs who have the app added
-    // For now, you could:
-    // 1. Query your database for users who have enabled notifications
-    // 2. Or send to a specific group
-    const targetFids = [
-      474867, // Your FID for testing
-      // Add more FIDs here or fetch from database
-    ];
-
-    // Send notification to all users
-    if (targetFids.length > 0) {
-      await sendNotification(
-        targetFids,
-        '🎃 New Pumpkin Minted!',
-        `@${minterUsername || 'Someone'} just carved their personality NFT!`,
-        `https://bushleague.xyz`
-      );
-    }
+    // Broadcast to ALL users who have the app added and notifications enabled
+    // Empty array = all users (Neynar handles filtering)
+    await sendNotification(
+      [], // Empty array broadcasts to all users with notifications enabled
+      '🎃 New Pumpkin Minted!',
+      `@${minterUsername || 'Someone'} just carved their personality NFT!`,
+      `https://bushleague.xyz`
+    );
 
     return NextResponse.json({
-      success: true,
-      notifiedCount: targetFids.length
+      success: true
     });
   } catch (error: any) {
     console.error('❌ Broadcast notification error:', error);

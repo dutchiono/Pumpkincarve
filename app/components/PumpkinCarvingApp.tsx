@@ -87,6 +87,21 @@ export function PumpkinCarvingApp() {
         await sdk.actions.ready();
         console.log('✅ Farcaster SDK ready() called successfully');
         console.log('✅ Splash screen should be dismissed now');
+
+        // Check if app is added and trigger "Add App" modal if not
+        try {
+          const context = await sdk.context;
+          console.log('📱 Context received:', context);
+
+          if (!context.client.added) {
+            console.log('⚠️ App not added, triggering add modal...');
+            await sdk.actions.addMiniApp();
+          } else {
+            console.log('✅ App is already added');
+          }
+        } catch (contextError) {
+          console.error('❌ Error checking context or adding app:', contextError);
+        }
       } catch (error: any) {
         console.error('❌ SDK ready() error:', error);
         // Try calling it again as a fallback
