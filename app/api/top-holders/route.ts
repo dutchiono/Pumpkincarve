@@ -141,22 +141,19 @@ export async function GET() {
           })
         );
 
-        holdersCache = topHoldersWithUsernames;
-        lastHoldersUpdate = Date.now();
+        saveHoldersCache({ holders: topHoldersWithUsernames, lastUpdate: Date.now() });
         return NextResponse.json(topHoldersWithUsernames);
       } catch (neynarError) {
         console.error('Error fetching usernames:', neynarError);
         const fallback = topHolders.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
-        holdersCache = fallback;
-        lastHoldersUpdate = Date.now();
+        saveHoldersCache({ holders: fallback, lastUpdate: Date.now() });
         return NextResponse.json(fallback);
       }
     }
 
-    const result = topHolders.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
-    holdersCache = result;
-    lastHoldersUpdate = Date.now();
-    return NextResponse.json(result);
+  const result = topHolders.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
+  saveHoldersCache({ holders: result, lastUpdate: Date.now() });
+  return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error fetching top holders:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
