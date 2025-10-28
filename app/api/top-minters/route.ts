@@ -44,12 +44,12 @@ export async function GET() {
 
     const currentBlock = await mainnetClient.getBlockNumber();
 
-    // RPC providers limit to 10,000 blocks per query, so we need to query in chunks
-    const MAX_BLOCK_RANGE = BigInt(10000);
+    // RPC providers limit to 5,000 blocks per query (1rpc.io), so we need to query in chunks
+    const MAX_BLOCK_RANGE = BigInt(4000);
     const allLogs = [];
 
-    // Start from 50k blocks ago or go back as far as needed
-    let fromBlock = currentBlock - BigInt(50000);
+    // Start from 20k blocks ago or go back as far as needed
+    let fromBlock = currentBlock - BigInt(20000);
 
     console.log(`Searching from block ${fromBlock} to latest (${currentBlock}) in chunks`);
 

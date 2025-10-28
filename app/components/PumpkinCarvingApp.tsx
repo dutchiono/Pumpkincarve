@@ -63,7 +63,7 @@ export function PumpkinCarvingApp() {
   const [topMinters, setTopMinters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topHolders, setTopHolders] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [leaderboardSubTab, setLeaderboardSubTab] = useState<'minters' | 'holders'>('minters');
-  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [userNFTs, setUserNFTs] = useState<Record<string, { tokenId: number; imageUrl: string }[]>>({});
   const [loadingNFTs, setLoadingNFTs] = useState<Record<string, boolean>>({});
 
@@ -176,10 +176,12 @@ export function PumpkinCarvingApp() {
       }
     };
 
-    if (expandedUser) {
-      fetchUserNFTs(expandedUser);
-    }
-  }, [expandedUser, userNFTs, loadingNFTs]);
+    expandedUsers.forEach(address => {
+      if (!userNFTs[address] && !loadingNFTs[address]) {
+        fetchUserNFTs(address);
+      }
+    });
+  }, [expandedUsers, userNFTs, loadingNFTs]);
 
   // Fetch top minters when leaderboard tab is active
   useEffect(() => {
@@ -880,7 +882,17 @@ export function PumpkinCarvingApp() {
                         padding: '16px',
                         border: '1px solid rgba(255, 255, 255, 0.1)'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexDirection: 'row' }} onClick={() => setExpandedUser(minter.address)}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexDirection: 'row' }} onClick={() => {
+                          setExpandedUsers(prev => {
+                            const next = new Set(prev);
+                            if (next.has(minter.address)) {
+                              next.delete(minter.address);
+                            } else {
+                              next.add(minter.address);
+                            }
+                            return next;
+                          });
+                        }}>
                           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f97316', width: '32px' }}>{index + 1}</div>
                           {minter.pfp && <img src={minter.pfp} alt={minter.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
                           <div style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{minter.username || 'Unknown'}</div>
@@ -888,9 +900,9 @@ export function PumpkinCarvingApp() {
                             <span style={{ fontWeight: 'bold', color: 'white', fontSize: '14px' }}>{minter.count}</span>
                             <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', marginLeft: '4px' }}>mint{minter.count > 1 ? 's' : ''}</span>
                           </div>
-                          <div style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{expandedUser === minter.address ? '▼' : '▶'}</div>
+                          <div style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{expandedUsers.has(minter.address) ? '▼' : '▶'}</div>
                         </div>
-                        {expandedUser === minter.address && (
+                        {expandedUsers.has(minter.address) && (
                           <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                             {loadingNFTs[minter.address] ? (
                               <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>Loading gallery...</p>
@@ -939,7 +951,17 @@ export function PumpkinCarvingApp() {
                         padding: '16px',
                         border: '1px solid rgba(255, 255, 255, 0.1)'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexDirection: 'row' }} onClick={() => setExpandedUser(holder.address)}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexDirection: 'row' }} onClick={() => {
+                          setExpandedUsers(prev => {
+                            const next = new Set(prev);
+                            if (next.has(holder.address)) {
+                              next.delete(holder.address);
+                            } else {
+                              next.add(holder.address);
+                            }
+                            return next;
+                          });
+                        }}>
                           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#a855f7', width: '32px' }}>{index + 1}</div>
                           {holder.pfp && <img src={holder.pfp} alt={holder.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
                           <div style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{holder.username || 'Unknown'}</div>
@@ -947,9 +969,9 @@ export function PumpkinCarvingApp() {
                             <span style={{ fontWeight: 'bold', color: 'white', fontSize: '14px' }}>{holder.count}</span>
                             <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', marginLeft: '4px' }}>NFT{holder.count > 1 ? 's' : ''}</span>
                           </div>
-                          <div style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{expandedUser === holder.address ? '▼' : '▶'}</div>
+                          <div style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{expandedUsers.has(holder.address) ? '▼' : '▶'}</div>
                         </div>
-                        {expandedUser === holder.address && (
+                        {expandedUsers.has(holder.address) && (
                           <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                             {loadingNFTs[holder.address] ? (
                               <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>Loading gallery...</p>
