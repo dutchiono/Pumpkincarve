@@ -598,9 +598,7 @@ const Gen3App: React.FC = () => {
     for (let octave = 0; octave < flowFieldsOctaves; octave++) {
       const freq = flowFieldsBaseFreq * Math.pow(2, octave);
       const amplitude = flowFieldsAmplitude / Math.pow(2, octave);
-      // t is in radians (0 to 2π * cycles), use as phase directly
-      // The periodicity is handled by the loop count
-      const phase = t;
+      const phase = t * 0.01;
       value += amplitude * Math.sin(x * freq + phase) * Math.cos(y * freq + phase);
     }
 
@@ -621,9 +619,7 @@ const Gen3App: React.FC = () => {
     for (let octave = 0; octave < contourOctaves; octave++) {
       const freq = contourBaseFreq * Math.pow(2, octave);
       const amplitude = contourAmplitude / Math.pow(2, octave);
-      // t is in radians (0 to 2π * cycles), use as phase directly
-      // The periodicity is handled by the loop count
-      const phase = t;
+      const phase = t * 0.01;
       value += amplitude * Math.sin(x * freq + phase) * Math.cos(y * freq + phase);
     }
 
@@ -769,21 +765,21 @@ const Gen3App: React.FC = () => {
 
     // Capture frames using the SAME rendering functions as the live canvas
     const frames: ImageData[] = [];
-    for (let frame = 0; frame < totalFrames; frame++) {
+    // Add one extra frame so last frame (totalFrames) is the same as first frame (0)
+    for (let frame = 0; frame <= totalFrames; frame++) {
       tempCtx.clearRect(0, 0, size, size);
 
-      // Use normalized time (0 to 1) for perfect loop
-      // frame/totalFrames goes from 0 to (totalFrames-1)/totalFrames
-      // Add one extra frame so last frame is the same as first frame
-      const normalizedTime = frame / totalFrames;
-      
-      // Convert to actual time value that loops
-      // Multiply by cycles to control speed, using 10 cycles for variety
-      const t = normalizedTime * (Math.PI * 2) * 10;
+      // Use t that creates a seamless loop
+      // Normalize frame to 0-1, then multiply by total cycles
+      // frame = 0: t = 0
+      // frame = totalFrames: t = 200 (one full cycle)
+      // frame = 0 after loop: t = 200 (same as last frame)
+      const t = (frame / totalFrames) * 200;
 
-      // Render Flow Field background - must use same time as animation
+      // Render Flow Field background
       if (enableFlowField) {
-        const angle = t * flowFieldDirection;
+        const time = frame * 0.02 * flowFieldDirection;
+        const angle = time % (Math.PI * 2);
 
         const x0 = size / 2 + Math.cos(angle) * size;
         const y0 = size / 2 + Math.sin(angle) * size;
