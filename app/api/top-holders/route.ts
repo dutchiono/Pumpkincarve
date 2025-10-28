@@ -2,6 +2,8 @@ import { Configuration, NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { join } from 'path';
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
 
@@ -23,20 +25,48 @@ const ERC721_ABI = [
 ] as const;
 
 type CachedHolder = { address: string; count: number; username: string | null; fid: number | null; pfp: string | null };
-let holdersCache: CachedHolder[] = [];
-let lastHoldersUpdate = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+type HolderCacheData = { holders: CachedHolder[]; lastUpdate: number };
+
+const CACHE_DIR = join(process.cwd(), '.cache');
+const CACHE_FILE = join(CACHE_DIR, 'top-holders.json');
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+if (!existsSync(CACHE_DIR)) {
+  mkdirSync(CACHE_DIR, { recursive: true });
+}
+
+function loadHoldersCache(): HolderCacheData | null {
+  try {
+    if (existsSync(CACHE_FILE)) {
+      return JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+    }
+  } catch (err) {
+    console.error('Error loading holders cache:', err);
+  }
+  return null;
+}
+
+function saveHoldersCache(data: HolderCacheData) {
+  try {
+    writeFileSync(CACHE_FILE, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Error saving holders cache:', err);
+  }
+}
 
 export async function GET() {
   if (!CONTRACT_ADDRESS) {
     return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
   }
 
-  // TEMPORARILY DISABLE CACHE FOR DEBUGGING
-  const cacheAge = Date.now() - lastHoldersUpdate;
-  if (false && holdersCache.length > 0 && cacheAge < CACHE_TTL) {
-    console.log(`✅ Returning cached top holders (age: ${Math.floor(cacheAge / 1000)}s)`);
-    return NextResponse.json(holdersCache);
+  // Load cache from disk
+  const cachedData = loadHoldersCache();
+  const now = Date.now();
+  
+  if (cachedData && cachedData.lastUpdate && (now - cachedData.lastUpdate) < CACHE_TTL) {
+    const age = Math.floor((now - cachedData.lastUpdate) / 1000);
+    console.log(`✅ Returning cached top holders (age: ${age}s)`);
+    return NextResponse.json(cachedData.holders);
   }
 
   try {

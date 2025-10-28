@@ -2,6 +2,8 @@ import { Configuration, NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { join } from 'path';
 
 const ERC721_ABI = [
   {
@@ -13,11 +15,35 @@ const ERC721_ABI = [
   },
 ] as const;
 
-// Server-side in-memory cache for top minters
 type CachedMinter = { address: string; count: number; username: string | null; fid: number | null; pfp: string | null };
-let topMintersCache: CachedMinter[] = [];
-let lastCacheUpdate = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+type MinterCacheData = { minters: CachedMinter[]; lastUpdate: number; lastBlock: number };
+
+const CACHE_DIR = join(process.cwd(), '.cache');
+const CACHE_FILE = join(CACHE_DIR, 'top-minters.json');
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+if (!existsSync(CACHE_DIR)) {
+  mkdirSync(CACHE_DIR, { recursive: true });
+}
+
+function loadMintersCache(): MinterCacheData | null {
+  try {
+    if (existsSync(CACHE_FILE)) {
+      return JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+    }
+  } catch (err) {
+    console.error('Error loading minters cache:', err);
+  }
+  return null;
+}
+
+function saveMintersCache(data: MinterCacheData) {
+  try {
+    writeFileSync(CACHE_FILE, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Error saving minters cache:', err);
+  }
+}
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
 
@@ -42,17 +68,14 @@ export async function GET() {
     return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
   }
 
-  // Optional nocache bypass for admin/debug
-  const url = new URL('http://local');
-  const nocache = url.searchParams.get('nocache') === '1';
-
-  // TEMPORARILY DISABLE CACHE FOR DEBUGGING
-  const cacheAge = Date.now() - lastCacheUpdate;
-  if (false && !nocache && topMintersCache.length > 0 && cacheAge < CACHE_TTL) {
-    console.log(`✅ Returning cached top minters (age: ${Math.floor(cacheAge / 1000)}s)`);
-    return new NextResponse(JSON.stringify(topMintersCache), {
-      headers: { 'Cache-Control': 'no-store' },
-    });
+  // Load cache from disk
+  const cachedData = loadMintersCache();
+  const now = Date.now();
+  
+  if (cachedData && cachedData.lastUpdate && (now - cachedData.lastUpdate) < CACHE_TTL) {
+    const age = Math.floor((now - cachedData.lastUpdate) / 1000);
+    console.log(`✅ Returning cached top minters (age: ${age}s)`);
+    return NextResponse.json(cachedData.minters);
   }
 
   try {
@@ -164,29 +187,20 @@ export async function GET() {
         );
 
         // Cache and return
-        topMintersCache = topMintersWithUsernames;
-        lastCacheUpdate = Date.now();
-        return new NextResponse(JSON.stringify(topMintersWithUsernames), {
-          headers: { 'Cache-Control': 'no-store' },
-        });
+        saveMintersCache({ minters: topMintersWithUsernames, lastUpdate: Date.now(), lastBlock: 0 });
+        return NextResponse.json(topMintersWithUsernames);
       } catch (neynarError) {
         console.error('Error fetching usernames:', neynarError);
         // Fall back to addresses only if username lookup fails
         const fallback = topMinters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
-        topMintersCache = fallback;
-        lastCacheUpdate = Date.now();
-        return new NextResponse(JSON.stringify(fallback), {
-          headers: { 'Cache-Control': 'no-store' },
-        });
+        saveMintersCache({ minters: fallback, lastUpdate: Date.now(), lastBlock: 0 });
+        return NextResponse.json(fallback);
       }
     }
 
-    const result = topMinters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
-    topMintersCache = result;
-    lastCacheUpdate = Date.now();
-    return new NextResponse(JSON.stringify(result), {
-      headers: { 'Cache-Control': 'no-store' },
-    });
+  const result = topMinters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
+  saveMintersCache({ minters: result, lastUpdate: Date.now(), lastBlock: 0 });
+  return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error fetching top minters:', error);
     return new NextResponse(JSON.stringify({ error: error.message }), {
