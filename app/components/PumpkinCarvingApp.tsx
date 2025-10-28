@@ -62,7 +62,7 @@ function PumpkinCarvingAppContent() {
   const isAdmin = userData?.fid === 474867;
   const [topMinters, setTopMinters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topHolders, setTopHolders] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
-  const [topGifters, setTopGifters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
+  const [topGifters, setTopGifters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[] }[]>([]);
   const [leaderboardSubTab, setLeaderboardSubTab] = useState<'minters' | 'holders' | 'gifters'>('minters');
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [userNFTs, setUserNFTs] = useState<Record<string, { tokenId: number; imageUrl: string }[]>>({});
@@ -983,7 +983,17 @@ function PumpkinCarvingAppContent() {
                         }}>
                           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f97316', width: '32px' }}>{index + 1}</div>
                           {minter.pfp && <img src={minter.pfp} alt={minter.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
-                          <div style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{minter.username || 'Unknown'}</div>
+                          <div 
+                            style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (minter.fid) {
+                                window.open(`https://warpcast.com/${minter.username || minter.fid}`, '_blank');
+                              }
+                            }}
+                          >
+                            @{minter.username || 'Unknown'}
+                          </div>
                           <div style={{ backgroundColor: 'rgba(249, 115, 22, 0.2)', padding: '4px 12px', borderRadius: '9999px', border: '1px solid rgba(249, 115, 22, 0.3)', whiteSpace: 'nowrap' }}>
                             <span style={{ fontWeight: 'bold', color: 'white', fontSize: '14px' }}>{minter.count}</span>
                             <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', marginLeft: '4px' }}>mint{minter.count > 1 ? 's' : ''}</span>
@@ -1052,7 +1062,17 @@ function PumpkinCarvingAppContent() {
                         }}>
                           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#22c55e', width: '32px' }}>{index + 1}</div>
                           {gifter.pfp && <img src={gifter.pfp} alt={gifter.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
-                          <div style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{gifter.username || 'Unknown'}</div>
+                          <div 
+                            style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (gifter.fid) {
+                                window.open(`https://warpcast.com/${gifter.username || gifter.fid}`, '_blank');
+                              }
+                            }}
+                          >
+                            @{gifter.username || 'Unknown'}
+                          </div>
                           <div style={{ backgroundColor: 'rgba(34, 197, 94, 0.2)', padding: '4px 12px', borderRadius: '9999px', border: '1px solid rgba(34, 197, 94, 0.3)', whiteSpace: 'nowrap' }}>
                             <span style={{ fontWeight: 'bold', color: 'white', fontSize: '14px' }}>{gifter.count}</span>
                             <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', marginLeft: '4px' }}>gift{gifter.count > 1 ? 's' : ''}</span>
@@ -1061,6 +1081,28 @@ function PumpkinCarvingAppContent() {
                         </div>
                         {expandedUsers.has(gifter.address) && (
                           <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                            {gifter.recipients && gifter.recipients.length > 0 && (
+                              <div style={{ marginBottom: '16px' }}>
+                                <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>Gifted to:</p>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                  {gifter.recipients.map((recipient, idx) => (
+                                    <span 
+                                      key={idx}
+                                      style={{
+                                        fontSize: '12px',
+                                        padding: '4px 8px',
+                                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                                        borderRadius: '8px',
+                                        color: '#22c55e',
+                                        fontFamily: 'monospace'
+                                      }}
+                                    >
+                                      {recipient.slice(0, 6)}...{recipient.slice(-4)}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             {loadingNFTs[gifter.address] ? (
                               <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>Loading gallery...</p>
                             ) : userNFTs[gifter.address] && userNFTs[gifter.address].length > 0 ? (
@@ -1121,7 +1163,17 @@ function PumpkinCarvingAppContent() {
                         }}>
                           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#a855f7', width: '32px' }}>{index + 1}</div>
                           {holder.pfp && <img src={holder.pfp} alt={holder.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
-                          <div style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{holder.username || 'Unknown'}</div>
+                          <div 
+                            style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (holder.fid) {
+                                window.open(`https://warpcast.com/${holder.username || holder.fid}`, '_blank');
+                              }
+                            }}
+                          >
+                            @{holder.username || 'Unknown'}
+                          </div>
                           <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.2)', padding: '4px 12px', borderRadius: '9999px', border: '1px solid rgba(168, 85, 247, 0.3)', whiteSpace: 'nowrap' }}>
                             <span style={{ fontWeight: 'bold', color: 'white', fontSize: '14px' }}>{holder.count}</span>
                             <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', marginLeft: '4px' }}>NFT{holder.count > 1 ? 's' : ''}</span>
@@ -1174,10 +1226,41 @@ function PumpkinCarvingAppContent() {
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
           }}>
             <div className="text-5xl mb-4 text-center">🚀</div>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px', textAlign: 'center' }}>Generation 2 NFTs</h2>
-            <p style={{ color: 'rgba(255, 255, 255, 0.7)', textAlign: 'center', marginBottom: '24px' }}>
-              Experimental new NFT generation system coming soon...
-            </p>
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px', textAlign: 'center' }}>Animated Generation NFTs</h2>
+            <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+              <p style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '16px', fontSize: '16px', lineHeight: '1.6' }}>
+                Get ready for the next evolution: <strong style={{ color: '#22d3ee' }}>Animated GIF NFTs</strong> powered by generative art algorithms!
+              </p>
+              
+              <div style={{ backgroundColor: 'rgba(34, 211, 238, 0.1)', borderRadius: '16px', padding: '20px', marginBottom: '20px', border: '1px solid rgba(34, 211, 238, 0.3)' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#22d3ee', marginBottom: '12px' }}>✨ Features</h3>
+                <ul style={{ textAlign: 'left', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.8' }}>
+                  <li>🎨 <strong>Flow Fields</strong> - Dynamic color gradients that flow and swirl</li>
+                  <li>🌀 <strong>Particle Systems</strong> - Interactive animated patterns</li>
+                  <li>🌊 <strong>Contour Mapping</strong> - Smooth 3D-esque visual effects</li>
+                  <li>🔄 <strong>Seamless Loops</strong> - Infinite perfect-loop animations</li>
+                  <li>🎯 <strong>Unique Combinations</strong> - Billions of possible variations</li>
+                </ul>
+              </div>
+
+              <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.1)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#a855f7', marginBottom: '12px' }}>🛠️ How It Works</h3>
+                <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.6', textAlign: 'left' }}>
+                  Each NFT is generated using multiple layered algorithms that create unique, mesmerizing animations. 
+                  You'll be able to customize:
+                </p>
+                <ul style={{ textAlign: 'left', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.8', marginTop: '8px' }}>
+                  <li>Color palettes and gradients</li>
+                  <li>Animation speed and direction</li>
+                  <li>Visual complexity and density</li>
+                  <li>And much more...</li>
+                </ul>
+              </div>
+
+              <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px', marginTop: '20px', fontStyle: 'italic' }}>
+                Coming soon to Base blockchain...
+              </p>
+            </div>
           </div>
         )}
 

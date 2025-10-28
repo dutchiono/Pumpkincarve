@@ -27,7 +27,7 @@ const ERC721_ABI = [
   },
 ] as const;
 
-type CachedGifter = { address: string; count: number; username: string | null; fid: number | null; pfp: string | null };
+type CachedGifter = { address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[] };
 let giftersCache: CachedGifter[] = [];
 let lastCacheUpdate = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -93,6 +93,7 @@ export async function GET() {
 
     // Filter out mints (from = 0x0) and track gifts (from != 0x0 and from != to)
     const giftCounts: Record<string, number> = {};
+    const giftRecipients: Record<string, Set<string>> = {};
     for (const log of allLogs) {
       const from = log.args.from?.toLowerCase() || '';
       const to = log.args.to?.toLowerCase() || '';
@@ -100,6 +101,10 @@ export async function GET() {
       // Only count as gift if not a mint (from !== address(0)) and sender != receiver
       if (from && from !== '0x0000000000000000000000000000000000000000' && from !== to) {
         giftCounts[from] = (giftCounts[from] || 0) + 1;
+        if (!giftRecipients[from]) {
+          giftRecipients[from] = new Set();
+        }
+        giftRecipients[from].add(to);
       }
     }
 
@@ -139,7 +144,7 @@ export async function GET() {
               pfp = user.pfp_url;
             }
 
-            return { address, count, username, fid, pfp: pfp || null };
+            return { address, count, username, fid, pfp: pfp || null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [] };
           })
         );
 
@@ -148,14 +153,14 @@ export async function GET() {
         return NextResponse.json(topGiftersWithUsernames);
       } catch (neynarError) {
         console.error('Error fetching usernames:', neynarError);
-        const fallback = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
+        const fallback = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [] }));
         giftersCache = fallback;
         lastCacheUpdate = Date.now();
         return NextResponse.json(fallback);
       }
     }
 
-    const result = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
+    const result = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [] }));
     giftersCache = result;
     lastCacheUpdate = Date.now();
     return NextResponse.json(result);
