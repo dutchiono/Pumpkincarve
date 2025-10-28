@@ -67,8 +67,8 @@ export async function GET() {
     const MAX_BLOCK_RANGE = BigInt(4000);
     const allLogs = [];
 
-    // Search backwards from current block - INCREASED RANGE TO 50K BLOCKS
-    let fromBlock = currentBlock - BigInt(50000);
+    // Search backwards from current block - INCREASED RANGE TO 100K BLOCKS
+    let fromBlock = currentBlock - BigInt(100000);
 
     console.log(`🔍 Searching Transfer events from block ${fromBlock} to ${currentBlock} (${currentBlock - fromBlock} blocks)`);
 
@@ -84,13 +84,15 @@ export async function GET() {
       });
 
       allLogs.push(...logs);
-      console.log(`Found ${logs.length} Transfer logs in this batch`);
+      if (logs.length > 0) {
+        console.log(`Found ${logs.length} Transfer logs in block range ${fromBlock} to ${toBlock}`);
+      }
 
       fromBlock = toBlock + BigInt(1);
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    console.log(`Found ${allLogs.length} total Transfer events`);
+    console.log(`📈 Found ${allLogs.length} total Transfer events across all blocks`);
 
     // Filter out mints (from = 0x0) and track gifts (from != 0x0 and from != to)
     const giftCounts: Record<string, number> = {};
