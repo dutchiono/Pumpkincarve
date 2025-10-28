@@ -1272,13 +1272,23 @@ function PumpkinCarvingAppContent() {
                   margin: '0 auto'
                 }}>
                   <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#f97316', marginBottom: '12px' }}>🎁 Example Gen3 NFT (Token #1)</h3>
-                  <div style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto', backgroundColor: 'rgba(0, 0, 0, 0.3)', borderRadius: '12px', padding: '12px' }}>
-                    <p style={{ fontSize: '11px', color: 'rgba(34, 211, 238, 0.8)', marginBottom: '8px', textAlign: 'center' }}>
-                      Loading Gen3 GIF from IPFS...
-                    </p>
-                    <div style={{ width: '100%', aspectRatio: '1', backgroundColor: 'rgba(0, 0, 0, 0.5)', borderRadius: '8px', border: '1px dashed rgba(255, 255, 255, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px' }}>🔍 View on Basescan to see the animated GIF</p>
-                    </div>
+                  <div style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
+                    <img 
+                      src="/api/gen3-image?tokenId=1"
+                      alt="Gen3 Animated NFT"
+                      style={{
+                        width: '100%',
+                        maxWidth: '300px',
+                        height: 'auto',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        marginBottom: '12px',
+                        display: 'block'
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.src = '/digitalpumpkin.png';
+                      }}
+                    />
                   </div>
                   <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
                     <a
