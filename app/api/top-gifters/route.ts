@@ -168,14 +168,31 @@ export async function GET() {
               pfp = user.pfp_url;
             }
 
+            // Also look up recipient usernames
+            const recipientAddresses = giftRecipients[address] ? Array.from(giftRecipients[address]) : [];
+            const recipientLookups = await neynarClient.fetchBulkUsersByEthOrSolAddress({
+              addresses: recipientAddresses
+            });
+
+            const recipientsWithUsernames = recipientAddresses.map(recipAddr => {
+              const recipKey = Object.keys(recipientLookups).find(
+                key => key.toLowerCase() === recipAddr.toLowerCase()
+              );
+              if (recipKey && recipientLookups[recipKey]?.length > 0) {
+                const recipientUser = recipientLookups[recipKey][0];
+                return { address: recipAddr, username: recipientUser.username || null };
+              }
+              return { address: recipAddr, username: null };
+            });
+
             return {
               address,
               count,
               username,
               fid,
               pfp: pfp || null,
-              recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [],
-              uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0
+              recipients: recipientAddresses,
+              uniqueRecipients: recipientAddresses.length
             };
           })
         );

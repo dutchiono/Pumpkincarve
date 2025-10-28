@@ -1086,7 +1086,7 @@ function PumpkinCarvingAppContent() {
                                 <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>Gifted to:</p>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                   {gifter.recipients.map((recipient, idx) => (
-                                    <span
+                                    <span 
                                       key={idx}
                                       style={{
                                         fontSize: '12px',
@@ -1096,6 +1096,7 @@ function PumpkinCarvingAppContent() {
                                         color: '#22c55e',
                                         fontFamily: 'monospace'
                                       }}
+                                      title={recipient}
                                     >
                                       {recipient.slice(0, 6)}...{recipient.slice(-4)}
                                     </span>
