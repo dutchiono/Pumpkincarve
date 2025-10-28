@@ -24,15 +24,29 @@ const PUMPKIN_MINT_ABI = [
 ] as const;
 
 export async function GET() {
+  // Force dynamic, no cache at Next layer
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  export const dynamic = 'force-dynamic';
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  export const revalidate = 0;
+
   if (!CONTRACT_ADDRESS) {
     return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
   }
 
+  // Optional nocache bypass for admin/debug
+  const url = new URL('http://local');
+  const nocache = url.searchParams.get('nocache') === '1';
+
   // Check cache first - return immediately if data is fresh
   const cacheAge = Date.now() - lastCacheUpdate;
-  if (topMintersCache.length > 0 && cacheAge < CACHE_TTL) {
+  if (!nocache && topMintersCache.length > 0 && cacheAge < CACHE_TTL) {
     console.log(`✅ Returning cached top minters (age: ${Math.floor(cacheAge / 1000)}s)`);
-    return NextResponse.json(topMintersCache);
+    return new NextResponse(JSON.stringify(topMintersCache), {
+      headers: { 'Cache-Control': 'no-store' },
+    });
   }
 
   try {
@@ -42,15 +56,14 @@ export async function GET() {
       transport: http('https://1rpc.io/base'),
     });
 
-    // Get current block
     const currentBlock = await mainnetClient.getBlockNumber();
 
-    // RPC providers limit to 10,000 blocks per query, so we need to query in chunks
-    const MAX_BLOCK_RANGE = BigInt(10000);
+    // RPC providers limit to 5,000 blocks per query (1rpc.io), so we need to query in chunks
+    const MAX_BLOCK_RANGE = BigInt(4000);
     const allLogs = [];
 
-    // Start from 50k blocks ago or go back as far as needed
-    let fromBlock = currentBlock - BigInt(50000);
+    // Start from 20k blocks ago or go back as far as needed
+    let fromBlock = currentBlock - BigInt(20000);
 
     console.log(`Searching from block ${fromBlock} to latest (${currentBlock}) in chunks`);
 
@@ -128,24 +141,33 @@ export async function GET() {
         // Cache and return
         topMintersCache = topMintersWithUsernames;
         lastCacheUpdate = Date.now();
-        return NextResponse.json(topMintersWithUsernames);
+        return new NextResponse(JSON.stringify(topMintersWithUsernames), {
+          headers: { 'Cache-Control': 'no-store' },
+        });
       } catch (neynarError) {
         console.error('Error fetching usernames:', neynarError);
         // Fall back to addresses only if username lookup fails
         const fallback = topMinters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
         topMintersCache = fallback;
         lastCacheUpdate = Date.now();
-        return NextResponse.json(fallback);
+        return new NextResponse(JSON.stringify(fallback), {
+          headers: { 'Cache-Control': 'no-store' },
+        });
       }
     }
 
     const result = topMinters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
     topMintersCache = result;
     lastCacheUpdate = Date.now();
-    return NextResponse.json(result);
+    return new NextResponse(JSON.stringify(result), {
+      headers: { 'Cache-Control': 'no-store' },
+    });
   } catch (error: any) {
     console.error('Error fetching top minters:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return new NextResponse(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Cache-Control': 'no-store' },
+    });
   }
 }
 
