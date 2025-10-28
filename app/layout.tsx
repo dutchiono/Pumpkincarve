@@ -37,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="fc:frame" content={JSON.stringify(miniappEmbed)} />
+        <meta name="fc:miniapp" content={JSON.stringify(miniappEmbed)} />
       </head>
       <body>
         <Providers>{children}</Providers>
