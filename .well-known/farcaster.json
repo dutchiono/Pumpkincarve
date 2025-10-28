@@ -9,7 +9,7 @@
     "name": "Pumpkin Carving!",
     "subtitle": "AI-powered personality NFTs",
     "description": "Carve your personality into a spooky NFT",
-    "tagline": "Your Farcaster posts, carved into a unique pumpkin NFT on Base",
+    "tagline": "Your Personality, Minted",
     "iconUrl": "https://bushleague.xyz/digitalpumpkin.png",
     "homeUrl": "https://bushleague.xyz",
     "imageUrl": "https://bushleague.xyz/digitalpumpkin.png",
@@ -17,14 +17,14 @@
     "buttonTitle": "Carve",
     "splashImageUrl": "https://bushleague.xyz/digitalpumpkin.png",
     "splashBackgroundColor": "#0F1535",
-    "primaryCategory": "NFT",
-    "tags": ["AI", "NFT", "Halloween", "Personality", "Base", "Farcaster"],
+    "primaryCategory": "art-creativity",
+    "tags": [],
     "screenshotUrls": [
       "https://bushleague.xyz/digitalpumpkin.png"
     ],
     "castShareUrl": "https://bushleague.xyz",
-    "ogTitle": "Pumpkin Carving NFT - Carve Your Personality",
-    "ogDescription": "AI-generated pumpkin carving NFT from your Farcaster posts on Base",
+    "ogTitle": "Mint Your Personality",
+    "ogDescription": "Mint Your Personality",
     "ogImageUrl": "https://bushleague.xyz/digitalpumpkin.png",
     "webhookUrl": "https://api.neynar.com/f/app/4359b582-99fa-463d-a506-35d85d625a7b/event"
   }
