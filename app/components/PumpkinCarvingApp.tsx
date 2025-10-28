@@ -1273,7 +1273,7 @@ function PumpkinCarvingAppContent() {
                 }}>
                   <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#f97316', marginBottom: '12px' }}>🎁 Example Gen3 NFT (Token #1)</h3>
                   <div style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
-                    <img 
+                    <img
                       src="/api/gen3-image?tokenId=1"
                       alt="Gen3 Animated NFT"
                       style={{

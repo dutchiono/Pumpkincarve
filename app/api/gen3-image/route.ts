@@ -32,34 +32,44 @@ export async function GET(request: Request) {
       args: [BigInt(tokenId)],
     });
 
-    // Parse metadata from IPFS
-    const cid = tokenURI.replace('ipfs://', '');
-    const gateways = [
-      `https://gateway.pinata.cloud/ipfs/${cid}`,
-      `https://cloudflare-ipfs.com/ipfs/${cid}`,
-      `https://ipfs.io/ipfs/${cid}`,
-    ];
+    console.log(`Token URI for Gen3 #${tokenId}:`, tokenURI);
 
-    let metadata;
-    for (const gateway of gateways) {
+    // Use the same pattern as pumpkin NFTs - proxy through proxy-image API
+    if (tokenURI.startsWith('ipfs://')) {
+      // Check if it's metadata JSON or direct IPFS image
+      const cid = tokenURI.replace('ipfs://', '');
+      const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+      
       try {
-        const response = await fetch(gateway);
+        // Try to fetch and see if it's JSON or direct image
+        const response = await fetch(gatewayUrl);
         if (response.ok) {
-          metadata = await response.json();
-          break;
+          const contentType = response.headers.get('content-type');
+          if (contentType?.includes('json')) {
+            // It's metadata JSON - extract animation_url
+            const metadata = await response.json();
+            if (metadata.animation_url) {
+              return NextResponse.redirect(metadata.animation_url);
+            }
+            if (metadata.image) {
+              return NextResponse.redirect(metadata.image);
+            }
+          } else {
+            // It's a direct image (GIF)
+            return response.body ? new NextResponse(response.body, { 
+              headers: { 'Content-Type': contentType || 'image/gif' } 
+            }) : NextResponse.json({ error: 'No content' }, { status: 404 });
+          }
         }
-      } catch (err) {
-        console.error(`Gateway ${gateway} failed:`, err);
+      } catch (fetchErr) {
+        console.error('Error fetching from IPFS:', fetchErr);
       }
+
+      // Fallback to proxy
+      return NextResponse.redirect(`/api/proxy-image?url=${encodeURIComponent(tokenURI)}`);
     }
 
-    if (metadata && metadata.animation_url) {
-      return NextResponse.redirect(metadata.animation_url);
-    } else if (metadata && metadata.image) {
-      return NextResponse.redirect(metadata.image);
-    }
-
-    return NextResponse.json({ error: 'No image found' }, { status: 404 });
+    return NextResponse.json({ error: 'Invalid token URI format' }, { status: 400 });
   } catch (error: any) {
     console.error('Error fetching Gen3 image:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
