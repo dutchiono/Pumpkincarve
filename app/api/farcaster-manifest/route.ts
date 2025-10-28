@@ -29,7 +29,7 @@ export async function GET() {
       ogTitle: "Pumpkin Carving NFT - Carve Your Personality",
       ogDescription: "AI-generated pumpkin carving NFT from your Farcaster posts on Base",
       ogImageUrl: "https://bushleague.xyz/digitalpumpkin.png",
-      webhookUrl: "https://bushleague.xyz/api/webhook"
+      webhookUrl: "https://api.neynar.com/f/app/4359b582-99fa-463d-a506-35d85d625a7b/event"
     }
   };
 
