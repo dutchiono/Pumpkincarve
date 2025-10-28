@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     // Try to get user - userId can be FID or username
     // First try FID lookup
     let fid: number | null = null;
-    
+
     // Check if userId is a number (FID)
     if (!isNaN(Number(userId))) {
       fid = Number(userId);
@@ -38,11 +38,11 @@ export async function POST(req: NextRequest) {
         // Username lookup failed, continue
       }
     }
-    
+
     if (!fid) {
       return NextResponse.json({ error: 'Farcaster user not found' }, { status: 404 });
     }
-    
+
     const castsResponse = await neynarClient.fetchCastsForUser({ fid, limit: 100 });
 
     // Perform a very basic sentiment analysis (placeholder logic)
