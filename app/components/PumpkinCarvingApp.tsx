@@ -1084,7 +1084,7 @@ function PumpkinCarvingAppContent() {
                             {gifter.gifts && gifter.gifts.length > 0 ? (
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '16px' }}>
                                 {gifter.gifts.map((gift, idx) => (
-                                  <div 
+                                  <div
                                     key={idx}
                                     style={{
                                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -1095,7 +1095,7 @@ function PumpkinCarvingAppContent() {
                                   >
                                     <div style={{ width: '100%', aspectRatio: '1', marginBottom: '8px', position: 'relative' }}>
                                       <img
-                                        src={`https://gateway.pinata.cloud/ipfs/QmSxzEv1Mj9MQ3CqKDJRzARjkJsFAqMAc7sXKJJmjqGMXz?tokenId=${gift.tokenId}`}
+                                        src={`/api/nft-image?tokenId=${gift.tokenId}`}
                                         alt={`NFT #${gift.tokenId}`}
                                         style={{
                                           width: '100%',
@@ -1106,18 +1106,17 @@ function PumpkinCarvingAppContent() {
                                         }}
                                         onClick={() => window.open(`https://basescan.org/nft/${process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS}/${gift.tokenId}`, '_blank')}
                                         onError={(e) => {
-                                          // Fallback to API if IPFS fails
-                                          e.currentTarget.src = `/api/gen3-image?tokenId=${gift.tokenId}`;
+                                          e.currentTarget.src = '/gameoverpumpkin.png';
                                         }}
                                       />
                                     </div>
                                     <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '4px' }}>
                                       To:
                                     </div>
-                                    <div 
-                                      style={{ 
-                                        fontSize: '12px', 
-                                        color: '#22c55e', 
+                                    <div
+                                      style={{
+                                        fontSize: '12px',
+                                        color: '#22c55e',
                                         fontWeight: 'bold',
                                         cursor: 'pointer',
                                         overflow: 'hidden',
