@@ -150,6 +150,7 @@ export async function GET() {
 
         const topGiftersWithUsernames: CachedGifter[] = await Promise.all(
           topGifters.map(async ([address, count]): Promise<CachedGifter> => {
+            console.log(`📝 Processing gifter: ${address}, count: ${count}, recipients: [${Array.from(giftRecipients[address] || [])}]`);
             const matchingKey = Object.keys(usersResponse).find(
               key => key.toLowerCase() === address.toLowerCase()
             );
