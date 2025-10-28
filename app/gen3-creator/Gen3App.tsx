@@ -598,7 +598,9 @@ const Gen3App: React.FC = () => {
     for (let octave = 0; octave < flowFieldsOctaves; octave++) {
       const freq = flowFieldsBaseFreq * Math.pow(2, octave);
       const amplitude = flowFieldsAmplitude / Math.pow(2, octave);
-      const phase = t * freq; // Use t directly - already scaled to 2π
+      // t is in radians (0 to 2π * cycles), use as phase directly
+      // The periodicity is handled by the loop count
+      const phase = t;
       value += amplitude * Math.sin(x * freq + phase) * Math.cos(y * freq + phase);
     }
 
@@ -619,7 +621,9 @@ const Gen3App: React.FC = () => {
     for (let octave = 0; octave < contourOctaves; octave++) {
       const freq = contourBaseFreq * Math.pow(2, octave);
       const amplitude = contourAmplitude / Math.pow(2, octave);
-      const phase = t * freq; // Use t directly - already scaled to 2π
+      // t is in radians (0 to 2π * cycles), use as phase directly
+      // The periodicity is handled by the loop count
+      const phase = t;
       value += amplitude * Math.sin(x * freq + phase) * Math.cos(y * freq + phase);
     }
 
@@ -768,14 +772,18 @@ const Gen3App: React.FC = () => {
     for (let frame = 0; frame < totalFrames; frame++) {
       tempCtx.clearRect(0, 0, size, size);
 
-      // Use t that creates a seamless loop
-      // Scale by 2π over totalFrames to ensure frame 0 and frame totalFrames are identical
-      const t = (frame / totalFrames) * (Math.PI * 2) * 10; // Perfect loop using 2π cycles
+      // Use normalized time (0 to 1) for perfect loop
+      // frame/totalFrames goes from 0 to (totalFrames-1)/totalFrames
+      // Add one extra frame so last frame is the same as first frame
+      const normalizedTime = frame / totalFrames;
+      
+      // Convert to actual time value that loops
+      // Multiply by cycles to control speed, using 10 cycles for variety
+      const t = normalizedTime * (Math.PI * 2) * 10;
 
-      // Render Flow Field background
+      // Render Flow Field background - must use same time as animation
       if (enableFlowField) {
-        const time = frame * 0.02 * flowFieldDirection;
-        const angle = time % (Math.PI * 2);
+        const angle = t * flowFieldDirection;
 
         const x0 = size / 2 + Math.cos(angle) * size;
         const y0 = size / 2 + Math.sin(angle) * size;
