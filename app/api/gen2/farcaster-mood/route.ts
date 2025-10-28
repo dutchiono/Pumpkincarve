@@ -22,12 +22,12 @@ export async function POST(req: NextRequest) {
     // Neynar API typically uses FID (Farcaster ID) or username.
     // Assuming userId can be either for now, or we might need a lookup step.
     // For simplicity, let's assume userId is a username for now.
-    const userResponse = await neynarClient.lookupUserByUsername(userId);
-    if (!userResponse || !userResponse.result || !userResponse.result.user) {
+    const user = await neynarClient.lookupUserByUsername(userId);
+    if (!user || !user.fid) {
       return NextResponse.json({ error: 'Farcaster user not found' }, { status: 404 });
     }
 
-    const fid = userResponse.result.user.fid;
+    const fid = user.fid;
     const castsResponse = await neynarClient.fetchCastsForUser({ fid, limit: 100 });
 
     // Perform a very basic sentiment analysis (placeholder logic)
