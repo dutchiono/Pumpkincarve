@@ -1261,8 +1261,8 @@ function PumpkinCarvingAppContent() {
                 <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px', marginBottom: '16px', fontStyle: 'italic' }}>
                   Currently live on Base Sepolia testnet!
                 </p>
-                
-                <div style={{ 
+
+                <div style={{
                   display: 'inline-block',
                   backgroundColor: 'rgba(249, 115, 22, 0.2)',
                   borderRadius: '16px',
@@ -1271,27 +1271,19 @@ function PumpkinCarvingAppContent() {
                   maxWidth: '400px',
                   margin: '0 auto'
                 }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#f97316', marginBottom: '12px' }}>🎁 Example Gen3 NFT</h3>
-                  <img 
-                    src="https://sepolia.basescan.org/api?module=contract&action=gettokenuri&address=0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6&tokenid=1" 
-                    alt="Gen3 NFT Example"
-                    style={{
-                      width: '100%',
-                      maxWidth: '300px',
-                      height: 'auto',
-                      borderRadius: '12px',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      marginBottom: '12px'
-                    }}
-                    onError={(e) => {
-                      // Fallback if image fails to load
-                      e.currentTarget.src = '/digitalpumpkin.png';
-                    }}
-                  />
+                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#f97316', marginBottom: '12px' }}>🎁 Example Gen3 NFT (Token #1)</h3>
+                  <div style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto', backgroundColor: 'rgba(0, 0, 0, 0.3)', borderRadius: '12px', padding: '12px' }}>
+                    <p style={{ fontSize: '11px', color: 'rgba(34, 211, 238, 0.8)', marginBottom: '8px', textAlign: 'center' }}>
+                      Loading Gen3 GIF from IPFS...
+                    </p>
+                    <div style={{ width: '100%', aspectRatio: '1', backgroundColor: 'rgba(0, 0, 0, 0.5)', borderRadius: '8px', border: '1px dashed rgba(255, 255, 255, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px' }}>🔍 View on Basescan to see the animated GIF</p>
+                    </div>
+                  </div>
                   <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                    <a 
-                      href="https://sepolia.basescan.org/nft/0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6/1" 
-                      target="_blank" 
+                    <a
+                      href="https://sepolia.basescan.org/nft/0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6/1"
+                      target="_blank"
                       rel="noopener noreferrer"
                       style={{ color: '#22d3ee', textDecoration: 'underline' }}
                     >
