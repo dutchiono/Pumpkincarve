@@ -15,10 +15,11 @@ const nextConfig = {
     ];
   },
   // Temporarily exclude Gen2 files from build
-  webpack: (config) => {
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
+  webpack: (config, { isServer }) => {
     config.module.rules.push({
-      test: /app\/gen2-creator\/Gen2App\.tsx$/,
-      use: 'null-loader',
+      test: /Gen2App\.tsx$/,
+      use: 'ignore-loader',
     });
     return config;
   },
