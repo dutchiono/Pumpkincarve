@@ -1084,7 +1084,7 @@ function PumpkinCarvingAppContent() {
                             {gifter.gifts && gifter.gifts.length > 0 ? (
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '16px' }}>
                                 {gifter.gifts.map((gift, idx) => (
-                                  <div 
+                                  <div
                                     key={idx}
                                     style={{
                                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -1113,10 +1113,10 @@ function PumpkinCarvingAppContent() {
                                     <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '4px' }}>
                                       To:
                                     </div>
-                                    <div 
-                                      style={{ 
-                                        fontSize: '12px', 
-                                        color: '#22c55e', 
+                                    <div
+                                      style={{
+                                        fontSize: '12px',
+                                        color: '#22c55e',
                                         fontWeight: 'bold',
                                         cursor: 'pointer',
                                         overflow: 'hidden',

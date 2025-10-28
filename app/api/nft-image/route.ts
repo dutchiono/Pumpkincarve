@@ -68,23 +68,57 @@ export async function GET(request: Request) {
     if (imageUrl) {
       console.log(`🔗 Fetching image from: ${imageUrl}`);
       
-      // Convert IPFS URLs to gateway URLs
+      // Convert IPFS URLs to gateway URLs with fallbacks
       let httpUrl = imageUrl;
+      let imageResponse;
+      let imageBuffer;
+      
       if (imageUrl.startsWith('ipfs://')) {
         const cid = imageUrl.replace('ipfs://', '');
-        httpUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+        
+        // Try multiple gateways
+        const gateways = [
+          `https://cloudflare-ipfs.com/ipfs/${cid}`,
+          `https://ipfs.io/ipfs/${cid}`,
+          `https://gateway.pinata.cloud/ipfs/${cid}`,
+          `https://dweb.link/ipfs/${cid}`
+        ];
+        
+        console.log(`📥 Trying IPFS gateways for CID: ${cid}`);
+        
+        // Try each gateway in order
+        for (const gateway of gateways) {
+          try {
+            console.log(`  Trying: ${gateway}`);
+            imageResponse = await fetch(gateway, { 
+              signal: AbortSignal.timeout(5000) // 5 second timeout per gateway
+            });
+            
+            if (imageResponse.ok) {
+              console.log(`✅ Successfully fetched from: ${gateway}`);
+              httpUrl = gateway;
+              break;
+            }
+          } catch (err) {
+            console.log(`  Failed: ${gateway}`);
+            continue;
+          }
+        }
+        
+        if (!imageResponse || !imageResponse.ok) {
+          throw new Error(`Failed to fetch from all IPFS gateways`);
+        }
+      } else {
+        // Regular HTTP URL
+        console.log(`📥 Fetching from: ${httpUrl}`);
+        imageResponse = await fetch(httpUrl);
+        
+        if (!imageResponse.ok) {
+          throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+        }
       }
       
-      console.log(`📥 Fetching from gateway: ${httpUrl}`);
-      
-      // Fetch the image
-      const imageResponse = await fetch(httpUrl);
-      
-      if (!imageResponse.ok) {
-        throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
-      }
-      
-      const imageBuffer = await imageResponse.arrayBuffer();
+      imageBuffer = await imageResponse.arrayBuffer();
       const contentType = imageResponse.headers.get('content-type') || 'image/png';
       
       console.log(`✅ Successfully fetched image, content-type: ${contentType}`);
