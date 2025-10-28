@@ -1244,83 +1244,57 @@ function PumpkinCarvingAppContent() {
             border: '2px solid rgba(255, 255, 255, 0.2)',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
           }}>
-            <div className="text-5xl mb-4 text-center">🚀</div>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px', textAlign: 'center' }}>Animated Generation NFTs</h2>
+            <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#ffffff', marginBottom: '24px', textAlign: 'center' }}>🚀 Gen3: Animated NFTs</h2>
+            
+            {/* GIF at the top */}
             <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-              <p style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '16px', fontSize: '16px', lineHeight: '1.6' }}>
-                Get ready for the next evolution: <strong style={{ color: '#22d3ee' }}>Animated GIF NFTs</strong> powered by generative art algorithms!
-              </p>
-
-              <div style={{ backgroundColor: 'rgba(34, 211, 238, 0.1)', borderRadius: '16px', padding: '20px', marginBottom: '20px', border: '1px solid rgba(34, 211, 238, 0.3)' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#22d3ee', marginBottom: '12px' }}>✨ Features</h3>
-                <ul style={{ textAlign: 'left', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.8' }}>
-                  <li>🎨 <strong>Flow Fields</strong> - Dynamic color gradients that flow and swirl</li>
-                  <li>🌀 <strong>Particle Systems</strong> - Interactive animated patterns</li>
-                  <li>🌊 <strong>Contour Mapping</strong> - Smooth 3D-esque visual effects</li>
-                  <li>🔄 <strong>Seamless Loops</strong> - Infinite perfect-loop animations</li>
-                  <li>🎯 <strong>Unique Combinations</strong> - Billions of possible variations</li>
-                </ul>
-              </div>
-
-              <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.1)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#a855f7', marginBottom: '12px' }}>🛠️ How It Works</h3>
-                <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.6', textAlign: 'left' }}>
-                  Each NFT is generated using multiple layered algorithms that create unique, mesmerizing animations.
-                  You'll be able to customize:
-                </p>
-                <ul style={{ textAlign: 'left', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.8', marginTop: '8px' }}>
-                  <li>Color palettes and gradients</li>
-                  <li>Animation speed and direction</li>
-                  <li>Visual complexity and density</li>
-                  <li>And much more...</li>
-                </ul>
-              </div>
-
-              <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px', marginBottom: '16px', fontStyle: 'italic' }}>
-                  Currently live on Base Sepolia testnet!
-                </p>
-
-                <div style={{
-                  display: 'inline-block',
-                  backgroundColor: 'rgba(249, 115, 22, 0.2)',
-                  borderRadius: '16px',
-                  padding: '20px',
-                  border: '2px solid rgba(249, 115, 22, 0.4)',
+              <img
+                src="/api/gen3-image?tokenId=1"
+                alt="Gen3 Animated NFT"
+                style={{
+                  width: '100%',
                   maxWidth: '400px',
+                  height: 'auto',
+                  borderRadius: '16px',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  display: 'block',
                   margin: '0 auto'
-                }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#f97316', marginBottom: '12px' }}>🎁 Example Gen3 NFT (Token #1)</h3>
-                  <div style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
-                    <img
-                      src="/api/gen3-image?tokenId=1"
-                      alt="Gen3 Animated NFT"
-                      style={{
-                        width: '100%',
-                        maxWidth: '300px',
-                        height: 'auto',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        marginBottom: '12px',
-                        display: 'block'
-                      }}
-                      onError={(e) => {
-                        e.currentTarget.src = '/gameoverpumpkin.png';
-                      }}
-                    />
-                  </div>
-                  <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                    <a
-                      href="https://sepolia.basescan.org/nft/0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6/1"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: '#22d3ee', textDecoration: 'underline' }}
-                    >
-                      View on Basescan →
-                    </a>
-                  </p>
-                </div>
-              </div>
+                }}
+                onError={(e) => {
+                  e.currentTarget.src = '/gameoverpumpkin.png';
+                }}
+              />
+            </div>
+
+            {/* Better description */}
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '16px', lineHeight: '1.8', marginBottom: '16px' }}>
+                Gen3 NFTs are <strong style={{ color: '#22d3ee' }}>animated GIFs</strong> generated using your Farcaster personality data.
+                Each NFT is unique, featuring dynamic patterns, flowing colors, and mesmerizing animations that loop seamlessly.
+              </p>
+              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px', lineHeight: '1.6', marginBottom: '16px' }}>
+                The animations are created by analyzing your posts and generating visual representations that capture your digital persona.
+                Each Gen3 NFT is a one-of-a-kind animated artwork stored permanently on-chain.
+              </p>
+            </div>
+
+            {/* Live status */}
+            <div style={{ textAlign: 'center', marginTop: '24px' }}>
+              <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px', fontStyle: 'italic', marginBottom: '12px' }}>
+                Currently live on Base Sepolia testnet
+              </p>
+              <a
+                href="https://sepolia.basescan.org/nft/0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6/1"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ 
+                  color: '#22d3ee', 
+                  textDecoration: 'underline',
+                  fontSize: '14px'
+                }}
+              >
+                View Example NFT on Basescan →
+              </a>
             </div>
           </div>
         )}
@@ -1463,22 +1437,22 @@ function PumpkinCarvingAppContent() {
         </div>
 
       {/* Bottom Navigation - Halloween Theme */}
-      <div style={{ 
-        position: 'fixed', 
-        bottom: 0, 
-        left: 0, 
-        right: 0, 
-        height: '64px', 
-        zIndex: 9999, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
+      <div style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '64px',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         gap: '32px',
         background: 'linear-gradient(to right, rgba(220, 38, 38, 0.8), rgba(107, 33, 168, 0.8))',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-        boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.3)' 
+        boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.3)'
       }}>
         <button onClick={() => setActiveTab('home')} style={{ fontSize: '28px', border: 'none', background: 'transparent', cursor: 'pointer', opacity: activeTab === 'home' ? 1 : 0.6 }}>
           🎃

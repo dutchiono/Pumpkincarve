@@ -1,0 +1,62 @@
+{
+  "minters": [
+    {
+      "address": "0x8dfbdeec8c5d4970bb5f481c6ec7f73fa1c65be5",
+      "count": 7,
+      "username": "ionoi",
+      "fid": 474867,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/3ff80cd0-0e6d-4bd4-c93c-2b3d8e575e00/original"
+    },
+    {
+      "address": "0xdf087b724174a3e4ed2338c0798193932e851f1b",
+      "count": 3,
+      "username": "kmacb.eth",
+      "fid": 4163,
+      "pfp": "https://images.colorino.site/cc214ccf3914a741130fbae423610b69406f9c7052751bd24bd0703e6d604686.png"
+    },
+    {
+      "address": "0x9f8679c8f662fdf09654fe73bd3702edeed1b9f3",
+      "count": 2,
+      "username": "mxjxn",
+      "fid": 4905,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/d13b2a51-2133-4c34-b019-de1763d70a00/original"
+    },
+    {
+      "address": "0x46df59648abe0af4e69952c298fe6ecc7e6cab9d",
+      "count": 1,
+      "username": "adikur21",
+      "fid": 299366,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/cedc2e83-f734-4b8f-367b-98bc5c513700/original"
+    },
+    {
+      "address": "0x1acbb32e13d98a6ca81f0fc52ecf455cc0abfdbf",
+      "count": 1,
+      "username": "chukwukaosakwe",
+      "fid": 10694,
+      "pfp": "https://images.colorino.site/43719bc5756370148f79ef5348196cacf9216f17d54c52ab58c47849bc92f2dd.png"
+    },
+    {
+      "address": "0x1674244f49fc2c27b1113437595b34d7eacd6a76",
+      "count": 1,
+      "username": "walkers-id",
+      "fid": 452723,
+      "pfp": "https://i.imgur.com/sbfankF.jpg"
+    },
+    {
+      "address": "0xdb31199c017e24dd8ab1b0b76823e5ab6191f89c",
+      "count": 1,
+      "username": "soufaki",
+      "fid": 1139282,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/230a7e2a-c89f-4f34-19f9-06edcc9fac00/original"
+    },
+    {
+      "address": "0x7ab322e187d7e6d3303f7c1066535d03f2b9cd98",
+      "count": 0,
+      "username": "ktn0076",
+      "fid": 309181,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/2962119e-7cb5-4942-2fcb-6bc2edae0900/rectcrop3"
+    }
+  ],
+  "lastUpdate": 1761683227879,
+  "lastBlock": 0
+}
