@@ -109,7 +109,7 @@ export async function GET() {
 
     // Count actual NFT holdings using balanceOf (current state)
     const mintCounts: Record<string, number> = {};
-    for (const address of uniqueAddresses) {
+    for (const address of Array.from(uniqueAddresses)) {
       try {
         const balance = await mainnetClient.readContract({
           address: CONTRACT_ADDRESS as `0x${string}`,
