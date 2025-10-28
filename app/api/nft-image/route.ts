@@ -40,16 +40,21 @@ export async function GET(request: Request) {
       args: [BigInt(tokenId)],
     });
 
+    console.log(`🔍 TokenURI for token ${tokenId}:`, tokenURI);
+
     // Parse the tokenURI to get the image
     let imageUrl = '';
     
     // Try to parse as JSON metadata
     try {
       const metadata = JSON.parse(tokenURI);
+      console.log(`✅ Parsed metadata for token ${tokenId}:`, metadata);
       if (metadata.image) {
         imageUrl = metadata.image;
+        console.log(`📸 Image URL: ${imageUrl}`);
       }
     } catch (parseErr) {
+      console.log(`ℹ️ TokenURI is not JSON for token ${tokenId}, trying as URL: ${tokenURI}`);
       // If not JSON, try as direct URL
       if (tokenURI.startsWith('http')) {
         imageUrl = tokenURI;
@@ -62,10 +67,17 @@ export async function GET(request: Request) {
     // Convert IPFS URLs to gateway URLs
     if (imageUrl.startsWith('ipfs://')) {
       const cid = imageUrl.replace('ipfs://', '');
+      console.log(`🔗 Redirecting to IPFS gateway: https://gateway.pinata.cloud/ipfs/${cid}`);
       return NextResponse.redirect(`https://gateway.pinata.cloud/ipfs/${cid}`);
     }
 
-    return NextResponse.redirect(imageUrl);
+    if (imageUrl) {
+      console.log(`🔗 Redirecting to: ${imageUrl}`);
+      return NextResponse.redirect(imageUrl);
+    }
+
+    console.error(`❌ Could not determine image URL for token ${tokenId}`);
+    return NextResponse.json({ error: 'Could not determine image URL' }, { status: 500 });
   } catch (error: any) {
     console.error('Error fetching NFT image:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
