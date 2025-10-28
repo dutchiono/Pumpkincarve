@@ -34,39 +34,35 @@ export async function GET(request: Request) {
 
     console.log(`Token URI for Gen3 #${tokenId}:`, tokenURI);
 
-    // Use the same pattern as pumpkin NFTs - proxy through proxy-image API
-    if (tokenURI.startsWith('ipfs://')) {
-      // Check if it's metadata JSON or direct IPFS image
-      const cid = tokenURI.replace('ipfs://', '');
-      const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+    // Gen3 contract returns JSON metadata directly (not IPFS URL)
+    try {
+      const metadata = JSON.parse(tokenURI);
+      console.log('Parsed metadata:', metadata);
       
-      try {
-        // Try to fetch and see if it's JSON or direct image
-        const response = await fetch(gatewayUrl);
-        if (response.ok) {
-          const contentType = response.headers.get('content-type');
-          if (contentType?.includes('json')) {
-            // It's metadata JSON - extract animation_url
-            const metadata = await response.json();
-            if (metadata.animation_url) {
-              return NextResponse.redirect(metadata.animation_url);
-            }
-            if (metadata.image) {
-              return NextResponse.redirect(metadata.image);
-            }
-          } else {
-            // It's a direct image (GIF)
-            return response.body ? new NextResponse(response.body, { 
-              headers: { 'Content-Type': contentType || 'image/gif' } 
-            }) : NextResponse.json({ error: 'No content' }, { status: 404 });
-          }
+      // Extract animation_url first (GIF), then fall back to image
+      const imageUrl = metadata.animation_url || metadata.image;
+      
+      if (imageUrl) {
+        console.log('Found image URL:', imageUrl);
+        
+        // If it's IPFS, convert to gateway URL
+        if (imageUrl.startsWith('ipfs://')) {
+          const cid = imageUrl.replace('ipfs://', '');
+          return NextResponse.redirect(`https://gateway.pinata.cloud/ipfs/${cid}`);
         }
-      } catch (fetchErr) {
-        console.error('Error fetching from IPFS:', fetchErr);
+        
+        return NextResponse.redirect(imageUrl);
       }
-
-      // Fallback to proxy
-      return NextResponse.redirect(`/api/proxy-image?url=${encodeURIComponent(tokenURI)}`);
+    } catch (parseErr) {
+      // tokenURI is not JSON, might be direct IPFS URL
+      console.log('Token URI is not JSON, trying as URL');
+      
+      if (tokenURI.startsWith('ipfs://')) {
+        const cid = tokenURI.replace('ipfs://', '');
+        return NextResponse.redirect(`https://gateway.pinata.cloud/ipfs/${cid}`);
+      }
+      
+      return NextResponse.json({ error: 'Could not parse metadata' }, { status: 400 });
     }
 
     return NextResponse.json({ error: 'Invalid token URI format' }, { status: 400 });
