@@ -87,6 +87,15 @@ function PumpkinCarvingAppContent() {
         await sdk.actions.ready();
         console.log('✅ Farcaster SDK ready() called successfully');
         console.log('✅ Splash screen should be dismissed now');
+        
+        // Try to trigger the add mini app modal if not added
+        try {
+          await sdk.actions.addMiniApp();
+          console.log('✅ Add mini app modal triggered');
+        } catch (addError: any) {
+          // User might have already added the app - this is normal
+          console.log('ℹ️ Add mini app status:', addError.message);
+        }
       } catch (error: any) {
         console.error('❌ SDK ready() error:', error);
         // Try calling it again as a fallback
