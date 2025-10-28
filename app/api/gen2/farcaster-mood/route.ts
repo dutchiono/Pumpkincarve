@@ -22,28 +22,31 @@ export async function POST(req: NextRequest) {
     // Neynar API typically uses FID (Farcaster ID) or username.
     // Assuming userId can be either for now, or we might need a lookup step.
     // For simplicity, let's assume userId is a username for now.
-    const user = await neynarClient.lookupUserByUsername(userId);
-    if (!user) {
+    const userResponse = await neynarClient.lookupUserByUsername(userId);
+    if (!userResponse || !userResponse.result || !userResponse.result.user) {
       return NextResponse.json({ error: 'Farcaster user not found' }, { status: 404 });
     }
 
-    const casts = await neynarClient.fetchCastsForUser(user.fid);
+    const fid = userResponse.result.user.fid;
+    const castsResponse = await neynarClient.fetchCastsForUser({ fid, limit: 100 });
 
     // Perform a very basic sentiment analysis (placeholder logic)
     let positiveCount = 0;
     let negativeCount = 0;
     let neutralCount = 0;
 
-    casts.messages.forEach(cast => {
-      const text = cast.text.toLowerCase();
-      if (text.includes('happy') || text.includes('great') || text.includes('love')) {
-        positiveCount++;
-      } else if (text.includes('sad') || text.includes('bad') || text.includes('hate')) {
-        negativeCount++;
-      } else {
-        neutralCount++;
-      }
-    });
+    if (castsResponse && castsResponse.casts && Array.isArray(castsResponse.casts)) {
+      castsResponse.casts.forEach((cast: any) => {
+        const text = cast.text?.toLowerCase() || '';
+        if (text.includes('happy') || text.includes('great') || text.includes('love')) {
+          positiveCount++;
+        } else if (text.includes('sad') || text.includes('bad') || text.includes('hate')) {
+          negativeCount++;
+        } else {
+          neutralCount++;
+        }
+      });
+    }
 
     let mood = 'neutral';
     if (positiveCount > negativeCount && positiveCount > neutralCount) {
