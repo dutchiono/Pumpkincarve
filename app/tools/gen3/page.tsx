@@ -1,12 +1,6 @@
 'use client';
 
 import Gen3App from '@/app/gen3-creator/Gen3App';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Internal Gen3 Creator',
-  robots: { index: false, follow: false },
-};
 
 export default function InternalGen3CreatorPage() {
   return (

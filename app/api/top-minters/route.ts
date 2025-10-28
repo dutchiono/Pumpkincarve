@@ -23,15 +23,11 @@ const PUMPKIN_MINT_ABI = [
   },
 ] as const;
 
-export async function GET() {
-  // Force dynamic, no cache at Next layer
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  export const dynamic = 'force-dynamic';
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  export const revalidate = 0;
+// Force dynamic, no cache at Next layer
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
+export async function GET() {
   if (!CONTRACT_ADDRESS) {
     return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
   }
