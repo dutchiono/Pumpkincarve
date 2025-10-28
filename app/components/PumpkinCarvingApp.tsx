@@ -420,8 +420,8 @@ export function PumpkinCarvingApp() {
       // Use the main miniapp URL so Farcaster recognizes it as a miniapp
       // The embed route will handle displaying the specific image
       const result = await sdk.actions.composeCast({
-        text: `🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nCheck it out: https://bushleague.xyz/embed?image=${encodeURIComponent(gatewayUrl)}\n\nMint your own: @bushleague.xyz`,
-        embeds: ['https://bushleague.xyz'] as [string],
+        text: `🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nCreated by @ionoi\n\nCheck it out: https://bushleague.xyz/embed?image=${encodeURIComponent(gatewayUrl)}`,
+        embeds: [gatewayUrl] as [string],
       });
 
       if (result?.cast) {

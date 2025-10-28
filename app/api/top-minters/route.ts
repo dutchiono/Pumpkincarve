@@ -42,7 +42,6 @@ export async function GET() {
       transport: http('https://1rpc.io/base'),
     });
 
-    // Get current block
     const currentBlock = await mainnetClient.getBlockNumber();
 
     // RPC providers limit to 10,000 blocks per query, so we need to query in chunks
