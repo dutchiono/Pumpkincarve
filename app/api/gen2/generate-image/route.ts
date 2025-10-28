@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import sharp from 'sharp';
+// import sharp from 'sharp'; // Temporarily disabled - sharp not installed
 
 // Define color palettes for different moods
 const moodPalettes = {
@@ -159,6 +159,12 @@ function generateParticleSvg(mood: string, frame: number, totalFrames: number, v
 }
 
 export async function POST(req: NextRequest) {
+  return NextResponse.json(
+    { error: 'Gen2 API temporarily disabled - missing sharp dependency' },
+    { status: 503 }
+  );
+
+  /* TEMPORARILY DISABLED
   try {
     const { farcasterMood, visualParams, dataSources } = await req.json();
 
@@ -220,4 +226,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+  */
 }

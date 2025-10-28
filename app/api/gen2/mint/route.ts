@@ -1,11 +1,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import sharp from 'sharp';
-import path from 'path';
-import { uploadToIPFS } from '@/app/services/ipfs';
-import { traits } from '@/app/gen2-creator/traits';
+// import sharp from 'sharp'; // Temporarily disabled - sharp not installed
 
 export async function POST(req: NextRequest) {
+  return NextResponse.json(
+    { error: 'Gen2 mint API temporarily disabled - missing sharp dependency' },
+    { status: 503 }
+  );
+
+  /* TEMPORARILY DISABLED
   try {
     const selectedTraits = await req.json();
 
@@ -20,12 +23,12 @@ export async function POST(req: NextRequest) {
       return new NextResponse('No traits selected', { status: 400 });
     }
 
-    const compositeImage = await sharp({ 
-        create: { 
-            width: 500, 
-            height: 500, 
-            channels: 4, 
-            background: { r: 0, g: 0, b: 0, alpha: 0 } 
+    const compositeImage = await sharp({
+        create: {
+            width: 500,
+            height: 500,
+            channels: 4,
+            background: { r: 0, g: 0, b: 0, alpha: 0 }
         }
     })
       .composite(imageLayers)
@@ -56,4 +59,5 @@ export async function POST(req: NextRequest) {
     console.error(error);
     return new NextResponse('Error minting NFT', { status: 500 });
   }
+  */
 }
