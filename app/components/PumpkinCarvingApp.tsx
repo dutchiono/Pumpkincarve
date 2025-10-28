@@ -983,7 +983,7 @@ function PumpkinCarvingAppContent() {
                         }}>
                           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f97316', width: '32px' }}>{index + 1}</div>
                           {minter.pfp && <img src={minter.pfp} alt={minter.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
-                          <div 
+                          <div
                             style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1062,7 +1062,7 @@ function PumpkinCarvingAppContent() {
                         }}>
                           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#22c55e', width: '32px' }}>{index + 1}</div>
                           {gifter.pfp && <img src={gifter.pfp} alt={gifter.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
-                          <div 
+                          <div
                             style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1086,7 +1086,7 @@ function PumpkinCarvingAppContent() {
                                 <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>Gifted to:</p>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                   {gifter.recipients.map((recipient, idx) => (
-                                    <span 
+                                    <span
                                       key={idx}
                                       style={{
                                         fontSize: '12px',
@@ -1163,7 +1163,7 @@ function PumpkinCarvingAppContent() {
                         }}>
                           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#a855f7', width: '32px' }}>{index + 1}</div>
                           {holder.pfp && <img src={holder.pfp} alt={holder.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
-                          <div 
+                          <div
                             style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1231,7 +1231,7 @@ function PumpkinCarvingAppContent() {
               <p style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '16px', fontSize: '16px', lineHeight: '1.6' }}>
                 Get ready for the next evolution: <strong style={{ color: '#22d3ee' }}>Animated GIF NFTs</strong> powered by generative art algorithms!
               </p>
-              
+
               <div style={{ backgroundColor: 'rgba(34, 211, 238, 0.1)', borderRadius: '16px', padding: '20px', marginBottom: '20px', border: '1px solid rgba(34, 211, 238, 0.3)' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#22d3ee', marginBottom: '12px' }}>✨ Features</h3>
                 <ul style={{ textAlign: 'left', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.8' }}>
@@ -1246,7 +1246,7 @@ function PumpkinCarvingAppContent() {
               <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.1)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#a855f7', marginBottom: '12px' }}>🛠️ How It Works</h3>
                 <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.6', textAlign: 'left' }}>
-                  Each NFT is generated using multiple layered algorithms that create unique, mesmerizing animations. 
+                  Each NFT is generated using multiple layered algorithms that create unique, mesmerizing animations.
                   You'll be able to customize:
                 </p>
                 <ul style={{ textAlign: 'left', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.8', marginTop: '8px' }}>
@@ -1257,9 +1257,49 @@ function PumpkinCarvingAppContent() {
                 </ul>
               </div>
 
-              <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px', marginTop: '20px', fontStyle: 'italic' }}>
-                Coming soon to Base blockchain...
-              </p>
+              <div style={{ marginTop: '24px', textAlign: 'center' }}>
+                <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px', marginBottom: '16px', fontStyle: 'italic' }}>
+                  Currently live on Base Sepolia testnet!
+                </p>
+                
+                <div style={{ 
+                  display: 'inline-block',
+                  backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                  borderRadius: '16px',
+                  padding: '20px',
+                  border: '2px solid rgba(249, 115, 22, 0.4)',
+                  maxWidth: '400px',
+                  margin: '0 auto'
+                }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#f97316', marginBottom: '12px' }}>🎁 Example Gen3 NFT</h3>
+                  <img 
+                    src="https://sepolia.basescan.org/api?module=contract&action=gettokenuri&address=0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6&tokenid=1" 
+                    alt="Gen3 NFT Example"
+                    style={{
+                      width: '100%',
+                      maxWidth: '300px',
+                      height: 'auto',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      marginBottom: '12px'
+                    }}
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      e.currentTarget.src = '/digitalpumpkin.png';
+                    }}
+                  />
+                  <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
+                    <a 
+                      href="https://sepolia.basescan.org/nft/0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6/1" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ color: '#22d3ee', textDecoration: 'underline' }}
+                    >
+                      View on Basescan →
+                    </a>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
