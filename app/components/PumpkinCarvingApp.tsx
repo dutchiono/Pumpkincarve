@@ -62,7 +62,8 @@ function PumpkinCarvingAppContent() {
   const isAdmin = userData?.fid === 474867;
   const [topMinters, setTopMinters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topHolders, setTopHolders] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
-  const [leaderboardSubTab, setLeaderboardSubTab] = useState<'minters' | 'holders'>('minters');
+  const [topGifters, setTopGifters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
+  const [leaderboardSubTab, setLeaderboardSubTab] = useState<'minters' | 'holders' | 'gifters'>('minters');
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [userNFTs, setUserNFTs] = useState<Record<string, { tokenId: number; imageUrl: string }[]>>({});
   const [loadingNFTs, setLoadingNFTs] = useState<Record<string, boolean>>({});
@@ -263,6 +264,13 @@ function PumpkinCarvingAppContent() {
           if (holdersResponse.ok) {
             const holdersData = await holdersResponse.json();
             setTopHolders(holdersData);
+          }
+
+          // Fetch gifters
+          const giftersResponse = await fetch('/api/top-gifters');
+          if (giftersResponse.ok) {
+            const giftersData = await giftersResponse.json();
+            setTopGifters(giftersData);
           }
         } catch (err) {
           console.error('Failed to fetch leaderboard data:', err);
@@ -930,6 +938,21 @@ function PumpkinCarvingAppContent() {
               >
                 Top Holders
               </button>
+              <button
+                onClick={() => setLeaderboardSubTab('gifters')}
+                style={{
+                  padding: '8px 24px',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s',
+                  cursor: 'pointer',
+                  border: 'none',
+                  backgroundColor: leaderboardSubTab === 'gifters' ? 'white' : 'transparent',
+                  color: leaderboardSubTab === 'gifters' ? 'black' : 'rgba(255, 255, 255, 0.6)',
+                }}
+              >
+                🎁 Top Gifters
+              </button>
             </div>
 
             {leaderboardSubTab === 'minters' && (
@@ -974,6 +997,75 @@ function PumpkinCarvingAppContent() {
                             ) : userNFTs[minter.address] && userNFTs[minter.address].length > 0 ? (
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px' }}>
                                 {userNFTs[minter.address].map((nft) => (
+                                  <img
+                                    key={nft.tokenId}
+                                    src={nft.imageUrl}
+                                    alt={`NFT #${nft.tokenId}`}
+                                    style={{
+                                      width: '100%',
+                                      aspectRatio: '1',
+                                      objectFit: 'cover',
+                                      borderRadius: '8px',
+                                      cursor: 'pointer'
+                                    }}
+                                    onClick={() => window.open(nft.imageUrl, '_blank')}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>No NFTs found</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {leaderboardSubTab === 'gifters' && (
+              <>
+                {topGifters.length === 0 ? (
+                  <div style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    <p>No gifts sent yet! Be generous!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {topGifters.map((gifter, index) => (
+                      <div key={gifter.address} style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '16px',
+                        padding: '16px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexDirection: 'row' }} onClick={() => {
+                          setExpandedUsers(prev => {
+                            const next = new Set(prev);
+                            if (next.has(gifter.address)) {
+                              next.delete(gifter.address);
+                            } else {
+                              next.add(gifter.address);
+                            }
+                            return next;
+                          });
+                        }}>
+                          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#22c55e', width: '32px' }}>{index + 1}</div>
+                          {gifter.pfp && <img src={gifter.pfp} alt={gifter.username || ''} style={{ borderRadius: '50%', width: '40px', height: '40px' }} />}
+                          <div style={{ color: 'white', fontWeight: 'bold', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{gifter.username || 'Unknown'}</div>
+                          <div style={{ backgroundColor: 'rgba(34, 197, 94, 0.2)', padding: '4px 12px', borderRadius: '9999px', border: '1px solid rgba(34, 197, 94, 0.3)', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontWeight: 'bold', color: 'white', fontSize: '14px' }}>{gifter.count}</span>
+                            <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', marginLeft: '4px' }}>gift{gifter.count > 1 ? 's' : ''}</span>
+                          </div>
+                          <div style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{expandedUsers.has(gifter.address) ? '▼' : '▶'}</div>
+                        </div>
+                        {expandedUsers.has(gifter.address) && (
+                          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                            {loadingNFTs[gifter.address] ? (
+                              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>Loading gallery...</p>
+                            ) : userNFTs[gifter.address] && userNFTs[gifter.address].length > 0 ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px' }}>
+                                {userNFTs[gifter.address].map((nft) => (
                                   <img
                                     key={nft.tokenId}
                                     src={nft.imageUrl}
