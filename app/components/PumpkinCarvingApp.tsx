@@ -666,12 +666,16 @@ function PumpkinCarvingAppContent() {
         }
       `}</style>
       <div className="max-w-2xl mx-auto p-4 pb-20" style={{ width: '100%', maxWidth: '100%' }}>
-        <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg" style={{ textAlign: 'center', marginBottom: '12px' }}>
-          Carve a Pumpkin
-        </h1>
-        <p className="text-white/90 text-sm md:text-base" style={{ textAlign: 'center', marginBottom: '24px' }}>
-          Your personality, carved into a spooky NFT
-        </p>
+        {activeTab === 'home' && (
+          <>
+            <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg" style={{ textAlign: 'center', marginBottom: '12px' }}>
+              Carve a Pumpkin
+            </h1>
+            <p className="text-white/90 text-sm md:text-base" style={{ textAlign: 'center', marginBottom: '24px' }}>
+              Your personality, carved into a spooky NFT
+            </p>
+          </>
+        )}
 
         {loading && loadingMessage && (
           <div style={{
@@ -1459,7 +1463,23 @@ function PumpkinCarvingAppContent() {
         </div>
 
       {/* Bottom Navigation - Halloween Theme */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to right, #dc2626, #6b21a8)', height: '64px', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)' }}>
+      <div style={{ 
+        position: 'fixed', 
+        bottom: 0, 
+        left: 0, 
+        right: 0, 
+        height: '64px', 
+        zIndex: 9999, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        gap: '32px',
+        background: 'linear-gradient(to right, rgba(220, 38, 38, 0.8), rgba(107, 33, 168, 0.8))',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderTop: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.3)' 
+      }}>
         <button onClick={() => setActiveTab('home')} style={{ fontSize: '28px', border: 'none', background: 'transparent', cursor: 'pointer', opacity: activeTab === 'home' ? 1 : 0.6 }}>
           🎃
         </button>
