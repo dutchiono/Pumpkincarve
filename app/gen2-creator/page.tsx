@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Gen2App from './Gen2App';
+// import Gen2App from './Gen2App'; // Temporarily disabled
 
 export const metadata: Metadata = {
   title: 'Gen2 NFT Creator',
@@ -16,5 +16,11 @@ export const metadata: Metadata = {
 };
 
 export default function Gen2CreatorPage() {
-  return <Gen2App />;
+  return (
+    <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <h1>Gen2 Creator Temporarily Disabled</h1>
+      <p>This page is under development.</p>
+    </div>
+  );
+  // Temporarily disabled: return <Gen2App />;
 }
