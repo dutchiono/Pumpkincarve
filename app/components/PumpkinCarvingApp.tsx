@@ -486,6 +486,7 @@ function PumpkinCarvingAppContent() {
       // Share both the user's image AND the mini app
       // First embed: user's pumpkin image
       // Second embed: mini app URL (will show as mini app card)
+      const miniappUrl = 'https://bushleague.xyz';
       const result = await sdk.actions.composeCast({
         text: `🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nCreated by @ionoi`,
         embeds: [gatewayUrl, miniappUrl] as [string, string],
