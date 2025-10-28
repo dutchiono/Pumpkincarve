@@ -905,11 +905,12 @@ const Gen3App: React.FC = () => {
     const render = () => {
       ctx.clearRect(0, 0, size, size);
 
-      // Render Flow Field background - SMOOTH gradient using createLinearGradient
+      // Use same time calculation as GIF for matching speed
+      const t = frame * 0.628; // Same as: (frame / totalFrames) * 628 when totalFrames=100
+
+      // Render Flow Field background - must use same time as animation
       if (enableFlowField) {
-        // Create smooth animated gradient
-        const time = frame * 0.02 * flowFieldDirection;
-        const angle = time % (Math.PI * 2);
+        const angle = (t / 100) * flowFieldDirection;
 
         const x0 = size / 2 + Math.cos(angle) * size;
         const y0 = size / 2 + Math.sin(angle) * size;
@@ -924,8 +925,8 @@ const Gen3App: React.FC = () => {
         ctx.fillRect(0, 0, size, size);
       }
 
-      renderFlowFields(ctx, size, frame);
-      renderContourMapping(ctx, size, frame);
+      renderFlowFields(ctx, size, t);
+      renderContourMapping(ctx, size, t);
 
       frame++;
       animationFrame = window.requestAnimationFrame(render);
