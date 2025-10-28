@@ -773,10 +773,10 @@ const Gen3App: React.FC = () => {
       // Scale by 2π over totalFrames to ensure frame 0 and frame totalFrames are identical
       const t = (frame / totalFrames) * 200; // 200 ensures we go through several cycles
 
-      // Render Flow Field background
+      // Render Flow Field background - must use same time as animation
       if (enableFlowField) {
-        const time = frame * 0.02 * flowFieldDirection;
-        const angle = time % (Math.PI * 2);
+        // Use t normalized to 0-2π for angle, with direction applied
+        const angle = (t / 100) * flowFieldDirection;
 
         const x0 = size / 2 + Math.cos(angle) * size;
         const y0 = size / 2 + Math.sin(angle) * size;
