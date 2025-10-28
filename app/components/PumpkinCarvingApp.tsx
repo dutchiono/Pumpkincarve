@@ -483,11 +483,12 @@ function PumpkinCarvingAppContent() {
 
       setLoadingMessage('📤 Sharing to Farcaster...');
 
-      // Use the main miniapp URL so Farcaster recognizes it as a miniapp
-      // The embed route will handle displaying the specific image
+      // Share both the user's image AND the mini app
+      // First embed: user's pumpkin image
+      // Second embed: mini app URL (will show as mini app card)
       const result = await sdk.actions.composeCast({
-        text: `🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nCreated by @ionoi\n\nCheck it out: https://bushleague.xyz/embed?image=${encodeURIComponent(gatewayUrl)}`,
-        embeds: [gatewayUrl] as [string],
+        text: `🎃 Just minted my personalized Pumpkin NFT on Base!\n\n🔮 HAPPY HALLOWEEN! 👻\n\nCreated by @ionoi`,
+        embeds: [gatewayUrl, miniappUrl] as [string, string],
       });
 
       if (result?.cast) {
