@@ -18,16 +18,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Neynar API Key not configured' }, { status: 500 });
     }
 
-    // Fetch user's casts (posts)
-    // Neynar API typically uses FID (Farcaster ID) or username.
-    // Assuming userId can be either for now, or we might need a lookup step.
-    // For simplicity, let's assume userId is a username for now.
-    const user = await neynarClient.lookupUserByUsername(userId);
-    if (!user || !user.fid) {
+    // Try to get user - userId can be FID or username
+    // First try FID lookup
+    let fid: number | null = null;
+    
+    // Check if userId is a number (FID)
+    if (!isNaN(Number(userId))) {
+      fid = Number(userId);
+    } else {
+      // Try username lookup
+      try {
+        const userResponse = await neynarClient.lookupUserByUsername(userId);
+        // @ts-ignore - SDK types may be incomplete
+        if (userResponse && userResponse.fid) {
+          // @ts-ignore
+          fid = userResponse.fid;
+        }
+      } catch (e) {
+        // Username lookup failed, continue
+      }
+    }
+    
+    if (!fid) {
       return NextResponse.json({ error: 'Farcaster user not found' }, { status: 404 });
     }
-
-    const fid = user.fid;
+    
     const castsResponse = await neynarClient.fetchCastsForUser({ fid, limit: 100 });
 
     // Perform a very basic sentiment analysis (placeholder logic)
