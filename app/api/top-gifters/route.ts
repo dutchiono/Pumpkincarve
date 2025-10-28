@@ -40,9 +40,10 @@ export async function GET() {
     return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
   }
 
+  // TEMPORARILY DISABLE CACHE FOR DEBUGGING
   // Check cache
   const cacheAge = Date.now() - lastCacheUpdate;
-  if (giftersCache.length > 0 && cacheAge < CACHE_TTL) {
+  if (false && giftersCache.length > 0 && cacheAge < CACHE_TTL) {
     console.log(`✅ Returning cached top gifters (age: ${Math.floor(cacheAge / 1000)}s)`);
     return NextResponse.json(giftersCache);
   }
@@ -66,10 +67,10 @@ export async function GET() {
     const MAX_BLOCK_RANGE = BigInt(4000);
     const allLogs = [];
 
-    // Search backwards from current block
-    let fromBlock = currentBlock - BigInt(20000);
+    // Search backwards from current block - INCREASED RANGE TO 50K BLOCKS
+    let fromBlock = currentBlock - BigInt(50000);
 
-    console.log(`Searching Transfer events from block ${fromBlock} to latest`);
+    console.log(`🔍 Searching Transfer events from block ${fromBlock} to ${currentBlock} (${currentBlock - fromBlock} blocks)`);
 
     // Query in batches
     while (fromBlock < currentBlock) {
@@ -96,13 +97,25 @@ export async function GET() {
     const giftRecipients: Record<string, Set<string>> = {};
     const giftDetails: Record<string, Array<{ recipient: string; tokenId: number }>> = {};
     
+    let mintCount = 0;
+    let giftCount = 0;
+    let selfTransferCount = 0;
+    
     for (const log of allLogs) {
       const from = log.args.from?.toLowerCase() || '';
       const to = log.args.to?.toLowerCase() || '';
       const tokenId = log.args.tokenId ? Number(log.args.tokenId) : 0;
       
-      // Only count as gift if not a mint (from !== address(0)) and sender != receiver
-      if (from && from !== '0x0000000000000000000000000000000000000000' && from !== to) {
+      // Categorize the transfer
+      if (!from) {
+        mintCount++;
+      } else if (from === '0x0000000000000000000000000000000000000000') {
+        mintCount++;
+      } else if (from === to) {
+        selfTransferCount++;
+      } else {
+        // This is a gift
+        giftCount++;
         giftCounts[from] = (giftCounts[from] || 0) + 1;
         
         if (!giftRecipients[from]) {
@@ -113,6 +126,8 @@ export async function GET() {
         giftDetails[from].push({ recipient: to, tokenId });
       }
     }
+    
+    console.log(`📊 Transfer breakdown: ${mintCount} mints, ${selfTransferCount} self-transfers, ${giftCount} gifts`);
 
     // Sort by count and get top 10
     const topGifters = Object.entries(giftCounts)
@@ -150,12 +165,12 @@ export async function GET() {
               pfp = user.pfp_url;
             }
 
-            return { 
-              address, 
-              count, 
-              username, 
-              fid, 
-              pfp: pfp || null, 
+            return {
+              address,
+              count,
+              username,
+              fid,
+              pfp: pfp || null,
               recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [],
               uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0
             };

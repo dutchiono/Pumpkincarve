@@ -62,7 +62,7 @@ function PumpkinCarvingAppContent() {
   const isAdmin = userData?.fid === 474867;
   const [topMinters, setTopMinters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topHolders, setTopHolders] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
-  const [topGifters, setTopGifters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[] }[]>([]);
+  const [topGifters, setTopGifters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[]; uniqueRecipients: number }[]>([]);
   const [leaderboardSubTab, setLeaderboardSubTab] = useState<'minters' | 'holders' | 'gifters'>('minters');
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [userNFTs, setUserNFTs] = useState<Record<string, { tokenId: number; imageUrl: string }[]>>({});

@@ -46,9 +46,9 @@ export async function GET() {
   const url = new URL('http://local');
   const nocache = url.searchParams.get('nocache') === '1';
 
-  // Check cache first - return immediately if data is fresh
+  // TEMPORARILY DISABLE CACHE FOR DEBUGGING
   const cacheAge = Date.now() - lastCacheUpdate;
-  if (!nocache && topMintersCache.length > 0 && cacheAge < CACHE_TTL) {
+  if (false && !nocache && topMintersCache.length > 0 && cacheAge < CACHE_TTL) {
     console.log(`✅ Returning cached top minters (age: ${Math.floor(cacheAge / 1000)}s)`);
     return new NextResponse(JSON.stringify(topMintersCache), {
       headers: { 'Cache-Control': 'no-store' },

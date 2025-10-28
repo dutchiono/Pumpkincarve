@@ -32,9 +32,9 @@ export async function GET() {
     return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
   }
 
-  // Check cache
+  // TEMPORARILY DISABLE CACHE FOR DEBUGGING
   const cacheAge = Date.now() - lastHoldersUpdate;
-  if (holdersCache.length > 0 && cacheAge < CACHE_TTL) {
+  if (false && holdersCache.length > 0 && cacheAge < CACHE_TTL) {
     console.log(`✅ Returning cached top holders (age: ${Math.floor(cacheAge / 1000)}s)`);
     return NextResponse.json(holdersCache);
   }
