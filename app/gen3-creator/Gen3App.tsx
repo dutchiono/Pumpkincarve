@@ -769,12 +769,11 @@ const Gen3App: React.FC = () => {
     for (let frame = 0; frame <= totalFrames; frame++) {
       tempCtx.clearRect(0, 0, size, size);
 
-      // Use t that creates a seamless loop
-      // Normalize frame to 0-1, then multiply by total cycles
-      // frame = 0: t = 0
-      // frame = totalFrames: t = 200 (one full cycle)
-      // frame = 0 after loop: t = 200 (same as last frame)
-      const t = (frame / totalFrames) * 200;
+      // For seamless loop: phase must complete 2π cycles
+      // phase = t * 0.01 needs to reach 2π by last frame
+      // So: (totalFrames/totalFrames) * multiplier * 0.01 = 2π
+      // multiplier = 2π / 0.01 = 628
+      const t = (frame / totalFrames) * 628;
 
       // Render Flow Field background
       if (enableFlowField) {
