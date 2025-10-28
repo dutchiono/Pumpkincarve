@@ -1286,7 +1286,7 @@ function PumpkinCarvingAppContent() {
                         display: 'block'
                       }}
                       onError={(e) => {
-                        e.currentTarget.src = '/digitalpumpkin.png';
+                        e.currentTarget.src = '/gameoverpumpkin.png';
                       }}
                     />
                   </div>
