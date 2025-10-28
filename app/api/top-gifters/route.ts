@@ -67,8 +67,8 @@ export async function GET() {
     const MAX_BLOCK_RANGE = BigInt(4000);
     const allLogs = [];
 
-    // Search backwards from current block - INCREASED RANGE TO 100K BLOCKS
-    let fromBlock = currentBlock - BigInt(100000);
+    // Search backwards from current block - INCREASED RANGE TO 200K BLOCKS
+    let fromBlock = currentBlock - BigInt(200000);
 
     console.log(`🔍 Searching Transfer events from block ${fromBlock} to ${currentBlock} (${currentBlock - fromBlock} blocks)`);
 
