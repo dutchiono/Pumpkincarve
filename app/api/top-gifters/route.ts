@@ -118,7 +118,7 @@ export async function GET() {
 
     // Query in batches
     while (fromBlock < currentBlock) {
-      const toBlock = fromBlock + MAX_BLOCK_RANGE > currentBlock ? currentBlock : fromBlock + MAX_BLOCK_RANGE;
+      const toBlock: bigint = fromBlock + MAX_BLOCK_RANGE > currentBlock ? currentBlock : fromBlock + MAX_BLOCK_RANGE;
 
       const logs = await client.getLogs({
         address: CONTRACT_ADDRESS as `0x${string}`,
