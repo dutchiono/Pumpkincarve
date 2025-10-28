@@ -64,16 +64,10 @@ export async function GET(request: Request) {
       }
     }
 
-    // Convert IPFS URLs to gateway URLs
-    if (imageUrl.startsWith('ipfs://')) {
-      const cid = imageUrl.replace('ipfs://', '');
-      console.log(`🔗 Redirecting to IPFS gateway: https://gateway.pinata.cloud/ipfs/${cid}`);
-      return NextResponse.redirect(`https://gateway.pinata.cloud/ipfs/${cid}`);
-    }
-
+    // Return image URL for proxy-image to handle
     if (imageUrl) {
-      console.log(`🔗 Redirecting to: ${imageUrl}`);
-      return NextResponse.redirect(imageUrl);
+      console.log(`🔗 Returning proxy URL: ${imageUrl}`);
+      return NextResponse.redirect(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`);
     }
 
     console.error(`❌ Could not determine image URL for token ${tokenId}`);
