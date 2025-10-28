@@ -665,7 +665,7 @@ function PumpkinCarvingAppContent() {
           3% { opacity: 0; }
         }
       `}</style>
-      <div className="max-w-2xl mx-auto p-4 pb-20" style={{ width: '100%', maxWidth: '100%' }}>
+      <div className="max-w-2xl mx-auto p-4 pb-20" style={{ width: '100%', maxWidth: '100%', minHeight: '100vh', background: 'radial-gradient(circle at center, rgba(168, 85, 247, 0.05), rgba(0, 0, 0, 0.8))' }}>
         {activeTab === 'home' && (
           <>
             <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg" style={{ textAlign: 'center', marginBottom: '12px' }}>
@@ -1245,7 +1245,7 @@ function PumpkinCarvingAppContent() {
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
           }}>
             <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#ffffff', marginBottom: '24px', textAlign: 'center' }}>🚀 Gen3: Animated NFTs</h2>
-            
+
             {/* GIF at the top */}
             <div style={{ marginBottom: '24px', textAlign: 'center' }}>
               <img
@@ -1287,8 +1287,8 @@ function PumpkinCarvingAppContent() {
                 href="https://sepolia.basescan.org/nft/0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6/1"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ 
-                  color: '#22d3ee', 
+                style={{
+                  color: '#22d3ee',
                   textDecoration: 'underline',
                   fontSize: '14px'
                 }}
