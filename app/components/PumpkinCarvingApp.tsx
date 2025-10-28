@@ -1084,14 +1084,16 @@ function PumpkinCarvingAppContent() {
                             {gifter.gifts && gifter.gifts.length > 0 ? (
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '16px' }}>
                                 {gifter.gifts.map((gift, idx) => (
-                                  <div
+                                  <div 
                                     key={idx}
                                     style={{
                                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                                       borderRadius: '12px',
                                       padding: '12px',
-                                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                                      cursor: 'pointer'
                                     }}
+                                    onClick={() => window.open(`https://basescan.org/nft/${process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS}/${gift.tokenId}`, '_blank')}
                                   >
                                     <div style={{ width: '100%', aspectRatio: '1', marginBottom: '8px', position: 'relative' }}>
                                       <img
@@ -1101,10 +1103,8 @@ function PumpkinCarvingAppContent() {
                                           width: '100%',
                                           height: '100%',
                                           objectFit: 'cover',
-                                          borderRadius: '8px',
-                                          cursor: 'pointer'
+                                          borderRadius: '8px'
                                         }}
-                                        onClick={() => window.open(`https://basescan.org/nft/${process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS}/${gift.tokenId}`, '_blank')}
                                         onError={(e) => {
                                           e.currentTarget.src = '/gameoverpumpkin.png';
                                         }}
@@ -1113,17 +1113,18 @@ function PumpkinCarvingAppContent() {
                                     <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '4px' }}>
                                       To:
                                     </div>
-                                    <div
-                                      style={{
-                                        fontSize: '12px',
-                                        color: '#22c55e',
+                                    <div 
+                                      style={{ 
+                                        fontSize: '12px', 
+                                        color: '#22c55e', 
                                         fontWeight: 'bold',
                                         cursor: 'pointer',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap'
                                       }}
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         if (gift.recipient) {
                                           window.open(`https://basescan.org/address/${gift.recipient}`, '_blank');
                                         }
