@@ -7,9 +7,12 @@
  * 3. Call this function to send notifications
  */
 
-import { NeynarAPIClient } from '@neynar/nodejs-sdk';
+import { Configuration, NeynarAPIClient } from '@neynar/nodejs-sdk';
 
-const client = new NeynarAPIClient(process.env.NEYNAR_API_KEY || '');
+const neynarConfig = new Configuration({
+  apiKey: process.env.NEYNAR_API_KEY || '',
+});
+const client = new NeynarAPIClient(neynarConfig);
 
 /**
  * Send a notification to users via Neynar
