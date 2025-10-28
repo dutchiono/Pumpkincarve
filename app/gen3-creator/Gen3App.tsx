@@ -598,7 +598,7 @@ const Gen3App: React.FC = () => {
     for (let octave = 0; octave < flowFieldsOctaves; octave++) {
       const freq = flowFieldsBaseFreq * Math.pow(2, octave);
       const amplitude = flowFieldsAmplitude / Math.pow(2, octave);
-      const phase = t * 0.01;
+      const phase = t * freq; // Use t directly - already scaled to 2π
       value += amplitude * Math.sin(x * freq + phase) * Math.cos(y * freq + phase);
     }
 
@@ -619,7 +619,7 @@ const Gen3App: React.FC = () => {
     for (let octave = 0; octave < contourOctaves; octave++) {
       const freq = contourBaseFreq * Math.pow(2, octave);
       const amplitude = contourAmplitude / Math.pow(2, octave);
-      const phase = t * 0.01;
+      const phase = t * freq; // Use t directly - already scaled to 2π
       value += amplitude * Math.sin(x * freq + phase) * Math.cos(y * freq + phase);
     }
 
@@ -770,7 +770,7 @@ const Gen3App: React.FC = () => {
 
       // Use t that creates a seamless loop
       // Scale by 2π over totalFrames to ensure frame 0 and frame totalFrames are identical
-      const t = (frame / totalFrames) * 200; // 200 ensures we go through several cycles
+      const t = (frame / totalFrames) * (Math.PI * 2) * 10; // Perfect loop using 2π cycles
 
       // Render Flow Field background
       if (enableFlowField) {
