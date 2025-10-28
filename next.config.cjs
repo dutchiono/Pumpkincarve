@@ -14,6 +14,12 @@ const nextConfig = {
       },
     ];
   },
+  // Exclude watcher directory from build
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
+  webpack: (config) => {
+    config.externals = [...(config.externals || []), { 'level': 'commonjs level' }];
+    return config;
+  },
 }
 
 module.exports = nextConfig
