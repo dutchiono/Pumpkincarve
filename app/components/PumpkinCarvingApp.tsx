@@ -1062,28 +1062,6 @@ export function PumpkinCarvingApp() {
               <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>@{userData.username}</p>
             </div>
             <div className="space-y-3">
-              {/* Add App Button */}
-              <button
-                onClick={handleAddApp}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  borderRadius: '16px',
-                  backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                  border: '1px solid rgba(59, 130, 246, 0.5)',
-                  color: '#ffffff',
-                  fontWeight: '600',
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                ➕ Add to Farcaster
-              </button>
-
               {/* Notifications Toggle */}
               <div style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',

@@ -5,7 +5,7 @@ const miniappEmbed = {
   version: "1",
   imageUrl: "https://bushleague.xyz/digitalpumpkin.png",
   button: {
-    title: "🎃 Carve Your NFT",
+    title: "Carve Your NFT",
     action: {
       type: "launch_miniapp",
       name: "Pumpkin Carving NFT",
@@ -37,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="fc:miniapp" content={JSON.stringify(miniappEmbed)} />
+        <meta name="fc:frame" content={JSON.stringify(miniappEmbed)} />
       </head>
       <body>
         <Providers>{children}</Providers>
