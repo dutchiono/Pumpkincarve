@@ -87,7 +87,7 @@ function PumpkinCarvingAppContent() {
         await sdk.actions.ready();
         console.log('✅ Farcaster SDK ready() called successfully');
         console.log('✅ Splash screen should be dismissed now');
-        
+
         // Try to trigger the add mini app modal if not added
         try {
           await sdk.actions.addMiniApp();

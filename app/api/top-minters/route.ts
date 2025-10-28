@@ -3,6 +3,16 @@ import { NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 
+const ERC721_ABI = [
+  {
+    inputs: [{ internalType: 'address', name: 'owner', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
+
 // Server-side in-memory cache for top minters
 type CachedMinter = { address: string; count: number; username: string | null; fid: number | null; pfp: string | null };
 let topMintersCache: CachedMinter[] = [];
@@ -88,11 +98,30 @@ export async function GET() {
     console.log(`Found ${allLogs.length} total logs on Base mainnet`);
     const logs = allLogs;
 
-    // Count mints per address
-    const mintCounts: Record<string, number> = {};
+    // Get unique addresses from mint events
+    const uniqueAddresses = new Set<string>();
     for (const log of logs) {
       const address = log.args.to?.toLowerCase() || '';
-      mintCounts[address] = (mintCounts[address] || 0) + 1;
+      if (address) {
+        uniqueAddresses.add(address);
+      }
+    }
+
+    // Count actual NFT holdings using balanceOf (current state)
+    const mintCounts: Record<string, number> = {};
+    for (const address of uniqueAddresses) {
+      try {
+        const balance = await mainnetClient.readContract({
+          address: CONTRACT_ADDRESS as `0x${string}`,
+          abi: ERC721_ABI,
+          functionName: 'balanceOf',
+          args: [address as `0x${string}`],
+        });
+        mintCounts[address] = Number(balance);
+      } catch (err) {
+        console.error(`Error getting balance for ${address}:`, err);
+        mintCounts[address] = 0;
+      }
     }
 
     // Sort by count and get top 10
