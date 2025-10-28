@@ -32,14 +32,27 @@ export async function sendNotification(
   };
 
   try {
+    console.log('🚀 Sending notification via Neynar:', {
+      targetFids: targetFids.length === 0 ? 'ALL_USERS' : targetFids,
+      title,
+      body,
+      targetUrl
+    });
+
     const response = await client.publishFrameNotifications({
       targetFids,
       notification
     });
 
-    console.log('✅ Notification sent:', response);
-  } catch (error) {
+    console.log('✅ Notification sent successfully:', response);
+    return response;
+  } catch (error: any) {
     console.error('❌ Failed to send notification:', error);
+    console.error('Error details:', {
+      message: error?.message,
+      stack: error?.stack,
+      response: error?.response?.data
+    });
     throw error;
   }
 }
