@@ -64,10 +64,39 @@ export async function GET(request: Request) {
       }
     }
 
-    // Return image URL for proxy-image to handle
+    // Fetch and proxy the image
     if (imageUrl) {
-      console.log(`🔗 Returning proxy URL: ${imageUrl}`);
-      return NextResponse.redirect(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`);
+      console.log(`🔗 Fetching image from: ${imageUrl}`);
+      
+      // Convert IPFS URLs to gateway URLs
+      let httpUrl = imageUrl;
+      if (imageUrl.startsWith('ipfs://')) {
+        const cid = imageUrl.replace('ipfs://', '');
+        httpUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+      }
+      
+      console.log(`📥 Fetching from gateway: ${httpUrl}`);
+      
+      // Fetch the image
+      const imageResponse = await fetch(httpUrl);
+      
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+      }
+      
+      const imageBuffer = await imageResponse.arrayBuffer();
+      const contentType = imageResponse.headers.get('content-type') || 'image/png';
+      
+      console.log(`✅ Successfully fetched image, content-type: ${contentType}`);
+      
+      // Return the image
+      return new NextResponse(imageBuffer, {
+        status: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
     }
 
     console.error(`❌ Could not determine image URL for token ${tokenId}`);
