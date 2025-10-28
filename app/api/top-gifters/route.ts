@@ -2,6 +2,8 @@ import { Configuration, NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { join } from 'path';
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
 
@@ -29,10 +31,36 @@ const ERC721_ABI = [
 
 type GiftDetail = { recipient: string; tokenId: number; recipientUsername?: string | null };
 type CachedGifter = { address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[]; uniqueRecipients: number; gifts: GiftDetail[] };
-let giftersCache: CachedGifter[] = [];
-let lastCacheUpdate = 0;
-let lastProcessedBlock = 0;
+type CacheData = { gifters: CachedGifter[]; lastUpdate: number; lastBlock: number };
+
+const CACHE_DIR = join(process.cwd(), '.cache');
+const CACHE_FILE = join(CACHE_DIR, 'top-gifters.json');
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+// Initialize cache directory
+if (!existsSync(CACHE_DIR)) {
+  mkdirSync(CACHE_DIR, { recursive: true });
+}
+
+function loadCache(): CacheData | null {
+  try {
+    if (existsSync(CACHE_FILE)) {
+      const data = readFileSync(CACHE_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error('Error loading cache:', err);
+  }
+  return null;
+}
+
+function saveCache(data: CacheData) {
+  try {
+    writeFileSync(CACHE_FILE, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Error saving cache:', err);
+  }
+}
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -42,12 +70,18 @@ export async function GET() {
     return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
   }
 
-  // Check cache first
-  const cacheAge = Date.now() - lastCacheUpdate;
-  if (giftersCache.length > 0 && cacheAge < CACHE_TTL) {
-    console.log(`✅ Returning cached top gifters (age: ${Math.floor(cacheAge / 1000)}s)`);
-    return NextResponse.json(giftersCache);
+  // Load cache from disk
+  const cachedData = loadCache();
+  const now = Date.now();
+  
+  // Check if cached data is still valid
+  if (cachedData && cachedData.lastUpdate && (now - cachedData.lastUpdate) < CACHE_TTL) {
+    const age = Math.floor((now - cachedData.lastUpdate) / 1000);
+    console.log(`✅ Returning cached top gifters (age: ${age}s, from block ${cachedData.lastBlock})`);
+    return NextResponse.json(cachedData.gifters);
   }
+  
+  const lastProcessedBlock = cachedData?.lastBlock || 0;
 
   try {
     const client = createPublicClient({
@@ -211,24 +245,31 @@ export async function GET() {
           };
         });
 
-        giftersCache = topGiftersWithUsernames;
-        lastCacheUpdate = Date.now();
-        lastProcessedBlock = Number(currentBlock);
-        return NextResponse.json(topGiftersWithUsernames);
+        const result = topGiftersWithUsernames;
+        saveCache({
+          gifters: result,
+          lastUpdate: Date.now(),
+          lastBlock: Number(currentBlock)
+        });
+        return NextResponse.json(result);
       } catch (neynarError) {
         console.error('Error fetching usernames:', neynarError);
         const fallback = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [], uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0, gifts: giftDetails[address] || [] }));
-        giftersCache = fallback;
-        lastCacheUpdate = Date.now();
-        lastProcessedBlock = Number(currentBlock);
+        saveCache({
+          gifters: fallback,
+          lastUpdate: Date.now(),
+          lastBlock: Number(currentBlock)
+        });
         return NextResponse.json(fallback);
       }
     }
 
   const result = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [], uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0, gifts: giftDetails[address] || [] }));
-  giftersCache = result;
-  lastCacheUpdate = Date.now();
-  lastProcessedBlock = Number(currentBlock);
+  saveCache({
+    gifters: result,
+    lastUpdate: Date.now(),
+    lastBlock: Number(currentBlock)
+  });
   return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error fetching top gifters:', error);
