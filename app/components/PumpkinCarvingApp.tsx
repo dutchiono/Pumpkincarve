@@ -67,6 +67,7 @@ export function PumpkinCarvingApp() {
   const [userNFTs, setUserNFTs] = useState<Record<string, { tokenId: number; imageUrl: string }[]>>({});
   const [loadingNFTs, setLoadingNFTs] = useState<Record<string, boolean>>({});
   const [notificationsEnabled, setNotificationsEnabled] = useState(true); // Default ON
+  const [testNotificationText, setTestNotificationText] = useState('');
 
   const { writeContract, data: hash, isPending, error: contractError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -147,28 +148,56 @@ export function PumpkinCarvingApp() {
     }
   };
 
-  // Handle mint success + send notification
+  // Handle test notification
+  const handleTestNotification = async () => {
+    if (!testNotificationText.trim()) {
+      alert('Please enter notification text');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/notifications/farcaster', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fid: userData?.fid,
+          title: '🧪 Test Notification',
+          body: testNotificationText.substring(0, 128),
+          url: 'https://bushleague.xyz'
+        })
+      });
+
+      if (response.ok) {
+        alert('✅ Test notification sent!');
+        setTestNotificationText('');
+      } else {
+        const error = await response.json();
+        alert('❌ Failed: ' + error.error);
+      }
+    } catch (error: any) {
+      alert('Error: ' + error.message);
+    }
+  };
+
+  // Handle mint success + broadcast notification
   useEffect(() => {
     if (isConfirmed && hash && userData) {
       setMintSuccess(true);
       setMinting(false);
       setLoadingMessage('');
-      
-      // Send Farcaster notification if enabled
-      if (notificationsEnabled && userData.fid) {
-        fetch('/api/notifications/farcaster', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fid: userData.fid,
-            title: '🎃 Your Pumpkin is Ready!',
-            body: `Your personality NFT has been minted! Check it out.`,
-            url: window.location.href
-          })
-        }).catch(err => console.error('Notification failed:', err));
-      }
+
+      // Broadcast "new mint" notification to everyone
+      fetch('/api/notifications/mint-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          minterFid: userData.fid,
+          minterUsername: userData.username,
+          transactionHash: hash
+        })
+      }).catch(err => console.error('Broadcast notification failed:', err));
     }
-  }, [isConfirmed, hash, notificationsEnabled, userData]);
+  }, [isConfirmed, hash, userData]);
 
   // Handle contract errors
   useEffect(() => {
@@ -1128,6 +1157,42 @@ export function PumpkinCarvingApp() {
                 borderTop: '1px solid rgba(255, 255, 255, 0.1)'
               }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: 'rgba(168, 85, 247, 1)', marginBottom: '12px' }}>🔧 Admin Tools</h3>
+
+                {/* Test Notification */}
+                <div style={{ marginBottom: '12px' }}>
+                  <input
+                    type="text"
+                    placeholder="Enter notification text..."
+                    value={testNotificationText}
+                    onChange={(e) => setTestNotificationText(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: 'white',
+                      marginBottom: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                  <button
+                    onClick={handleTestNotification}
+                    style={{
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      backgroundColor: 'rgba(59, 130, 246, 0.3)',
+                      border: '1px solid rgba(59, 130, 246, 0.5)',
+                      color: 'white',
+                      cursor: 'pointer',
+                      width: '100%'
+                    }}
+                  >
+                    📨 Send Test Notification
+                  </button>
+                </div>
+
                 <button
                   onClick={handleTestComposeCast}
                   style={{
