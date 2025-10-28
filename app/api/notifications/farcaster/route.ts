@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Send Farcaster notification via Neynar
-    await sendNotification([fid], title, body, url || window.location.href);
+    const targetUrl = url || process.env.NEXT_PUBLIC_APP_URL || 'https://bushleague.xyz';
+    await sendNotification([fid], title, body, targetUrl);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
