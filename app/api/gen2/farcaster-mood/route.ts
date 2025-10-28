@@ -1,6 +1,6 @@
 
-import { NextRequest, NextResponse } from 'next/server';
 import { NeynarAPIClient } from '@neynar/nodejs-sdk';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Initialize Neynar client
 const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY;
