@@ -111,7 +111,7 @@ const Gen3App: React.FC = () => {
   useEffect(() => {
     if (isConfirmed && hash && address) {
       console.log('✅ Mint confirmed - sending notification');
-      
+
       // Extract token ID from transaction receipt
       publicClient?.getTransactionReceipt({ hash }).then(async (receipt) => {
         if (receipt && receipt.logs.length > 0) {
@@ -127,7 +127,7 @@ const Gen3App: React.FC = () => {
                 tokenId: 'pending', // Will be resolved from receipt logs
               }),
             });
-            
+
             if (res.ok) {
               console.log('✅ Mint notification sent');
             } else {
@@ -747,11 +747,12 @@ const Gen3App: React.FC = () => {
       throw new Error('Canvas not available');
     }
 
-    // Capture 120 frames to ensure a full loop cycle
-    // The animation uses sine/cosine with phase (t * 0.01), so we need frames where (t * 0.01) % (2*PI) = 0
-    // For a perfect loop, we want frame * 0.01 * totalFrames = 2*PI, so totalFrames should be a multiple of ~628
-    // Using 120 frames gives us a clean 2-second loop
-    const totalFrames = 120;
+    // Capture enough frames to match canvas animation speed
+    // Canvas uses t = frame * 0.628
+    // GIF uses t = (frame / totalFrames) * 628
+    // For same speed: frame * 0.628 = (frame / totalFrames) * 628
+    // So 0.628 = 628 / totalFrames → totalFrames = 628 / 0.628 = 1000
+    const totalFrames = 1000; // Match canvas speed
     const size = canvas.width;
 
     // Create a temporary canvas to render frames
