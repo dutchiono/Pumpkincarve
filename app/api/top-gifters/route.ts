@@ -31,7 +31,8 @@ type GiftDetail = { recipient: string; tokenId: number; recipientUsername?: stri
 type CachedGifter = { address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[]; uniqueRecipients: number; gifts: GiftDetail[] };
 let giftersCache: CachedGifter[] = [];
 let lastCacheUpdate = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let lastProcessedBlock = 0;
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -41,10 +42,9 @@ export async function GET() {
     return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
   }
 
-  // TEMPORARILY DISABLE CACHE FOR DEBUGGING
-  // Check cache
+  // Check cache first
   const cacheAge = Date.now() - lastCacheUpdate;
-  if (false && giftersCache.length > 0 && cacheAge < CACHE_TTL) {
+  if (giftersCache.length > 0 && cacheAge < CACHE_TTL) {
     console.log(`✅ Returning cached top gifters (age: ${Math.floor(cacheAge / 1000)}s)`);
     return NextResponse.json(giftersCache);
   }
@@ -66,10 +66,13 @@ export async function GET() {
 
     const currentBlock = await client.getBlockNumber();
     const MAX_BLOCK_RANGE = BigInt(4000);
+    
+    // If we have a cached result, only scan new blocks since last cache
+    let fromBlock = lastProcessedBlock > 0 ? BigInt(lastProcessedBlock) : currentBlock - BigInt(50000);
+    
+    console.log(`🔍 Scanning blocks from ${fromBlock} to ${currentBlock} (${currentBlock - fromBlock} blocks)`);
+    
     const allLogs = [];
-
-    // Search backwards from current block - INCREASED RANGE TO 200K BLOCKS
-    let fromBlock = currentBlock - BigInt(200000);
 
     console.log(`🔍 Searching Transfer events from block ${fromBlock} to ${currentBlock} (${currentBlock - fromBlock} blocks)`);
 
@@ -204,20 +207,23 @@ export async function GET() {
 
         giftersCache = topGiftersWithUsernames;
         lastCacheUpdate = Date.now();
+        lastProcessedBlock = Number(currentBlock);
         return NextResponse.json(topGiftersWithUsernames);
       } catch (neynarError) {
         console.error('Error fetching usernames:', neynarError);
         const fallback = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [], uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0, gifts: giftDetails[address] || [] }));
         giftersCache = fallback;
         lastCacheUpdate = Date.now();
+        lastProcessedBlock = Number(currentBlock);
         return NextResponse.json(fallback);
       }
     }
 
-    const result = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [], uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0, gifts: giftDetails[address] || [] }));
-    giftersCache = result;
-    lastCacheUpdate = Date.now();
-    return NextResponse.json(result);
+  const result = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [], uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0, gifts: giftDetails[address] || [] }));
+  giftersCache = result;
+  lastCacheUpdate = Date.now();
+  lastProcessedBlock = Number(currentBlock);
+  return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error fetching top gifters:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
