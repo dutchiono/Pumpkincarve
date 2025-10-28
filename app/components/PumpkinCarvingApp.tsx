@@ -1,7 +1,6 @@
 'use client';
 
 import { sdk } from '@farcaster/miniapp-sdk';
-import { useMiniApp } from '@neynar/react';
 import { useEffect, useState } from 'react';
 import { parseEther } from 'viem';
 import { useAccount, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
@@ -48,7 +47,6 @@ const PUMPKIN_NFT_ABI = [
 
 export function PumpkinCarvingApp() {
   const { address, isConnected } = useAccount();
-  const { isSDKLoaded, actions, added, notificationDetails } = useMiniApp();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [pumpkinDesign, setPumpkinDesign] = useState<PumpkinDesign | null>(null);
   const [loading, setLoading] = useState(false);
@@ -108,30 +106,6 @@ export function PumpkinCarvingApp() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Check if app is added and trigger modal if not (using Neynar hook)
-  useEffect(() => {
-    const checkAndAddApp = async () => {
-      if (!isSDKLoaded || !actions) return;
-      
-      try {
-        console.log('📱 App status - added:', added);
-        
-        if (!added) {
-          console.log('⚠️ App not added, triggering add modal...');
-          await actions.addMiniApp();
-        } else {
-          console.log('✅ App is already added');
-          if (notificationDetails) {
-            console.log('🔔 Notification details available:', !!notificationDetails.token);
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error checking or adding app:', error);
-      }
-    };
-
-    checkAndAddApp();
-  }, [isSDKLoaded, actions, added, notificationDetails]);
 
 
 
