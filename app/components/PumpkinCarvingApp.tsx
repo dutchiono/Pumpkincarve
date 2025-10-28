@@ -62,7 +62,7 @@ function PumpkinCarvingAppContent() {
   const isAdmin = userData?.fid === 474867;
   const [topMinters, setTopMinters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topHolders, setTopHolders] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
-  const [topGifters, setTopGifters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[]; uniqueRecipients: number }[]>([]);
+  const [topGifters, setTopGifters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[]; uniqueRecipients: number; gifts: Array<{ recipient: string; tokenId: number; recipientUsername?: string | null }> }[]>([]);
   const [leaderboardSubTab, setLeaderboardSubTab] = useState<'minters' | 'holders' | 'gifters'>('minters');
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [userNFTs, setUserNFTs] = useState<Record<string, { tokenId: number; imageUrl: string }[]>>({});
@@ -1081,51 +1081,65 @@ function PumpkinCarvingAppContent() {
                         </div>
                         {expandedUsers.has(gifter.address) && (
                           <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                            {gifter.recipients && gifter.recipients.length > 0 && (
-                              <div style={{ marginBottom: '16px' }}>
-                                <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>Gifted to:</p>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                  {gifter.recipients.map((recipient, idx) => (
-                                    <span
-                                      key={idx}
-                                      style={{
-                                        fontSize: '12px',
-                                        padding: '4px 8px',
-                                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
-                                        borderRadius: '8px',
-                                        color: '#22c55e',
-                                        fontFamily: 'monospace'
-                                      }}
-                                      title={recipient}
-                                    >
-                                      {recipient.slice(0, 6)}...{recipient.slice(-4)}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {loadingNFTs[gifter.address] ? (
-                              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>Loading gallery...</p>
-                            ) : userNFTs[gifter.address] && userNFTs[gifter.address].length > 0 ? (
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px' }}>
-                                {userNFTs[gifter.address].map((nft) => (
-                                  <img
-                                    key={nft.tokenId}
-                                    src={nft.imageUrl}
-                                    alt={`NFT #${nft.tokenId}`}
+                            {gifter.gifts && gifter.gifts.length > 0 ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '16px' }}>
+                                {gifter.gifts.map((gift, idx) => (
+                                  <div 
+                                    key={idx}
                                     style={{
-                                      width: '100%',
-                                      aspectRatio: '1',
-                                      objectFit: 'cover',
-                                      borderRadius: '8px',
-                                      cursor: 'pointer'
+                                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                      borderRadius: '12px',
+                                      padding: '12px',
+                                      border: '1px solid rgba(255, 255, 255, 0.1)'
                                     }}
-                                    onClick={() => window.open(nft.imageUrl, '_blank')}
-                                  />
+                                  >
+                                    <div style={{ width: '100%', aspectRatio: '1', marginBottom: '8px', position: 'relative' }}>
+                                      <img
+                                        src={`https://gateway.pinata.cloud/ipfs/QmSxzEv1Mj9MQ3CqKDJRzARjkJsFAqMAc7sXKJJmjqGMXz?tokenId=${gift.tokenId}`}
+                                        alt={`NFT #${gift.tokenId}`}
+                                        style={{
+                                          width: '100%',
+                                          height: '100%',
+                                          objectFit: 'cover',
+                                          borderRadius: '8px',
+                                          cursor: 'pointer'
+                                        }}
+                                        onClick={() => window.open(`https://basescan.org/nft/${process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS}/${gift.tokenId}`, '_blank')}
+                                        onError={(e) => {
+                                          // Fallback to API if IPFS fails
+                                          e.currentTarget.src = `/api/gen3-image?tokenId=${gift.tokenId}`;
+                                        }}
+                                      />
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '4px' }}>
+                                      To:
+                                    </div>
+                                    <div 
+                                      style={{ 
+                                        fontSize: '12px', 
+                                        color: '#22c55e', 
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
+                                      }}
+                                      onClick={() => {
+                                        if (gift.recipient) {
+                                          window.open(`https://basescan.org/address/${gift.recipient}`, '_blank');
+                                        }
+                                      }}
+                                    >
+                                      @{gift.recipientUsername || gift.recipient.slice(0, 6) + '...' + gift.recipient.slice(-4)}
+                                    </div>
+                                    <div style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)', marginTop: '4px' }}>
+                                      Token #{gift.tokenId}
+                                    </div>
+                                  </div>
                                 ))}
                               </div>
                             ) : (
-                              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>No NFTs found</p>
+                              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }}>No gifts found</p>
                             )}
                           </div>
                         )}

@@ -27,7 +27,8 @@ const ERC721_ABI = [
   },
 ] as const;
 
-type CachedGifter = { address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[]; uniqueRecipients: number };
+type GiftDetail = { recipient: string; tokenId: number; recipientUsername?: string | null };
+type CachedGifter = { address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[]; uniqueRecipients: number; gifts: GiftDetail[] };
 let giftersCache: CachedGifter[] = [];
 let lastCacheUpdate = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -138,78 +139,82 @@ export async function GET() {
 
     console.log(`Top gifters: ${JSON.stringify(topGifters)}`);
 
-    // Look up usernames from Neynar
+    // Collect ALL addresses (gifters + all recipients) for a single bulk lookup
+    const allRecipientAddresses = new Set<string>();
+    topGifters.forEach(([address]) => {
+      if (giftRecipients[address]) {
+        giftRecipients[address].forEach(addr => allRecipientAddresses.add(addr));
+      }
+    });
+
+    // Look up usernames from Neynar - SINGLE BATCH CALL
     if (process.env.NEYNAR_API_KEY) {
       const neynarConfig = new Configuration({ apiKey: process.env.NEYNAR_API_KEY });
       const neynarClient = new NeynarAPIClient(neynarConfig);
 
       const addresses = topGifters.map(([address]) => address);
+      const allAddressesForLookup = [...addresses, ...Array.from(allRecipientAddresses)];
 
       try {
         const usersResponse = await neynarClient.fetchBulkUsersByEthOrSolAddress({
-          addresses
+          addresses: allAddressesForLookup
         });
 
-        const topGiftersWithUsernames: CachedGifter[] = await Promise.all(
-          topGifters.map(async ([address, count]): Promise<CachedGifter> => {
-            console.log(`📝 Processing gifter: ${address}, count: ${count}, recipients: [${Array.from(giftRecipients[address] || [])}]`);
-            const matchingKey = Object.keys(usersResponse).find(
-              key => key.toLowerCase() === address.toLowerCase()
+        const topGiftersWithUsernames: CachedGifter[] = topGifters.map(([address, count]) => {
+          console.log(`📝 Processing gifter: ${address}, count: ${count}, recipients: [${Array.from(giftRecipients[address] || [])}]`);
+          const matchingKey = Object.keys(usersResponse).find(
+            key => key.toLowerCase() === address.toLowerCase()
+          );
+
+          let username = null;
+          let fid = null;
+          let pfp = null;
+
+          if (matchingKey && usersResponse[matchingKey]?.length > 0) {
+            const user = usersResponse[matchingKey][0];
+            username = user.username;
+            fid = user.fid;
+            pfp = user.pfp_url;
+          }
+
+          // Build gift details with usernames
+          const gifts: GiftDetail[] = giftDetails[address]?.map(({ recipient, tokenId }) => {
+            const recipKey = Object.keys(usersResponse).find(
+              key => key.toLowerCase() === recipient.toLowerCase()
             );
-
-            let username = null;
-            let fid = null;
-            let pfp = null;
-
-            if (matchingKey && usersResponse[matchingKey]?.length > 0) {
-              const user = usersResponse[matchingKey][0];
-              username = user.username;
-              fid = user.fid;
-              pfp = user.pfp_url;
+            let recipientUsername = null;
+            if (recipKey && usersResponse[recipKey]?.length > 0) {
+              recipientUsername = usersResponse[recipKey][0].username || null;
             }
+            return { recipient, tokenId, recipientUsername };
+          }) || [];
 
-            // Also look up recipient usernames
-            const recipientAddresses = giftRecipients[address] ? Array.from(giftRecipients[address]) : [];
-            const recipientLookups = await neynarClient.fetchBulkUsersByEthOrSolAddress({
-              addresses: recipientAddresses
-            });
-
-            const recipientsWithUsernames = recipientAddresses.map(recipAddr => {
-              const recipKey = Object.keys(recipientLookups).find(
-                key => key.toLowerCase() === recipAddr.toLowerCase()
-              );
-              if (recipKey && recipientLookups[recipKey]?.length > 0) {
-                const recipientUser = recipientLookups[recipKey][0];
-                return { address: recipAddr, username: recipientUser.username || null };
-              }
-              return { address: recipAddr, username: null };
-            });
-
-            return {
-              address,
-              count,
-              username,
-              fid,
-              pfp: pfp || null,
-              recipients: recipientAddresses,
-              uniqueRecipients: recipientAddresses.length
-            };
-          })
-        );
+          const recipientAddresses = giftRecipients[address] ? Array.from(giftRecipients[address]) : [];
+          return {
+            address,
+            count,
+            username,
+            fid,
+            pfp: pfp || null,
+            recipients: recipientAddresses,
+            uniqueRecipients: recipientAddresses.length,
+            gifts
+          };
+        });
 
         giftersCache = topGiftersWithUsernames;
         lastCacheUpdate = Date.now();
         return NextResponse.json(topGiftersWithUsernames);
       } catch (neynarError) {
         console.error('Error fetching usernames:', neynarError);
-        const fallback = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [], uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0 }));
+        const fallback = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [], uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0, gifts: giftDetails[address] || [] }));
         giftersCache = fallback;
         lastCacheUpdate = Date.now();
         return NextResponse.json(fallback);
       }
     }
 
-    const result = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [], uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0 }));
+    const result = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [], uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0, gifts: giftDetails[address] || [] }));
     giftersCache = result;
     lastCacheUpdate = Date.now();
     return NextResponse.json(result);
