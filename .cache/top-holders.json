@@ -1,0 +1,75 @@
+{
+  "holders": [
+    {
+      "address": "0x8dfbdeec8c5d4970bb5f481c6ec7f73fa1c65be5",
+      "count": 7,
+      "username": "ionoi",
+      "fid": 474867,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/3ff80cd0-0e6d-4bd4-c93c-2b3d8e575e00/original"
+    },
+    {
+      "address": "0xdf087b724174a3e4ed2338c0798193932e851f1b",
+      "count": 3,
+      "username": "kmacb.eth",
+      "fid": 4163,
+      "pfp": "https://images.colorino.site/cc214ccf3914a741130fbae423610b69406f9c7052751bd24bd0703e6d604686.png"
+    },
+    {
+      "address": "0x9f8679c8f662fdf09654fe73bd3702edeed1b9f3",
+      "count": 2,
+      "username": "mxjxn",
+      "fid": 4905,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/b961f26b-88f7-4990-e45d-0fd9c6e49500/original"
+    },
+    {
+      "address": "0x6bfd104298be1036dfb4df8b0803c45137135321",
+      "count": 1,
+      "username": "mememan",
+      "fid": 1346697,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/0d563087-0933-4ec1-d538-047732e96200/original"
+    },
+    {
+      "address": "0x294ebfe91746743050c35a220c075cd28251f55a",
+      "count": 1,
+      "username": "catswilleatyou",
+      "fid": 299247,
+      "pfp": "https://i.imgur.com/csVWYwo.jpg"
+    },
+    {
+      "address": "0xa272bc9d6f462f4f08849adeaf6e49a5d4430c38",
+      "count": 1,
+      "username": "warpl.eth",
+      "fid": 230238,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/eafa3ee3-7dbb-4d8f-62bb-5d83d5e4d900/original"
+    },
+    {
+      "address": "0xdd8a40a15f0fe67d4ec52adf0ee24489e8d8a58a",
+      "count": 1,
+      "username": "thedude",
+      "fid": 13874,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/77692cb0-6fb5-40c7-ced3-42353e178b00/original"
+    },
+    {
+      "address": "0x7a2ef31fedea178e577316e6bead4a09c1dcd03a",
+      "count": 1,
+      "username": "catincryptoland",
+      "fid": 463365,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/a6111cba-c1d8-4266-20f5-8d7696d7e200/original"
+    },
+    {
+      "address": "0x10fc964ef70c8467cd8c53e9ed9347422adf96a8",
+      "count": 1,
+      "username": "kenny",
+      "fid": 2210,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/e6f1d0c9-26ff-4701-4bc5-f748256ab900/rectcrop3"
+    },
+    {
+      "address": "0x644e09bea250a6edd577271b0be08d5fb29f716d",
+      "count": 1,
+      "username": "dosir",
+      "fid": 427349,
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/c1359f0e-e483-4c28-2afb-01bdb82d8b00/original"
+    }
+  ],
+  "lastUpdate": 1761781613104
+}

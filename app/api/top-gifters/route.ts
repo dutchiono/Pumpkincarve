@@ -1,9 +1,9 @@
 import { Configuration, NeynarAPIClient } from '@neynar/nodejs-sdk';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { NextResponse } from 'next/server';
+import { join } from 'path';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
 
@@ -73,14 +73,14 @@ export async function GET() {
   // Load cache from disk
   const cachedData = loadCache();
   const now = Date.now();
-  
+
   // Check if cached data is still valid
   if (cachedData && cachedData.lastUpdate && (now - cachedData.lastUpdate) < CACHE_TTL) {
     const age = Math.floor((now - cachedData.lastUpdate) / 1000);
     console.log(`✅ Returning cached top gifters (age: ${age}s, from block ${cachedData.lastBlock})`);
     return NextResponse.json(cachedData.gifters);
   }
-  
+
   const lastProcessedBlock = cachedData?.lastBlock || 0;
 
   try {
@@ -100,7 +100,7 @@ export async function GET() {
 
     const currentBlock = await client.getBlockNumber();
     const MAX_BLOCK_RANGE = BigInt(4000);
-    
+
     // If we have a cached result, only scan new blocks since last cache
     // First time: scan 200k blocks to get all historical data
     // After that: only scan new blocks
@@ -112,13 +112,13 @@ export async function GET() {
       fromBlock = currentBlock - BigInt(200000);
       console.log(`🔄 Initial scan: scanning last 200k blocks from ${fromBlock} to ${currentBlock}`);
     }
-    
+
     const allLogs = [];
     console.log(`🔍 Searching Transfer events from block ${fromBlock} to ${currentBlock} (${Number(currentBlock - fromBlock)} blocks)`);
 
     // Query in batches
     while (fromBlock < currentBlock) {
-      const toBlock: bigint = fromBlock + BigInt(MAX_BLOCK_RANGE) > currentBlock ? currentBlock : fromBlock + BigInt(MAX_BLOCK_RANGE);
+      const toBlock: bigint = fromBlock + MAX_BLOCK_RANGE > currentBlock ? currentBlock : fromBlock + MAX_BLOCK_RANGE;
 
       const logs = await client.getLogs({
         address: CONTRACT_ADDRESS as `0x${string}`,
@@ -142,16 +142,16 @@ export async function GET() {
     const giftCounts: Record<string, number> = {};
     const giftRecipients: Record<string, Set<string>> = {};
     const giftDetails: Record<string, Array<{ recipient: string; tokenId: number }>> = {};
-    
+
     let mintCount = 0;
     let giftCount = 0;
     let selfTransferCount = 0;
-    
+
     for (const log of allLogs) {
       const from = log.args.from?.toLowerCase() || '';
       const to = log.args.to?.toLowerCase() || '';
       const tokenId = log.args.tokenId ? Number(log.args.tokenId) : 0;
-      
+
       // Categorize the transfer
       if (!from) {
         mintCount++;
@@ -163,7 +163,7 @@ export async function GET() {
         // This is a gift
         giftCount++;
         giftCounts[from] = (giftCounts[from] || 0) + 1;
-        
+
         if (!giftRecipients[from]) {
           giftRecipients[from] = new Set();
           giftDetails[from] = [];
@@ -172,7 +172,7 @@ export async function GET() {
         giftDetails[from].push({ recipient: to, tokenId });
       }
     }
-    
+
     console.log(`📊 Transfer breakdown: ${mintCount} mints, ${selfTransferCount} self-transfers, ${giftCount} gifts`);
 
     // Sort by count and get top 10
