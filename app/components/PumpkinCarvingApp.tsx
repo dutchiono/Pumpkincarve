@@ -665,13 +665,17 @@ function PumpkinCarvingAppContent() {
           3% { opacity: 0; }
         }
       `}</style>
-      <div className="max-w-2xl mx-auto p-4 pb-20" style={{ width: '100%', maxWidth: '100%' }}>
-        <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg" style={{ textAlign: 'center', marginBottom: '12px' }}>
-          Carve a Pumpkin
-        </h1>
-        <p className="text-white/90 text-sm md:text-base" style={{ textAlign: 'center', marginBottom: '24px' }}>
-          Your personality, carved into a spooky NFT
-        </p>
+      <div className="max-w-2xl mx-auto p-4 pb-20" style={{ width: '100%', maxWidth: '100%', minHeight: '100vh', background: 'radial-gradient(circle at center, rgba(168, 85, 247, 0.05), rgba(0, 0, 0, 0.8))' }}>
+        {activeTab === 'home' && (
+          <>
+            <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg" style={{ textAlign: 'center', marginBottom: '12px' }}>
+              Carve a Pumpkin
+            </h1>
+            <p className="text-white/90 text-sm md:text-base" style={{ textAlign: 'center', marginBottom: '24px' }}>
+              Your personality, carved into a spooky NFT
+            </p>
+          </>
+        )}
 
         {loading && loadingMessage && (
           <div style={{
