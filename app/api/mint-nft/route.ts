@@ -21,7 +21,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const nftContractAddress = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
+    const nftContractAddress = process.env.NFT_CONTRACT_ADDRESS ?? process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
+    console.log('Mint route CONTRACT_ADDRESS =', nftContractAddress);
+    if (!nftContractAddress) {
+      return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
+    }
 
     if (!nftContractAddress || nftContractAddress === '0x0000000000000000000000000000000000000000') {
       return NextResponse.json(
