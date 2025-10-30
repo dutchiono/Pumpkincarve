@@ -72,7 +72,6 @@ function PumpkinCarvingAppContent() {
   const [leaderboardNotice, setLeaderboardNotice] = useState<string | null>(null);
 
   const { writeContract, data: hash, isPending, error: contractError } = useWriteContract();
-  const nftContractAddress = (process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xca3f315D82cE6Eecc3b9E29Ecc8654BA61e7508C') as `0x${string}`;
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
   });
@@ -1144,7 +1143,7 @@ function PumpkinCarvingAppContent() {
                                       border: '1px solid rgba(255, 255, 255, 0.1)',
                                       cursor: 'pointer'
                                     }}
-                                  onClick={() => window.open(`https://basescan.org/nft/${nftContractAddress}/${gift.tokenId}`, '_blank')}
+                                  onClick={() => window.open(`https://basescan.org/nft/${process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS}/${gift.tokenId}`, '_blank')}
                                   >
                                     <div style={{ width: '100%', aspectRatio: '1', marginBottom: '8px', position: 'relative' }}>
                                       <img

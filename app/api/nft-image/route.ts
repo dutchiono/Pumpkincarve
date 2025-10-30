@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xca3f315D82cE6Eecc3b9E29Ecc8654BA61e7508C';
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
 
 const NFT_ABI = [
   {
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
 
     // Parse the tokenURI to get the image
     let imageUrl = '';
-    
+
     // Try to parse as JSON metadata
     try {
       const metadata = JSON.parse(tokenURI);
@@ -67,15 +67,15 @@ export async function GET(request: Request) {
     // Fetch and proxy the image
     if (imageUrl) {
       console.log(`🔗 Fetching image from: ${imageUrl}`);
-      
+
       // Convert IPFS URLs to gateway URLs with fallbacks
       let httpUrl = imageUrl;
       let imageResponse;
       let imageBuffer;
-      
+
       if (imageUrl.startsWith('ipfs://')) {
         const cid = imageUrl.replace('ipfs://', '');
-        
+
         // Try multiple gateways
         const gateways = [
           `https://cloudflare-ipfs.com/ipfs/${cid}`,
@@ -83,17 +83,17 @@ export async function GET(request: Request) {
           `https://gateway.pinata.cloud/ipfs/${cid}`,
           `https://dweb.link/ipfs/${cid}`
         ];
-        
+
         console.log(`📥 Trying IPFS gateways for CID: ${cid}`);
-        
+
         // Try each gateway in order
         for (const gateway of gateways) {
           try {
             console.log(`  Trying: ${gateway}`);
-            imageResponse = await fetch(gateway, { 
+            imageResponse = await fetch(gateway, {
               signal: AbortSignal.timeout(5000) // 5 second timeout per gateway
             });
-            
+
             if (imageResponse.ok) {
               console.log(`✅ Successfully fetched from: ${gateway}`);
               httpUrl = gateway;
@@ -104,7 +104,7 @@ export async function GET(request: Request) {
             continue;
           }
         }
-        
+
         if (!imageResponse || !imageResponse.ok) {
           throw new Error(`Failed to fetch from all IPFS gateways`);
         }
@@ -112,17 +112,17 @@ export async function GET(request: Request) {
         // Regular HTTP URL
         console.log(`📥 Fetching from: ${httpUrl}`);
         imageResponse = await fetch(httpUrl);
-        
+
         if (!imageResponse.ok) {
           throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
         }
       }
-      
+
       imageBuffer = await imageResponse.arrayBuffer();
       const contentType = imageResponse.headers.get('content-type') || 'image/png';
-      
+
       console.log(`✅ Successfully fetched image, content-type: ${contentType}`);
-      
+
       // Return the image
       return new NextResponse(imageBuffer, {
         status: 200,

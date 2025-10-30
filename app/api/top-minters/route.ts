@@ -45,7 +45,7 @@ function saveMintersCache(data: MinterCacheData) {
   }
 }
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xca3f315D82cE6Eecc3b9E29Ecc8654BA61e7508C';
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
 
 const PUMPKIN_MINT_ABI = [
   {
@@ -71,7 +71,7 @@ export async function GET() {
   // Load cache from disk
   const cachedData = loadMintersCache();
   const now = Date.now();
-  
+
   if (cachedData && cachedData.lastUpdate && (now - cachedData.lastUpdate) < CACHE_TTL) {
     const age = Math.floor((now - cachedData.lastUpdate) / 1000);
     console.log(`✅ Returning cached top minters (age: ${age}s)`);
