@@ -60,7 +60,6 @@ function PumpkinCarvingAppContent() {
   const [personalityInsights, setPersonalityInsights] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'home' | 'leaderboard' | 'gen2' | 'profile'>('home');
   const isAdmin = userData?.fid === 474867;
-  const profileFetchAttempted = useRef(false);
   const [topMinters, setTopMinters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topHolders, setTopHolders] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topGifters, setTopGifters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[]; uniqueRecipients: number; gifts: Array<{ recipient: string; tokenId: number; recipientUsername?: string | null }> }[]>([]);
@@ -285,12 +284,6 @@ function PumpkinCarvingAppContent() {
     };
     fetchData();
   }, [activeTab]);
-
-  // Reset profile fetch flag when address changes
-  useEffect(() => {
-    profileFetchAttempted.current = false;
-    setUserData(null);
-  }, [address]);
 
   // Auto-fetch profile when wallet connects (only once per address)
   useEffect(() => {
