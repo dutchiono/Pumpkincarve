@@ -262,6 +262,8 @@ function PumpkinCarvingAppContent() {
           if (mintersResponse.ok) {
             const mintersData = await mintersResponse.json();
             setTopMinters(mintersData);
+          } else {
+            console.error('Failed to fetch minters:', mintersResponse.status, await mintersResponse.text());
           }
 
           // Fetch holders
@@ -269,6 +271,8 @@ function PumpkinCarvingAppContent() {
           if (holdersResponse.ok) {
             const holdersData = await holdersResponse.json();
             setTopHolders(holdersData);
+          } else {
+            console.error('Failed to fetch holders:', holdersResponse.status, await holdersResponse.text());
           }
 
           // Fetch gifters
@@ -276,6 +280,8 @@ function PumpkinCarvingAppContent() {
           if (giftersResponse.ok) {
             const giftersData = await giftersResponse.json();
             setTopGifters(giftersData);
+          } else {
+            console.error('Failed to fetch gifters:', giftersResponse.status, await giftersResponse.text());
           }
         } catch (err) {
           console.error('Failed to fetch leaderboard data:', err);
