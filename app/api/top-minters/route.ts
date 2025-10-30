@@ -64,6 +64,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
+  console.log('Leaderboard[minters] CONTRACT_ADDRESS =', CONTRACT_ADDRESS);
   if (!CONTRACT_ADDRESS) {
     return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
   }
