@@ -300,13 +300,20 @@ function PumpkinCarvingAppContent() {
         setLoading(true);
         setLoadingMessage('👻 Loading your profile...');
         try {
+          console.log('📞 Fetching profile for address:', address);
           const response = await fetch('/api/neynar/user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ address }),
           });
-          if (!response.ok) throw new Error('Profile fetch failed');
+          console.log('📥 Response status:', response.status, response.statusText);
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('❌ Profile fetch failed:', errorData);
+            throw new Error(errorData.error || 'Profile fetch failed');
+          }
           const data = await response.json();
+          console.log('✅ Profile data received:', data);
           setUserData(data);
         } catch (err: any) {
           console.error('Profile fetch error:', err);

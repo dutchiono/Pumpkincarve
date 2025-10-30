@@ -40,12 +40,17 @@ export async function POST(request: NextRequest) {
 
     // Get user by address to get their FID
     const response = await client.fetchBulkUsersByEthOrSolAddress({ addresses: [address] });
+    console.log('✅ Neynar response keys:', Object.keys(response));
     console.log('✅ Neynar response:', JSON.stringify(response, null, 2));
 
     // The API returns users keyed by address (lowercase)
     // Find the matching entry regardless of case
     const responseKeys = Object.keys(response);
     const matchingKey = responseKeys.find(key => key.toLowerCase() === address.toLowerCase());
+
+    console.log('🔑 Looking for address:', address.toLowerCase());
+    console.log('🔑 Available keys:', responseKeys);
+    console.log('🔑 Matching key:', matchingKey);
 
     if (!matchingKey) {
       console.log('❌ No Farcaster account found for address:', address);
@@ -54,6 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const users = response[matchingKey];
+    console.log('👤 Users found for key:', users);
     if (!users || users.length === 0) {
       console.log('❌ No users in response for address:', address);
       return NextResponse.json({ error: 'No Farcaster account found for this address' }, { status: 404 });
