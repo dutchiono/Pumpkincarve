@@ -1,7 +1,7 @@
 'use client';
 
 import { sdk } from '@farcaster/miniapp-sdk';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { parseEther } from 'viem';
 import { useAccount, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
 
@@ -60,6 +60,7 @@ function PumpkinCarvingAppContent() {
   const [personalityInsights, setPersonalityInsights] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'home' | 'leaderboard' | 'gen2' | 'profile'>('home');
   const isAdmin = userData?.fid === 474867;
+  const profileFetchAttempted = useRef(false);
   const [topMinters, setTopMinters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topHolders, setTopHolders] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topGifters, setTopGifters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[]; uniqueRecipients: number; gifts: Array<{ recipient: string; tokenId: number; recipientUsername?: string | null }> }[]>([]);
@@ -280,10 +281,17 @@ function PumpkinCarvingAppContent() {
     fetchData();
   }, [activeTab]);
 
-  // Auto-fetch profile when wallet connects
+  // Reset profile fetch flag when address changes
+  useEffect(() => {
+    profileFetchAttempted.current = false;
+    setUserData(null);
+  }, [address]);
+
+  // Auto-fetch profile when wallet connects (only once per address)
   useEffect(() => {
     const fetchProfile = async () => {
-      if (isConnected && address && !userData && !loading) {
+      if (isConnected && address && !userData && !profileFetchAttempted.current) {
+        profileFetchAttempted.current = true;
         setLoading(true);
         setLoadingMessage('👻 Loading your profile...');
         try {
@@ -305,7 +313,7 @@ function PumpkinCarvingAppContent() {
       }
     };
     fetchProfile();
-  }, [isConnected, address, userData, loading]);
+  }, [isConnected, address, userData]);
 
   // One button to generate design + image
   const handleGeneratePumpkin = async () => {
