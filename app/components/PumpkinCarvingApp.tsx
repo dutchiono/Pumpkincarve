@@ -295,8 +295,7 @@ function PumpkinCarvingAppContent() {
   // Auto-fetch profile when wallet connects (only once per address)
   useEffect(() => {
     const fetchProfile = async () => {
-      if (isConnected && address && !userData && !profileFetchAttempted.current) {
-        profileFetchAttempted.current = true;
+      if (isConnected && address && !userData && !loading) {
         setLoading(true);
         setLoadingMessage('👻 Loading your profile...');
         try {
@@ -325,7 +324,7 @@ function PumpkinCarvingAppContent() {
       }
     };
     fetchProfile();
-  }, [isConnected, address, userData]);
+  }, [isConnected, address, userData, loading]);
 
   // One button to generate design + image
   const handleGeneratePumpkin = async () => {
