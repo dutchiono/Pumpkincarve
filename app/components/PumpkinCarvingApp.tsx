@@ -86,11 +86,11 @@ function PumpkinCarvingAppContent() {
     const initializeSDK = async () => {
       try {
         console.log('🔄 Attempting to call sdk.actions.ready()...');
-        
+
         // Call ready() first to initialize the SDK
         await sdk.actions.ready();
         console.log('✅ Farcaster SDK ready() called successfully');
-        
+
         // Get the context to check if we're in Farcaster
         const context = sdk.context;
         console.log('📱 Farcaster context:', context);
