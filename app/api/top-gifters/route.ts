@@ -198,6 +198,16 @@ export async function GET() {
 
       const addresses = topGifters.map(([address]) => address);
       const allAddressesForLookup = [...addresses, ...Array.from(allRecipientAddresses)];
+      if (allAddressesForLookup.length === 0) {
+        console.log('Top-gifters: no addresses to lookup, skipping Neynar call');
+        saveCache({
+          gifters: [],
+          lastUpdate: Date.now(),
+          lastBlock: Number(currentBlock)
+        });
+        return NextResponse.json([]);
+      }
+      console.log('Top-gifters: requesting Neynar for address count =', allAddressesForLookup.length);
 
       try {
         const usersResponse = await neynarClient.fetchBulkUsersByEthOrSolAddress({
