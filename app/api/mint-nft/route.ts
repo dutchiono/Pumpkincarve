@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const nftContractAddress = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
+    const nftContractAddress = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xca3f315D82cE6Eecc3b9E29Ecc8654BA61e7508C';
 
     if (!nftContractAddress || nftContractAddress === '0x0000000000000000000000000000000000000000') {
       return NextResponse.json(

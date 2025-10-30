@@ -69,8 +69,10 @@ function PumpkinCarvingAppContent() {
   const [loadingNFTs, setLoadingNFTs] = useState<Record<string, boolean>>({});
   const [notificationsEnabled, setNotificationsEnabled] = useState(true); // Default ON
   const [testNotificationText, setTestNotificationText] = useState('');
+  const [leaderboardNotice, setLeaderboardNotice] = useState<string | null>(null);
 
   const { writeContract, data: hash, isPending, error: contractError } = useWriteContract();
+  const nftContractAddress = (process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xca3f315D82cE6Eecc3b9E29Ecc8654BA61e7508C') as `0x${string}`;
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
   });
@@ -257,13 +259,20 @@ function PumpkinCarvingAppContent() {
     const fetchData = async () => {
       if (activeTab === 'leaderboard') {
         try {
+          // Reset notice before fetch
+          setLeaderboardNotice(null);
+
           // Fetch minters
           const mintersResponse = await fetch('/api/top-minters');
           if (mintersResponse.ok) {
             const mintersData = await mintersResponse.json();
             setTopMinters(mintersData);
           } else {
-            console.error('Failed to fetch minters:', mintersResponse.status, await mintersResponse.text());
+            const txt = await mintersResponse.text();
+            console.error('Failed to fetch minters:', mintersResponse.status, txt);
+            if (mintersResponse.status === 400 && txt.includes('Contract not deployed')) {
+              setLeaderboardNotice('Leaderboard unavailable: contract address is not configured on the server.');
+            }
           }
 
           // Fetch holders
@@ -272,7 +281,11 @@ function PumpkinCarvingAppContent() {
             const holdersData = await holdersResponse.json();
             setTopHolders(holdersData);
           } else {
-            console.error('Failed to fetch holders:', holdersResponse.status, await holdersResponse.text());
+            const txt = await holdersResponse.text();
+            console.error('Failed to fetch holders:', holdersResponse.status, txt);
+            if (holdersResponse.status === 400 && txt.includes('Contract not deployed')) {
+              setLeaderboardNotice('Leaderboard unavailable: contract address is not configured on the server.');
+            }
           }
 
           // Fetch gifters
@@ -281,7 +294,11 @@ function PumpkinCarvingAppContent() {
             const giftersData = await giftersResponse.json();
             setTopGifters(giftersData);
           } else {
-            console.error('Failed to fetch gifters:', giftersResponse.status, await giftersResponse.text());
+            const txt = await giftersResponse.text();
+            console.error('Failed to fetch gifters:', giftersResponse.status, txt);
+            if (giftersResponse.status === 400 && txt.includes('Contract not deployed')) {
+              setLeaderboardNotice('Leaderboard unavailable: contract address is not configured on the server.');
+            }
           }
         } catch (err) {
           console.error('Failed to fetch leaderboard data:', err);
@@ -918,6 +935,18 @@ function PumpkinCarvingAppContent() {
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
           }}>
             <div className="text-5xl mb-4 text-center">🏆</div>
+            {leaderboardNotice && (
+              <div style={{
+                marginBottom: '16px',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                color: 'rgba(255, 255, 255, 0.85)'
+              }}>
+                {leaderboardNotice}
+              </div>
+            )}
             <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px', textAlign: 'center' }}>Leaderboard</h2>
 
             {/* Sub-tabs - Modern segmented control */}
@@ -1115,7 +1144,7 @@ function PumpkinCarvingAppContent() {
                                       border: '1px solid rgba(255, 255, 255, 0.1)',
                                       cursor: 'pointer'
                                     }}
-                                    onClick={() => window.open(`https://basescan.org/nft/${process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS}/${gift.tokenId}`, '_blank')}
+                                  onClick={() => window.open(`https://basescan.org/nft/${nftContractAddress}/${gift.tokenId}`, '_blank')}
                                   >
                                     <div style={{ width: '100%', aspectRatio: '1', marginBottom: '8px', position: 'relative' }}>
                                       <img

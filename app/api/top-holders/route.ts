@@ -5,7 +5,7 @@ import { base } from 'viem/chains';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xca3f315D82cE6Eecc3b9E29Ecc8654BA61e7508C';
 
 const ERC721_ABI = [
   {
@@ -66,7 +66,7 @@ export async function GET() {
   // Load cache from disk
   const cachedData = loadHoldersCache();
   const now = Date.now();
-  
+
   if (cachedData && cachedData.lastUpdate && (now - cachedData.lastUpdate) < CACHE_TTL) {
     const age = Math.floor((now - cachedData.lastUpdate) / 1000);
     console.log(`✅ Returning cached top holders (age: ${age}s)`);
