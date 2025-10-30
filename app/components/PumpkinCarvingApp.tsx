@@ -86,9 +86,14 @@ function PumpkinCarvingAppContent() {
     const initializeSDK = async () => {
       try {
         console.log('🔄 Attempting to call sdk.actions.ready()...');
+        
+        // Call ready() first to initialize the SDK
         await sdk.actions.ready();
         console.log('✅ Farcaster SDK ready() called successfully');
-        console.log('✅ Splash screen should be dismissed now');
+        
+        // Get the context to check if we're in Farcaster
+        const context = sdk.context;
+        console.log('📱 Farcaster context:', context);
 
         // Try to trigger the add mini app modal if not added
         try {
