@@ -102,10 +102,11 @@ function Gen1AppContent() {
           args: [address],
         });
 
-        setUserBalance(balance as bigint);
+        const balanceValue = BigInt(balance as unknown as bigint);
+        setUserBalance(balanceValue);
 
         // If user has NFTs, find the first tokenId they own
-        if (balance > 0n) {
+        if (balanceValue > 0n) {
           // For now, we'll find the tokenId by checking sequentially (inefficient but simple)
           // In production, you might want to cache this or use an indexer
           for (let i = 1; i <= 1111; i++) {
