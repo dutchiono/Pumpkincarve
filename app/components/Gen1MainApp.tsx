@@ -297,16 +297,6 @@ function Gen1AppContent() {
     fetchProfile();
   }, [isConnected, address, userData, loading]);
 
-  const handleOpenCreator = () => {
-    window.location.href = '/gen1-creator';
-  };
-
-  const handleUpdateNFT = () => {
-    if (userTokenId) {
-      window.location.href = `/gen1-creator?tokenId=${userTokenId}`;
-    }
-  };
-
   const handleTestComposeCast = async () => {
     if (!isAdmin) return;
 
@@ -820,82 +810,6 @@ function Gen1AppContent() {
               </p>
             </div>
 
-            {/* Action Buttons */}
-            {isConnected && address && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
-                {userBalance && userBalance > BigInt(0) ? (
-                  <>
-                    <button
-                      onClick={handleUpdateNFT}
-                      style={{
-                        padding: '16px 32px',
-                        borderRadius: '12px',
-                        fontWeight: '600',
-                        fontSize: '16px',
-                        backgroundColor: 'rgba(34, 211, 238, 0.2)',
-                        border: '2px solid rgba(34, 211, 238, 0.5)',
-                        color: '#ffffff',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(34, 211, 238, 0.3)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(34, 211, 238, 0.2)';
-                      }}
-                    >
-                      🔄 Update Your NFT (Token #{userTokenId || '?'})
-                    </button>
-                    <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', textAlign: 'center', margin: 0 }}>
-                      You already own {userBalance.toString()} Gen1 NFT{userBalance > BigInt(1) ? 's' : ''}. Update it for a new design.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={handleOpenCreator}
-                      style={{
-                        padding: '16px 32px',
-                        borderRadius: '12px',
-                        fontWeight: '600',
-                        fontSize: '16px',
-                        backgroundColor: 'rgba(59, 130, 246, 0.3)',
-                        border: '2px solid rgba(59, 130, 246, 0.6)',
-                        color: '#ffffff',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.4)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
-                      }}
-                    >
-                      🚀 Create & Mint Your Gen1 NFT
-                    </button>
-                    <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', textAlign: 'center', margin: 0 }}>
-                      One mint per wallet. Create your unique animated NFT powered by AI personality analysis.
-                    </p>
-                  </>
-                )}
-              </div>
-            )}
-
-            {!isConnected && (
-              <div style={{
-                backgroundColor: 'rgba(234, 179, 8, 0.2)',
-                border: '2px solid rgba(234, 179, 8, 0.5)',
-                borderRadius: '16px',
-                padding: '20px',
-                textAlign: 'center',
-                marginTop: '24px'
-              }}>
-                <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', marginBottom: '8px' }}>🔗 Connect Your Wallet</p>
-                <p style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.8)' }}>Connect your wallet to create and mint your Gen1 NFT</p>
-              </div>
-            )}
           </div>
         )}
 
