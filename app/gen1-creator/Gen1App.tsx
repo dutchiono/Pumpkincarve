@@ -72,12 +72,16 @@ const Gen1App: React.FC = () => {
   const [farcasterUserId, setFarcasterUserId] = useState<string>(DEFAULT_FARCASTER_USER_ID);
   const [farcasterMood, setFarcasterMood] = useState<string | null>(null);
   const [farcasterPersonality, setFarcasterPersonality] = useState<string | null>(null);
+  const [farcasterTraits, setFarcasterTraits] = useState<string[]>([]);
+  const [farcasterInterests, setFarcasterInterests] = useState<string[]>([]);
   const [postsAnalyzed, setPostsAnalyzed] = useState<number>(0);
   const [recommendedColor1, setRecommendedColor1] = useState<string | null>(null);
   const [recommendedColor2, setRecommendedColor2] = useState<string | null>(null);
   const [recommendedFrequency, setRecommendedFrequency] = useState<number | null>(null);
   const [aiReasoning, setAiReasoning] = useState<string | null>(null);
   const [contractMintPrice, setContractMintPrice] = useState<bigint | null>(null);
+  const [totalSupply, setTotalSupply] = useState<bigint | null>(null);
+  const MAX_SUPPLY = 1111;
 
   // Wagmi hooks
   const { address, isConnected } = useAccount();
@@ -425,6 +429,11 @@ const Gen1App: React.FC = () => {
       return;
     }
 
+    if (totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY) {
+      alert(`⚠️ Maximum supply of ${MAX_SUPPLY} reached! Minting is disabled.`);
+      return;
+    }
+
     setQueueStatus('processing');
     setQueueProgress(0);
 
@@ -487,6 +496,13 @@ const Gen1App: React.FC = () => {
         if (status.status === 'completed') {
           clearInterval(interval);
           setQueueStatus('completed');
+
+          // Check supply before minting
+          if (totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY) {
+            alert(`⚠️ Maximum supply of ${MAX_SUPPLY} reached! Cannot mint.`);
+            setQueueStatus('error');
+            return;
+          }
 
           // Step 3: Mint on-chain
           const totalValue = contractMintPrice * BigInt(mintCount);
@@ -630,9 +646,11 @@ const Gen1App: React.FC = () => {
       });
 
       if (response.ok) {
-        const { mood, personality, postsAnalyzed, color1, color2, baseFrequency, reasoning } = await response.json();
+        const { mood, personality, traits, interests, postsAnalyzed, color1, color2, baseFrequency, reasoning } = await response.json();
         setFarcasterMood(mood);
         setFarcasterPersonality(personality || null);
+        setFarcasterTraits(traits || []);
+        setFarcasterInterests(interests || []);
         setPostsAnalyzed(postsAnalyzed || 0);
         setRecommendedColor1(color1 || null);
         setRecommendedColor2(color2 || null);
@@ -1074,6 +1092,30 @@ const Gen1App: React.FC = () => {
     fetchMintPrice();
   }, [publicClient]);
 
+  // Fetch the total supply from the contract
+  useEffect(() => {
+    const fetchTotalSupply = async () => {
+      if (!publicClient) return;
+
+      try {
+        const supply: any = await publicClient.readContract({
+          address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+          abi: gen1ABI,
+          functionName: 'totalSupply',
+        });
+        console.log('Contract total supply:', supply.toString());
+        setTotalSupply(supply as bigint);
+      } catch (err) {
+        console.error('Error fetching total supply:', err);
+      }
+    };
+
+    fetchTotalSupply();
+    // Refresh every 10 seconds to keep supply count updated
+    const interval = setInterval(fetchTotalSupply, 10000);
+    return () => clearInterval(interval);
+  }, [publicClient]);
+
   // p5.js setup and draw functions
   const setup = (p5: any, canvasParentRef: Element) => {
     p5.createCanvas(800, 600).parent(canvasParentRef);
@@ -1442,7 +1484,7 @@ const Gen1App: React.FC = () => {
                   <div className="bg-slate-900 p-3 rounded-md border border-slate-700 space-y-2">
             <div>
                       <p className="text-xs text-gray-400">Mood:</p>
-                      <p className="text-lg font-semibold text-cyan-400">{farcasterMood}</p>
+                      <p className="text-lg font-semibold text-cyan-400 capitalize">{farcasterMood}</p>
             </div>
                     {farcasterPersonality && (
             <div>
@@ -1450,14 +1492,26 @@ const Gen1App: React.FC = () => {
                         <p className="text-md font-semibold text-purple-400">{farcasterPersonality}</p>
             </div>
                     )}
+                    {farcasterTraits.length > 0 && (
+                      <div>
+                        <p className="text-xs text-gray-400">Traits:</p>
+                        <p className="text-sm text-gray-300">{farcasterTraits.join(' • ')}</p>
+                      </div>
+                    )}
+                    {farcasterInterests.length > 0 && (
+                      <div>
+                        <p className="text-xs text-gray-400">Interests:</p>
+                        <p className="text-sm text-gray-300">{farcasterInterests.join(' • ')}</p>
+                      </div>
+                    )}
                     {postsAnalyzed > 0 && (
-                      <p className="text-xs text-gray-500 italic">Based on {postsAnalyzed} posts</p>
+                      <p className="text-xs text-gray-500 italic border-t border-slate-700 pt-2 mt-2">Based on {postsAnalyzed} posts</p>
                     )}
                   </div>
 
                   {recommendedColor1 && recommendedColor2 && (
                     <div className="bg-slate-900 p-3 rounded-md border border-slate-700">
-                      <p className="text-xs text-gray-400 mb-2">AI Recommendations:</p>
+                      <p className="text-xs text-gray-400 mb-2">AI Visual Recommendations:</p>
                       <div className="grid grid-cols-2 gap-2 mb-2">
                         <div className="text-center">
                           <div className="w-full h-8 rounded border border-slate-600" style={{backgroundColor: recommendedColor1}}></div>
@@ -1468,9 +1522,12 @@ const Gen1App: React.FC = () => {
                           <p className="text-xs text-gray-500 mt-1">{recommendedColor2}</p>
                         </div>
                       </div>
-                      <p className="text-xs text-gray-400">Frequency: <span className="text-cyan-400 font-semibold">{recommendedFrequency?.toFixed(3)}</span></p>
+                      <p className="text-xs text-gray-400">Base Frequency: <span className="text-cyan-400 font-semibold">{recommendedFrequency?.toFixed(3)}</span></p>
                       {aiReasoning && (
-                        <p className="text-xs text-gray-500 italic mt-2">{aiReasoning}</p>
+                        <div className="border-t border-slate-700 pt-2 mt-2">
+                          <p className="text-xs text-gray-400 font-semibold mb-1">AI Reasoning:</p>
+                          <p className="text-xs text-gray-500 italic">{aiReasoning}</p>
+                        </div>
                       )}
                     </div>
                   )}
@@ -1519,10 +1576,26 @@ const Gen1App: React.FC = () => {
 
             {isConnected && (
               <div className="space-y-3">
-                <p className="text-sm text-gray-400">Connected: <span className="font-semibold text-cyan-400">{address?.slice(0, 6)}...{address?.slice(-4)}</span></p>
+                <div className="bg-slate-900 p-3 rounded-md border border-slate-700">
+                  <p className="text-sm text-gray-400 mb-1">
+                    Connected: <span className="font-semibold text-cyan-400">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                  </p>
+                  {totalSupply !== null && (
+                    <p className="text-sm text-gray-400">
+                      Supply: <span className={`font-semibold ${Number(totalSupply) >= MAX_SUPPLY ? 'text-red-400' : 'text-green-400'}`}>
+                        {totalSupply.toString()} / {MAX_SUPPLY}
+                      </span>
+                    </p>
+                  )}
+                </div>
 
                 <div className="border-t border-slate-600 pt-3">
                   <h3 className="text-md font-bold text-cyan-400 mb-2">Mint New NFT</h3>
+                  {totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY && (
+                    <div className="bg-red-900/30 border border-red-600 text-red-300 text-sm p-3 rounded-md mb-3">
+                      ⚠️ Maximum supply reached! Minting is disabled.
+                    </div>
+                  )}
                   <p className="text-xs text-gray-500 mb-2">
                     Debug: Connected={isConnected ? 'YES' : 'NO'}, MintPrice={contractMintPrice?.toString() || 'LOADING...'}, Count={mintCount}
                   </p>
@@ -1541,11 +1614,17 @@ const Gen1App: React.FC = () => {
                 <div className="space-y-2">
                   <button
                     type="button"
+                    disabled={totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY}
                     onClick={async () => {
                       console.log('🎃 Mint button clicked!');
 
                       if (!contractMintPrice) {
                         alert('⏳ Loading mint price from contract... Please wait a few seconds and try again.');
+                        return;
+                      }
+
+                      if (totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY) {
+                        alert(`⚠️ Maximum supply of ${MAX_SUPPLY} reached! Minting is disabled.`);
                         return;
                       }
 
@@ -1662,7 +1741,7 @@ const Gen1App: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleQueueMint}
-                    disabled={!isConnected || !contractMintPrice || mintCount < 1 || mintCount > 10 || isMinting || isConfirming || queueStatus === 'processing'}
+                    disabled={!isConnected || !contractMintPrice || mintCount < 1 || mintCount > 10 || isMinting || isConfirming || queueStatus === 'processing' || (totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY)}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {queueStatus === 'processing' ? `⏳ Rendering ${queueProgress}%...` : queueStatus === 'completed' ? '✅ Complete!' : queueStatus === 'error' ? '❌ Error - Try Again' : contractMintPrice ? `🚀 Mint ${mintCount} NFT (Queue)` : 'Loading Price...'}
