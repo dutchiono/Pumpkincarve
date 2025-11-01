@@ -97,6 +97,11 @@ const Gen1App: React.FC = () => {
   const [isFetchingNFTMetadata, setIsFetchingNFTMetadata] = useState<boolean>(false);
   const [fetchNFTMetadataError, setFetchNFTMetadataError] = useState<Error | null>(null);
 
+  // Queue-based rendering state
+  const [queueJobId, setQueueJobId] = useState<string | null>(null);
+  const [queueProgress, setQueueProgress] = useState<number>(0);
+  const [queueStatus, setQueueStatus] = useState<'idle' | 'processing' | 'completed' | 'error'>('idle');
+
   const publicClient = usePublicClient();
 
   // Log write errors
@@ -412,6 +417,109 @@ const Gen1App: React.FC = () => {
   const handleResetLevels = useCallback(() => {
     setContourLevels(5); // Default contour levels
   }, []);
+
+  // Queue-based mint handler
+  const handleQueueMint = useCallback(async () => {
+    if (!isConnected || !contractMintPrice || !address) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    setQueueStatus('processing');
+    setQueueProgress(0);
+
+    try {
+      // Step 1: Submit job to queue
+      const response = await fetch('/api/gen1/queue-mint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: {
+            flowField: {
+              enabled: enableFlowField,
+              color1: flowColor1,
+              color2: flowColor2,
+              baseFrequency: flowFieldBaseFreq,
+              amplitude: flowFieldAmplitude,
+              octaves: flowFieldOctaves,
+              rotation: flowFieldRotation,
+              direction: flowFieldDirection,
+            },
+            flowFields: {
+              enabled: enableFlowFields,
+              baseFrequency: flowFieldsBaseFreq,
+              amplitude: flowFieldsAmplitude,
+              octaves: flowFieldsOctaves,
+              lineLength: flowLineLength,
+              lineDensity: flowLineDensity,
+              rotation: flowFieldsRotation,
+              direction: flowFieldsDirection,
+            },
+            contour: {
+              enabled: enableContourMapping,
+              baseFrequency: contourBaseFreq,
+              amplitude: contourAmplitude,
+              octaves: contourOctaves,
+              levels: contourLevels,
+              smoothness: contourSmoothness,
+            },
+            contourAffectsFlow,
+          },
+          walletAddress: address,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to queue job');
+      }
+
+      const { jobId } = await response.json();
+      setQueueJobId(jobId);
+      console.log('✓ Job queued:', jobId);
+
+      // Step 2: Poll for status
+      const interval = setInterval(async () => {
+        const statusResponse = await fetch(`/api/gen1/job-status?jobId=${jobId}`);
+        const status = await statusResponse.json();
+
+        setQueueProgress(status.progress || 0);
+
+        if (status.status === 'completed') {
+          clearInterval(interval);
+          setQueueStatus('completed');
+
+          // Step 3: Mint on-chain
+          const totalValue = contractMintPrice * BigInt(mintCount);
+          console.log('🎃 Minting with IPFS URLs from queue...');
+          console.log('Image URL:', status.result.imageUrl);
+          console.log('Metadata URL:', status.result.metadataUrl);
+
+          writeContract({
+            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            abi: gen1ABI,
+            functionName: 'mint',
+            args: [status.result.imageUrl, status.result.metadataUrl],
+            value: totalValue,
+            chainId: 84532,
+          } as any);
+
+          console.log('✓ WriteContract called');
+          setQueueJobId(null);
+        } else if (status.status === 'failed') {
+          clearInterval(interval);
+          setQueueStatus('error');
+          alert('Rendering failed. Please try again.');
+          setQueueJobId(null);
+        }
+      }, 2000); // Poll every 2 seconds
+
+    } catch (err: any) {
+      console.error('Queue mint error:', err);
+      setQueueStatus('error');
+      alert('Error: ' + err.message);
+      setQueueJobId(null);
+    }
+  }, [isConnected, contractMintPrice, address, mintCount, enableFlowField, enableFlowFields, enableContourMapping, flowColor1, flowColor2, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowFieldRotation, flowFieldDirection, flowFieldsBaseFreq, flowFieldsAmplitude, flowFieldsOctaves, flowLineLength, flowLineDensity, flowFieldsRotation, flowFieldsDirection, contourBaseFreq, contourAmplitude, contourOctaves, contourLevels, contourSmoothness, contourAffectsFlow, writeContract]);
 
   // Apply mood-based settings to Canvas (for new NFTs)
   const handleApplyMoodToCanvas = useCallback(() => {
@@ -1430,126 +1538,137 @@ const Gen1App: React.FC = () => {
                     className="block w-full pl-2 pr-2 py-1 text-sm border-gray-600 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 rounded-md bg-slate-700 text-white"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    console.log('🎃 Mint button clicked!');
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      console.log('🎃 Mint button clicked!');
 
-                    if (!contractMintPrice) {
-                      alert('⏳ Loading mint price from contract... Please wait a few seconds and try again.');
-                      return;
-                    }
-
-                    try {
-                      // Step 1: Capture canvas as animated GIF
-                      console.log('📹 Capturing canvas as animated GIF...');
-                      const gifBlob = await exportCanvasAsGIF();
-                      console.log('✓ GIF captured, size:', gifBlob.size, 'bytes');
-
-                      // Step 2: Upload GIF to IPFS
-                      console.log('🌐 Uploading GIF to IPFS...');
-                      const formData = new FormData();
-                      formData.append('gif', gifBlob, 'gen1-animation.gif');
-
-                      const uploadResponse = await fetch('/api/gen1/upload-gif', {
-                        method: 'POST',
-                        body: formData,
-                      });
-
-                      if (!uploadResponse.ok) {
-                        const errorData = await uploadResponse.json();
-                        throw new Error(errorData.error || 'Failed to upload GIF to IPFS');
+                      if (!contractMintPrice) {
+                        alert('⏳ Loading mint price from contract... Please wait a few seconds and try again.');
+                        return;
                       }
 
-                      const { ipfsUrl: imageUrl } = await uploadResponse.json();
-                      console.log('✓ Image uploaded to IPFS:', imageUrl);
+                      try {
+                        // Step 1: Capture canvas as animated GIF
+                        console.log('📹 Capturing canvas as animated GIF...');
+                        const gifBlob = await exportCanvasAsGIF();
+                        console.log('✓ GIF captured, size:', gifBlob.size, 'bytes');
 
-                      // Step 3: Create metadata JSON
-                      const metadata = {
-                        name: `Gen1 NFT #${Date.now()}`,
-                        description: 'A generative Gen1 NFT with dynamic visual layers',
-                        image: imageUrl,
-                        animation_url: imageUrl,
-                        attributes: {
-                          flowField: {
-                            enabled: enableFlowField,
-                            color1: flowColor1,
-                            color2: flowColor2,
-                            baseFrequency: flowFieldBaseFreq,
-                            amplitude: flowFieldAmplitude,
-                            octaves: flowFieldOctaves,
-                            rotation: flowFieldRotation,
-                            direction: flowFieldDirection,
+                        // Step 2: Upload GIF to IPFS
+                        console.log('🌐 Uploading GIF to IPFS...');
+                        const formData = new FormData();
+                        formData.append('gif', gifBlob, 'gen1-animation.gif');
+
+                        const uploadResponse = await fetch('/api/gen1/upload-gif', {
+                          method: 'POST',
+                          body: formData,
+                        });
+
+                        if (!uploadResponse.ok) {
+                          const errorData = await uploadResponse.json();
+                          throw new Error(errorData.error || 'Failed to upload GIF to IPFS');
+                        }
+
+                        const { ipfsUrl: imageUrl } = await uploadResponse.json();
+                        console.log('✓ Image uploaded to IPFS:', imageUrl);
+
+                        // Step 3: Create metadata JSON
+                        const metadata = {
+                          name: `Gen1 NFT #${Date.now()}`,
+                          description: 'A generative Gen1 NFT with dynamic visual layers',
+                          image: imageUrl,
+                          animation_url: imageUrl,
+                          attributes: {
+                            flowField: {
+                              enabled: enableFlowField,
+                              color1: flowColor1,
+                              color2: flowColor2,
+                              baseFrequency: flowFieldBaseFreq,
+                              amplitude: flowFieldAmplitude,
+                              octaves: flowFieldOctaves,
+                              rotation: flowFieldRotation,
+                              direction: flowFieldDirection,
+                            },
+                            flowFields: {
+                              enabled: enableFlowFields,
+                              baseFrequency: flowFieldsBaseFreq,
+                              amplitude: flowFieldsAmplitude,
+                              octaves: flowFieldsOctaves,
+                              lineLength: flowLineLength,
+                              lineDensity: flowLineDensity,
+                              rotation: flowFieldsRotation,
+                              direction: flowFieldsDirection,
+                            },
+                            contour: {
+                              enabled: enableContourMapping,
+                              baseFrequency: contourBaseFreq,
+                              amplitude: contourAmplitude,
+                              octaves: contourOctaves,
+                              levels: contourLevels,
+                              smoothness: contourSmoothness,
+                            },
+                            contourAffectsFlow,
                           },
-                          flowFields: {
-                            enabled: enableFlowFields,
-                            baseFrequency: flowFieldsBaseFreq,
-                            amplitude: flowFieldsAmplitude,
-                            octaves: flowFieldsOctaves,
-                            lineLength: flowLineLength,
-                            lineDensity: flowLineDensity,
-                            rotation: flowFieldsRotation,
-                            direction: flowFieldsDirection,
-                          },
-                          contour: {
-                            enabled: enableContourMapping,
-                            baseFrequency: contourBaseFreq,
-                            amplitude: contourAmplitude,
-                            octaves: contourOctaves,
-                            levels: contourLevels,
-                            smoothness: contourSmoothness,
-                          },
-                          contourAffectsFlow,
-                        },
-                      };
+                        };
 
-                      // Step 4: Upload metadata to IPFS
-                      console.log('🌐 Uploading metadata to IPFS...');
-                      const metadataBuffer = Buffer.from(JSON.stringify(metadata));
-                      const metadataFormData = new FormData();
-                      metadataFormData.append('gif', new Blob([metadataBuffer], { type: 'application/json' }), 'metadata.json');
+                        // Step 4: Upload metadata to IPFS
+                        console.log('🌐 Uploading metadata to IPFS...');
+                        const metadataBuffer = Buffer.from(JSON.stringify(metadata));
+                        const metadataFormData = new FormData();
+                        metadataFormData.append('gif', new Blob([metadataBuffer], { type: 'application/json' }), 'metadata.json');
 
-                      const metadataUploadResponse = await fetch('/api/gen1/upload-gif', {
-                        method: 'POST',
-                        body: metadataFormData,
-                      });
+                        const metadataUploadResponse = await fetch('/api/gen1/upload-gif', {
+                          method: 'POST',
+                          body: metadataFormData,
+                        });
 
-                      if (!metadataUploadResponse.ok) {
-                        const errorData = await metadataUploadResponse.json();
-                        throw new Error(errorData.error || 'Failed to upload metadata to IPFS');
+                        if (!metadataUploadResponse.ok) {
+                          const errorData = await metadataUploadResponse.json();
+                          throw new Error(errorData.error || 'Failed to upload metadata to IPFS');
+                        }
+
+                        const { ipfsUrl: metadataUrl } = await metadataUploadResponse.json();
+                        console.log('✓ Metadata uploaded to IPFS:', metadataUrl);
+
+                        // Step 5: Mint with real IPFS URLs
+                        const totalValue = contractMintPrice * BigInt(mintCount);
+                        console.log('🎃 Minting with real IPFS URLs...');
+                        console.log('Image URL:', imageUrl);
+                        console.log('Metadata URL:', metadataUrl);
+                        console.log('Total value:', totalValue.toString(), 'wei');
+
+                        writeContract({
+                      address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+                      abi: gen1ABI,
+                      functionName: 'mint',
+                          args: [imageUrl, metadataUrl],
+                          value: totalValue,
+                          chainId: 84532,
+                        } as any);
+
+                        console.log('✓ WriteContract called - Phantom should pop up now');
+                      } catch (err: any) {
+                        console.error('WriteContract error:', err);
+                        alert('Error: ' + err.message);
                       }
+                    }}
+                    disabled={!isConnected || !contractMintPrice || mintCount < 1 || mintCount > 10 || isMinting || isConfirming}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isMinting ? 'Minting...' : isConfirming ? 'Confirming...' : contractMintPrice ? `🎃 Mint ${mintCount} NFT (Browser)` : 'Loading Price...'}
+                  </button>
 
-                      const { ipfsUrl: metadataUrl } = await metadataUploadResponse.json();
-                      console.log('✓ Metadata uploaded to IPFS:', metadataUrl);
-
-                      // Step 5: Mint with real IPFS URLs
-                      const totalValue = contractMintPrice * BigInt(mintCount);
-                      console.log('🎃 Minting with real IPFS URLs...');
-                      console.log('Image URL:', imageUrl);
-                      console.log('Metadata URL:', metadataUrl);
-                      console.log('Total value:', totalValue.toString(), 'wei');
-
-                      writeContract({
-                    address: CONTRACT_ADDRESS_BASE_SEPOLIA,
-                    abi: gen1ABI,
-                    functionName: 'mint',
-                        args: [imageUrl, metadataUrl],
-                        value: totalValue,
-                        chainId: 84532,
-                      } as any);
-
-                      console.log('✓ WriteContract called - Phantom should pop up now');
-                    } catch (err: any) {
-                      console.error('WriteContract error:', err);
-                      alert('Error: ' + err.message);
-                    }
-                  }}
-                  disabled={!isConnected || !contractMintPrice || mintCount < 1 || mintCount > 10 || isMinting || isConfirming}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isMinting ? 'Minting...' : isConfirming ? 'Confirming...' : contractMintPrice ? `🎃 Mint ${mintCount} NFT (GIF)` : 'Loading Price...'}
-                </button>
-                <p className="text-sm text-yellow-400">Note: Current contract ABI only supports minting to the connected wallet. 'To Address' field is for future transfer functionality or contract update.</p>
+                  <button
+                    type="button"
+                    onClick={handleQueueMint}
+                    disabled={!isConnected || !contractMintPrice || mintCount < 1 || mintCount > 10 || isMinting || isConfirming || queueStatus === 'processing'}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {queueStatus === 'processing' ? `⏳ Rendering ${queueProgress}%...` : queueStatus === 'completed' ? '✅ Complete!' : queueStatus === 'error' ? '❌ Error - Try Again' : contractMintPrice ? `🚀 Mint ${mintCount} NFT (Queue)` : 'Loading Price...'}
+                  </button>
+                </div>
+                <p className="text-sm text-yellow-400">Note: Browser rendering works best on desktop Chrome. Queue rendering works on all devices and handles concurrent mints.</p>
                 {hash && <p className="text-sm text-gray-400">Transaction Hash: <a href={`https://sepolia.basescan.org/tx/${hash}`} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">{hash.slice(0, 6)}...{hash.slice(-4)}</a></p>}
                 {isConfirming && <p className="text-sm text-gray-400">Waiting for confirmation...</p>}
                 {isConfirmed && <p className="text-sm text-green-400">Mint successful!</p>}
