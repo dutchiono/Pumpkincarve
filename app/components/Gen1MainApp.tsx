@@ -106,7 +106,7 @@ function Gen1AppContent() {
         setUserBalance(balanceValue);
 
         // If user has NFTs, find the first tokenId they own
-        if (balanceValue > 0n) {
+        if (balanceValue > BigInt(0)) {
           // For now, we'll find the tokenId by checking sequentially (inefficient but simple)
           // In production, you might want to cache this or use an indexer
           for (let i = 1; i <= 1111; i++) {
@@ -1087,7 +1087,7 @@ function Gen1AppContent() {
             {/* Action Buttons */}
             {isConnected && address && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
-                {userBalance && userBalance > 0n ? (
+                {userBalance && userBalance > BigInt(0) ? (
                   <>
                     <button
                       onClick={handleUpdateNFT}
@@ -1112,7 +1112,7 @@ function Gen1AppContent() {
                       🔄 Update Your NFT (Token #{userTokenId || '?'})
                     </button>
                     <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', textAlign: 'center', margin: 0 }}>
-                      You already own {userBalance.toString()} Gen1 NFT{userBalance > 1n ? 's' : ''}. Update it for a new design.
+                      You already own {userBalance.toString()} Gen1 NFT{userBalance > BigInt(1) ? 's' : ''}. Update it for a new design.
                     </p>
                   </>
                 ) : (
