@@ -13,7 +13,7 @@ interface UserData {
   displayName: string;
 }
 
-const GEN1_CONTRACT_ADDRESS = '0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6';
+const GEN1_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || '0x9d394EAD99Acab4cF8e65cdA3c8e440fB7D27087';
 
 function Gen1AppContent() {
   const { address, isConnected } = useAccount();
@@ -776,7 +776,7 @@ function Gen1AppContent() {
                 </div>
                 <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
                   <a
-                    href="https://sepolia.basescan.org/nft/0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6/1"
+                    href={`https://basescan.org/nft/${GEN1_CONTRACT_ADDRESS}/1`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ color: '#22d3ee', textDecoration: 'underline' }}
@@ -785,7 +785,7 @@ function Gen1AppContent() {
                   </a>
                 </p>
                 <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)', fontStyle: 'italic' }}>
-                  Live on Base Sepolia testnet
+                  Live on Base mainnet
                 </p>
               </div>
             </div>

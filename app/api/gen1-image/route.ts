@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const CONTRACT_ADDRESS = '0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6';
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || '0x9d394EAD99Acab4cF8e65cdA3c8e440fB7D27087';
 const DEMO_TOKEN_ID = '1'; // The demo NFT that shows on home page
 
 const ERC721_ABI = [
@@ -60,8 +60,8 @@ export async function GET(request: Request) {
 
   try {
     const client = createPublicClient({
-      chain: baseSepolia,
-      transport: http('https://sepolia.base.org'),
+      chain: base,
+      transport: http('https://mainnet.base.org'),
     });
 
     // Get token URI from contract
