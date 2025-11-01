@@ -118,7 +118,8 @@ function Gen1AppContent() {
                 args: [BigInt(i)],
               });
 
-              if (owner.toLowerCase() === address.toLowerCase()) {
+              const ownerAddress = owner as string;
+              if (ownerAddress.toLowerCase() === address.toLowerCase()) {
                 setUserTokenId(i);
                 break;
               }
