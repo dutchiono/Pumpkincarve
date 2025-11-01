@@ -1109,82 +1109,69 @@ function PumpkinCarvingAppContent() {
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
           }}>
             <div className="text-5xl mb-4 text-center">🚀</div>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px', textAlign: 'center' }}>Animated Generation NFTs</h2>
-            <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-              <p style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '16px', fontSize: '16px', lineHeight: '1.6' }}>
-                Get ready for the next evolution: <strong style={{ color: '#22d3ee' }}>Animated GIF NFTs</strong> powered by generative art algorithms!
-              </p>
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '24px', textAlign: 'center' }}>Animated Generation NFTs</h2>
 
-              <div style={{ backgroundColor: 'rgba(34, 211, 238, 0.1)', borderRadius: '16px', padding: '20px', marginBottom: '20px', border: '1px solid rgba(34, 211, 238, 0.3)' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#22d3ee', marginBottom: '12px' }}>✨ Features</h3>
-                <ul style={{ textAlign: 'left', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.8' }}>
-                  <li>🎨 <strong>Flow Fields</strong> - Dynamic color gradients that flow and swirl</li>
-                  <li>🌀 <strong>Particle Systems</strong> - Interactive animated patterns</li>
-                  <li>🌊 <strong>Contour Mapping</strong> - Smooth 3D-esque visual effects</li>
-                  <li>🔄 <strong>Seamless Loops</strong> - Infinite perfect-loop animations</li>
-                  <li>🎯 <strong>Unique Combinations</strong> - Billions of possible variations</li>
-                </ul>
-              </div>
-
-              <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.1)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#a855f7', marginBottom: '12px' }}>🛠️ How It Works</h3>
-                <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.6', textAlign: 'left' }}>
-                  Each NFT is generated using multiple layered algorithms that create unique, mesmerizing animations.
-                  You'll be able to customize:
-                </p>
-                <ul style={{ textAlign: 'left', color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px', lineHeight: '1.8', marginTop: '8px' }}>
-                  <li>Color palettes and gradients</li>
-                  <li>Animation speed and direction</li>
-                  <li>Visual complexity and density</li>
-                  <li>And much more...</li>
-                </ul>
-              </div>
-
-              <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px', marginBottom: '16px', fontStyle: 'italic' }}>
-                  Currently live on Base Sepolia testnet!
-                </p>
-
-                <div style={{
-                  display: 'inline-block',
-                  backgroundColor: 'rgba(249, 115, 22, 0.2)',
-                  borderRadius: '16px',
-                  padding: '20px',
-                  border: '2px solid rgba(249, 115, 22, 0.4)',
-                  maxWidth: '400px',
-                  margin: '0 auto'
-                }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#f97316', marginBottom: '12px' }}>🎁 Example Gen1 NFT (Token #1)</h3>
-                  <div style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
-                    <img
-                      src="/api/gen1-image?tokenId=1"
-                      alt="Gen1 Animated NFT"
-                      style={{
-                        width: '100%',
-                        maxWidth: '300px',
-                        height: 'auto',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        marginBottom: '12px',
-                        display: 'block'
-                      }}
-                      onError={(e) => {
-                        e.currentTarget.src = '/gameoverpumpkin.png';
-                      }}
-                    />
-                  </div>
-                  <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                    <a
-                      href="https://sepolia.basescan.org/nft/0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6/1"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: '#22d3ee', textDecoration: 'underline' }}
-                    >
-                      View on Basescan →
-                    </a>
-                  </p>
+            {/* Demo NFT at the top */}
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{
+                display: 'inline-block',
+                backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                borderRadius: '16px',
+                padding: '20px',
+                border: '2px solid rgba(249, 115, 22, 0.4)',
+                maxWidth: '350px',
+                margin: '0 auto'
+              }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#f97316', marginBottom: '12px' }}>🎁 Example Gen1 NFT (Token #1)</h3>
+                <div style={{ position: 'relative', width: '100%', margin: '0 auto' }}>
+                  <img
+                    src="/api/gen1-image?tokenId=1"
+                    alt="Gen1 Animated NFT"
+                    style={{
+                      width: '100%',
+                      maxWidth: '300px',
+                      height: 'auto',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      marginBottom: '12px',
+                      display: 'block',
+                      margin: '0 auto 12px'
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.src = '/gameoverpumpkin.png';
+                    }}
+                  />
                 </div>
+                <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
+                  <a
+                    href="https://sepolia.basescan.org/nft/0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6/1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#22d3ee', textDecoration: 'underline' }}
+                  >
+                    View on Basescan →
+                  </a>
+                </p>
+                <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)', fontStyle: 'italic' }}>
+                  Live on Base Sepolia testnet
+                </p>
               </div>
+            </div>
+
+            {/* Condensed explanation */}
+            <div style={{ backgroundColor: 'rgba(34, 211, 238, 0.1)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(34, 211, 238, 0.3)' }}>
+              <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '15px', lineHeight: '1.6', marginBottom: '12px', textAlign: 'left' }}>
+                <strong style={{ color: '#22d3ee' }}>Animated GIF NFTs</strong> powered by generative art algorithms. Each unique design combines:
+              </p>
+              <ul style={{ textAlign: 'left', color: 'rgba(255, 255, 255, 0.8)', fontSize: '13px', lineHeight: '1.8', margin: 0, paddingLeft: '20px' }}>
+                <li>🎨 <strong>Flow Fields</strong> - Dynamic flowing gradients</li>
+                <li>🌀 <strong>Particle Systems</strong> - Interactive animated patterns</li>
+                <li>🌊 <strong>Contour Mapping</strong> - Smooth 3D visual effects</li>
+                <li>🔄 <strong>Seamless Loops</strong> - Infinite perfect animations</li>
+              </ul>
+              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '13px', lineHeight: '1.6', marginTop: '12px', marginBottom: 0, textAlign: 'left' }}>
+                Customize colors, speeds, and complexity for billions of unique combinations. Coming soon to mainnet!
+              </p>
             </div>
           </div>
         )}
