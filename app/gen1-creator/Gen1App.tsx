@@ -1614,7 +1614,6 @@ const Gen1App: React.FC = () => {
                 <div className="space-y-2">
                   <button
                     type="button"
-                    disabled={totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY}
                     onClick={async () => {
                       console.log('🎃 Mint button clicked!');
 

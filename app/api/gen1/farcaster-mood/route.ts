@@ -31,6 +31,15 @@ export async function POST(req: NextRequest) {
     // Check if userId is a number (FID)
     if (!isNaN(Number(userId))) {
       fid = Number(userId);
+      // If we have FID, fetch username and bio
+      try {
+        const usernameData = await neynarClient.fetchUserData(fid, 'USER_DATA_TYPE_USERNAME');
+        username = usernameData?.data?.userDataBody?.value || null;
+        const bioData = await neynarClient.fetchUserData(fid, 'USER_DATA_TYPE_BIO');
+        bio = bioData?.data?.userDataBody?.value || null;
+      } catch (e) {
+        // Fetch user data failed
+      }
     } else {
       // Try username lookup to get FID
       try {
