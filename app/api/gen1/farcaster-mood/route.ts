@@ -25,36 +25,21 @@ export async function POST(req: NextRequest) {
 
     // Try to get user - userId can be FID or username
     let fid: number | null = null;
-    let username: string | null = null;
-    let bio: string | null = null;
 
     // Check if userId is a number (FID)
     if (!isNaN(Number(userId))) {
       fid = Number(userId);
-      // If we have FID, fetch username and bio
-      try {
-        const usernameData = await neynarClient.fetchUserData(fid, 'USER_DATA_TYPE_USERNAME');
-        username = usernameData?.data?.userDataBody?.value || null;
-        const bioData = await neynarClient.fetchUserData(fid, 'USER_DATA_TYPE_BIO');
-        bio = bioData?.data?.userDataBody?.value || null;
-      } catch (e) {
-        // Fetch user data failed
-      }
     } else {
-      // Try username lookup to get FID
+      // Try username lookup
       try {
         const userResponse = await neynarClient.lookupUserByUsername(userId);
         // @ts-ignore - SDK types may be incomplete
         if (userResponse && userResponse.fid) {
           // @ts-ignore
           fid = userResponse.fid;
-          // @ts-ignore
-          username = userResponse.username || userId;
-          // @ts-ignore
-          bio = userResponse.profile?.bio?.text || '';
         }
       } catch (e) {
-        // Username lookup failed
+        // Username lookup failed, continue
       }
     }
 
@@ -89,8 +74,7 @@ export async function POST(req: NextRequest) {
     const analysisPrompt = `
 Analyze the following Farcaster user's recent posts to understand their personality and mood:
 
-USERNAME: @${username || userId}
-BIO: "${bio || 'No bio provided'}"
+USERNAME: @${userId}
 
 RECENT POSTS (${postsAnalyzed} total):
 ${postTexts}
