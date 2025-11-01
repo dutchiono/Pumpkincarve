@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { join } from 'path';
 
 const CONTRACT_ADDRESS = '0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6';
+const DEMO_TOKEN_ID = '1'; // The demo NFT that shows on home page
 
 const ERC721_ABI = [
   {
@@ -14,9 +17,46 @@ const ERC721_ABI = [
   },
 ] as const;
 
+const CACHE_DIR = join(process.cwd(), '.cache');
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour cache for demo NFT
+
+// Ensure cache directory exists
+if (!existsSync(CACHE_DIR)) {
+  mkdirSync(CACHE_DIR, { recursive: true });
+}
+
+type ImageCacheData = {
+  buffer: string; // base64 encoded
+  contentType: string;
+  lastUpdate: number;
+};
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const tokenId = searchParams.get('tokenId') || '1';
+
+  const now = Date.now();
+  const cacheFile = join(CACHE_DIR, `gen1-image-${tokenId}.json`);
+
+  // Check cache for any token (but especially the demo NFT)
+  if (existsSync(cacheFile)) {
+    try {
+      const cacheData: ImageCacheData = JSON.parse(readFileSync(cacheFile, 'utf-8'));
+      if (cacheData.lastUpdate && (now - cacheData.lastUpdate) < CACHE_TTL) {
+        const age = Math.floor((now - cacheData.lastUpdate) / 1000);
+        console.log(`✅ Returning cached Gen1 #${tokenId} image (age: ${age}s)`);
+        return new NextResponse(Buffer.from(cacheData.buffer, 'base64'), {
+          status: 200,
+          headers: {
+            'Content-Type': cacheData.contentType,
+            'Cache-Control': 'public, max-age=31536000, immutable',
+          },
+        });
+      }
+    } catch (err) {
+      console.error('Error reading cache:', err);
+    }
+  }
 
   try {
     const client = createPublicClient({
@@ -115,6 +155,19 @@ export async function GET(request: Request) {
     const contentType = imageResponse.headers.get('content-type') || 'image/gif';
 
     console.log(`✅ Successfully fetched Gen1 image, content-type: ${contentType}`);
+
+    // Cache the image for future requests
+    try {
+      const cacheData: ImageCacheData = {
+        buffer: Buffer.from(imageBuffer).toString('base64'),
+        contentType,
+        lastUpdate: now,
+      };
+      writeFileSync(cacheFile, JSON.stringify(cacheData));
+      console.log(`✅ Cached Gen1 #${tokenId} image`);
+    } catch (err) {
+      console.error('Error caching image:', err);
+    }
 
     // Return the image with caching headers
     return new NextResponse(imageBuffer, {
