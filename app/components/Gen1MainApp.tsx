@@ -3,7 +3,8 @@
 import { sdk } from '@farcaster/miniapp-sdk';
 import { useEffect, useState, useRef } from 'react';
 import { parseEther } from 'viem';
-import { useAccount, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
+import { useAccount, usePublicClient } from 'wagmi';
+import { gen1ABI } from '../gen1-creator/abi';
 
 interface UserData {
   posts: any[];
@@ -14,51 +15,19 @@ interface UserData {
   displayName: string;
 }
 
-interface PumpkinDesign {
-  theme: string;
-  description: string;
-  imageUrl: string;
-  thoughtProcess: string;
-  personalityAnalysis: any;
-}
+const GEN1_CONTRACT_ADDRESS = '0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6';
 
-const HALLOWEEN_MESSAGES = [
-  '🎃 Carving out your personality...',
-  '👻 Analyzing your spooky side...',
-  '🧙 Stirring the cauldron of creativity...',
-  '🦇 Bats are plotting your design...',
-  '💀 Skeleton crew hard at work...',
-  '🕷️ Weaving your web of inspiration...',
-  '🔮 Crystal ball gazing into your soul...',
-  '🎭 Masks are off, creativity is on...',
-  '🌙 Full moon magic in progress...',
-  '⚰️ Digging deep for unique design...',
-];
-
-const PUMPKIN_NFT_ABI = [
-  {
-    inputs: [{ internalType: 'string', name: 'imageUrl', type: 'string' }],
-    name: 'mint',
-    outputs: [],
-    stateMutability: 'payable',
-    type: 'function',
-  },
-] as const;
-
-function PumpkinCarvingAppContent() {
+function Gen1AppContent() {
   const { address, isConnected } = useAccount();
+  const publicClient = usePublicClient();
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [pumpkinDesign, setPumpkinDesign] = useState<PumpkinDesign | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [generatingImage, setGeneratingImage] = useState(false);
-  const [minting, setMinting] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [mintSuccess, setMintSuccess] = useState(false);
-  const [ipfsUrl, setIpfsUrl] = useState<string>('');
-  const [personalityInsights, setPersonalityInsights] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'gen1' | 'leaderboard' | 'profile'>('gen1');
+  const [userBalance, setUserBalance] = useState<bigint | null>(null);
+  const [userTokenId, setUserTokenId] = useState<number | null>(null);
   const isAdmin = userData?.fid === 474867;
   const [topMinters, setTopMinters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topHolders, setTopHolders] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
@@ -67,14 +36,9 @@ function PumpkinCarvingAppContent() {
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [userNFTs, setUserNFTs] = useState<Record<string, { tokenId: number; imageUrl: string }[]>>({});
   const [loadingNFTs, setLoadingNFTs] = useState<Record<string, boolean>>({});
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true); // Default ON
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [testNotificationText, setTestNotificationText] = useState('');
   const [leaderboardNotice, setLeaderboardNotice] = useState<string | null>(null);
-
-  const { writeContract, data: hash, isPending, error: contractError } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash,
-  });
 
   // Mount state to prevent hydration errors
   useEffect(() => {
@@ -125,35 +89,53 @@ function PumpkinCarvingAppContent() {
 
 
 
-  // Get random Halloween message
-  const getRandomMessage = () => {
-    return HALLOWEEN_MESSAGES[Math.floor(Math.random() * HALLOWEEN_MESSAGES.length)];
-  };
+  // Check user's NFT balance
+  useEffect(() => {
+    const checkBalance = async () => {
+      if (!address || !publicClient) return;
 
-  // Generate personality insights from analysis
-  const generatePersonalityInsights = (analysis: any, username: string) => {
-    const insights: string[] = [];
+      try {
+        const balance = await publicClient.readContract({
+          address: GEN1_CONTRACT_ADDRESS as `0x${string}`,
+          abi: gen1ABI,
+          functionName: 'balanceOf',
+          args: [address],
+        });
 
-    if (analysis.themes && analysis.themes.length > 0) {
-      insights.push(`We noticed you love talking about ${analysis.themes[0]}! 🎃`);
-    }
+        setUserBalance(balance as bigint);
 
-    if (analysis.interests && analysis.interests.length > 0) {
-      insights.push(`Your passion for ${analysis.interests[0]} is carving into this design! 🔪`);
-    }
+        // If user has NFTs, find the first tokenId they own
+        if (balance > 0n) {
+          // For now, we'll find the tokenId by checking sequentially (inefficient but simple)
+          // In production, you might want to cache this or use an indexer
+          for (let i = 1; i <= 1111; i++) {
+            try {
+              const owner = await publicClient.readContract({
+                address: GEN1_CONTRACT_ADDRESS as `0x${string}`,
+                abi: gen1ABI,
+                functionName: 'ownerOf',
+                args: [BigInt(i)],
+              });
 
-    if (analysis.personality) {
-      insights.push(`Your ${analysis.personality.toLowerCase()} vibes are perfect for Halloween! 👻`);
-    }
+              if (owner.toLowerCase() === address.toLowerCase()) {
+                setUserTokenId(i);
+                break;
+              }
+            } catch {
+              // Token doesn't exist yet, continue
+              continue;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error checking balance:', err);
+      }
+    };
 
-    if (analysis.mood) {
-      insights.push(`That ${analysis.mood.toLowerCase()} energy is so spooky cool! 🦇`);
-    }
-
-    insights.push(`@${username}, your Halloween spirit is about to shine! 🎃✨`);
-
-    return insights;
-  };
+    checkBalance();
+    const interval = setInterval(checkBalance, 10000); // Check every 10 seconds
+    return () => clearInterval(interval);
+  }, [address, publicClient]);
 
   // Handle "Add App" button click
   const handleAddApp = async () => {
@@ -196,34 +178,6 @@ function PumpkinCarvingAppContent() {
     }
   };
 
-  // Handle mint success + broadcast notification
-  useEffect(() => {
-    if (isConfirmed && hash && userData) {
-      setMintSuccess(true);
-      setMinting(false);
-      setLoadingMessage('');
-
-      // Broadcast "new mint" notification to everyone
-      fetch('/api/notifications/mint-broadcast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          minterFid: userData.fid,
-          minterUsername: userData.username,
-          transactionHash: hash
-        })
-      }).catch(err => console.error('Broadcast notification failed:', err));
-    }
-  }, [isConfirmed, hash, userData]);
-
-  // Handle contract errors
-  useEffect(() => {
-    if (contractError) {
-      setError(`Mint failed: ${contractError.message || 'Unknown error'}`);
-      setMinting(false);
-      setLoadingMessage('');
-    }
-  }, [contractError]);
 
   // Fetch NFTs when user is expanded
   useEffect(() => {
@@ -312,7 +266,7 @@ function PumpkinCarvingAppContent() {
     const fetchProfile = async () => {
       if (isConnected && address && !userData && !loading) {
         setLoading(true);
-        setLoadingMessage('👻 Loading your profile...');
+        setLoadingMessage('Loading your profile...');
         try {
           console.log('📞 Fetching profile for address:', address);
           const response = await fetch('/api/neynar/user', {
@@ -646,60 +600,15 @@ function PumpkinCarvingAppContent() {
 
   return (
     <div
-      className="min-h-screen pb-20 relative"
+      className="min-h-screen pb-32 relative"
       style={{
         width: '100vw',
         maxWidth: '100vw',
         overflowX: 'hidden',
-        background: 'linear-gradient(180deg, #1a0a2e 0%, #2d1b47 50%, #0f0c29 100%)',
-        backgroundImage: `
-          radial-gradient(ellipse at top, rgba(139, 69, 19, 0.3) 0%, transparent 50%),
-          url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='graveyard' x='0' y='0' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Crect fill='%23000000' opacity='0.2' width='100' height='100'/%3E%3Cpath d='M 20 100 L 25 70 L 22 70 L 27 50 L 25 50 L 23 30 L 25 30 L 20 10 L 15 30 L 17 30 L 15 50 L 13 50 L 18 70 L 15 70 Z' fill='%23ffffff' opacity='0.15'/%3E%3Cpath d='M 80 100 L 85 70 L 82 70 L 87 50 L 85 50 L 83 30 L 85 30 L 80 10 L 75 30 L 77 30 L 75 50 L 73 50 L 78 70 L 75 70 Z' fill='%23ffffff' opacity='0.15'/%3E%3C/pattern%3E%3C/defs%3E%3Crect fill='url(%23graveyard)' width='100' height='100'/%3E%3C/svg%3E")
-        `,
+        background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
       }}
     >
-      {/* Lightning Effect Overlay */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        pointerEvents: 'none',
-        overflow: 'hidden',
-        zIndex: 1,
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: '10%',
-          left: '20%',
-          width: '4px',
-          height: '200px',
-          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%)',
-          filter: 'blur(2px)',
-          animation: 'lightning 3s infinite',
-          boxShadow: '0 0 20px rgba(255, 255, 255, 0.5)',
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: '15%',
-          right: '25%',
-          width: '3px',
-          height: '150px',
-          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%)',
-          filter: 'blur(1px)',
-          animation: 'lightning 4s infinite 1.5s',
-          boxShadow: '0 0 15px rgba(255, 255, 255, 0.4)',
-        }} />
-      </div>
-      <style>{`
-        @keyframes lightning {
-          0%, 100% { opacity: 0; }
-          1%, 2% { opacity: 1; }
-          3% { opacity: 0; }
-        }
-      `}</style>
-      <div className="max-w-2xl mx-auto p-4 pb-20" style={{ width: '100%', maxWidth: '100%', minHeight: '100vh', background: 'radial-gradient(circle at center, rgba(168, 85, 247, 0.05), rgba(0, 0, 0, 0.8))' }}>
+      <div className="max-w-2xl mx-auto p-4 pb-32" style={{ width: '100%', maxWidth: '100%', minHeight: '100vh', paddingBottom: '120px', background: 'radial-gradient(circle at center, rgba(59, 130, 246, 0.05), rgba(0, 0, 0, 0.8))' }}>
 
         {loading && loadingMessage && (
           <div style={{
@@ -1138,7 +1047,7 @@ function PumpkinCarvingAppContent() {
                       margin: '0 auto 12px'
                     }}
                     onError={(e) => {
-                      e.currentTarget.src = '/gameoverpumpkin.png';
+                      e.currentTarget.style.display = 'none';
                     }}
                   />
                 </div>
@@ -1159,7 +1068,7 @@ function PumpkinCarvingAppContent() {
             </div>
 
             {/* Condensed explanation */}
-            <div style={{ backgroundColor: 'rgba(34, 211, 238, 0.1)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(34, 211, 238, 0.3)' }}>
+            <div style={{ backgroundColor: 'rgba(34, 211, 238, 0.1)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(34, 211, 238, 0.3)', marginBottom: '24px' }}>
               <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '15px', lineHeight: '1.6', marginBottom: '12px', textAlign: 'left' }}>
                 <strong style={{ color: '#22d3ee' }}>Animated GIF NFTs</strong> powered by generative art algorithms. Each unique design combines:
               </p>
@@ -1170,9 +1079,86 @@ function PumpkinCarvingAppContent() {
                 <li>🔄 <strong>Seamless Loops</strong> - Infinite perfect animations</li>
               </ul>
               <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '13px', lineHeight: '1.6', marginTop: '12px', marginBottom: 0, textAlign: 'left' }}>
-                Customize colors, speeds, and complexity for billions of unique combinations. Coming soon to mainnet!
+                Customize colors, speeds, and complexity for billions of unique combinations.
               </p>
             </div>
+
+            {/* Action Buttons */}
+            {isConnected && address && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
+                {userBalance && userBalance > 0n ? (
+                  <>
+                    <button
+                      onClick={handleUpdateNFT}
+                      style={{
+                        padding: '16px 32px',
+                        borderRadius: '12px',
+                        fontWeight: '600',
+                        fontSize: '16px',
+                        backgroundColor: 'rgba(34, 211, 238, 0.2)',
+                        border: '2px solid rgba(34, 211, 238, 0.5)',
+                        color: '#ffffff',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(34, 211, 238, 0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(34, 211, 238, 0.2)';
+                      }}
+                    >
+                      🔄 Update Your NFT (Token #{userTokenId || '?'})
+                    </button>
+                    <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', textAlign: 'center', margin: 0 }}>
+                      You already own {userBalance.toString()} Gen1 NFT{userBalance > 1n ? 's' : ''}. Update it for a new design.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleOpenCreator}
+                      style={{
+                        padding: '16px 32px',
+                        borderRadius: '12px',
+                        fontWeight: '600',
+                        fontSize: '16px',
+                        backgroundColor: 'rgba(59, 130, 246, 0.3)',
+                        border: '2px solid rgba(59, 130, 246, 0.6)',
+                        color: '#ffffff',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
+                      }}
+                    >
+                      🚀 Create & Mint Your Gen1 NFT
+                    </button>
+                    <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', textAlign: 'center', margin: 0 }}>
+                      One mint per wallet. Create your unique animated NFT powered by AI personality analysis.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+
+            {!isConnected && (
+              <div style={{
+                backgroundColor: 'rgba(234, 179, 8, 0.2)',
+                border: '2px solid rgba(234, 179, 8, 0.5)',
+                borderRadius: '16px',
+                padding: '20px',
+                textAlign: 'center',
+                marginTop: '24px'
+              }}>
+                <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', marginBottom: '8px' }}>🔗 Connect Your Wallet</p>
+                <p style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.8)' }}>Connect your wallet to create and mint your Gen1 NFT</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -1313,8 +1299,8 @@ function PumpkinCarvingAppContent() {
         )}
         </div>
 
-      {/* Bottom Navigation - Halloween Theme */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to right, #dc2626, #6b21a8)', height: '64px', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)' }}>
+      {/* Bottom Navigation */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to right, #1e293b, #334155)', height: '64px', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
         <button onClick={() => setActiveTab('gen1')} style={{ fontSize: '28px', border: 'none', background: 'transparent', cursor: 'pointer', opacity: activeTab === 'gen1' ? 1 : 0.6 }}>
           🚀
         </button>
@@ -1331,6 +1317,6 @@ function PumpkinCarvingAppContent() {
   );
 }
 
-export function PumpkinCarvingApp() {
-  return <PumpkinCarvingAppContent />;
+export function Gen1MainApp() {
+  return <Gen1AppContent />;
 }
