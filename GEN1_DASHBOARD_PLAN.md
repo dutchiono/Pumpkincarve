@@ -1,8 +1,8 @@
-# Gen3 Dashboard & Mint System
+# Gen1 Dashboard & Mint System
 
 ## Overview
 
-Gen3 studio becomes the central dashboard for:
+Gen1 studio becomes the central dashboard for:
 1. **Designing** base visual parameters
 2. **Minting** new NFTs to holders
 3. **Manually modifying** existing NFTs
@@ -28,13 +28,13 @@ Gen3 Studio → Export Settings → Batch Script → IPFS → Update Metadata
 
 ---
 
-## Gen3 Studio UI Redesign
+## Gen1 Studio UI Redesign
 
 ### Layout (Card-Based)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  GEN3 NFT DESIGN STUDIO                          [Base Sepolia] │
+│  GEN1 NFT DESIGN STUDIO                          [Base Sepolia] │
 ├─────────────────────────────────────────────────────────┤
 │                                                           │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
@@ -61,7 +61,7 @@ Gen3 Studio → Export Settings → Batch Script → IPFS → Update Metadata
 │  │ Mint New:                      │   ┌────────────┐ │
 │  │   To Address: [_____________]  │   │ DATA       │ │
 │  │   Count: [1]                   │   │ SOURCES    │ │
-│  │   [Mint to Address]             │   │ LEGEND     │ │
+│  │   [Mint to Address]             │   │            │ │
 │  │                                 │   │            │ │
 │  │ Update Existing:                │   └────────────┘ │
 │  │   Token ID: [#]                 │                  │
@@ -202,7 +202,7 @@ async function mintToAddress(destinationAddress: string, count: number) {
 
     // Upload metadata with base settings to IPFS
     const metadata = {
-      name: `Gen3 NFT #${tokenId}`,
+      name: `Gen1 NFT #${tokenId}`,
       description: 'Evolving generative art',
       image: ipfsUrl,
       animation_url: ipfsUrl,
@@ -269,7 +269,7 @@ Select Token → Fetch Current → Modify Manually → Render → Upload → Upd
 ## Network Strategy
 
 ### Base Sepolia (Test)
-- Deploy Gen3 contract
+- Deploy Gen1 contract
 - Mint test NFTs
 - Test batch scripts
 - Test manual updates
@@ -310,7 +310,7 @@ Select Token → Fetch Current → Modify Manually → Render → Upload → Upd
 - [ ] Neighbor associations (TODO)
 
 ### Contracts
-- [ ] Gen3 contract on Base Sepolia
+- [ ] Gen1 contract on Base Sepolia
 - [ ] `mintTo(address, count)` function
 - [ ] `updateMetadata(tokenId, newURI)` function
 - [ ] `tokenURI(tokenId)` function
@@ -327,7 +327,7 @@ Select Token → Fetch Current → Modify Manually → Render → Upload → Upd
 
 ## Next Steps
 
-1. **Redesign Gen3 Studio UI** (card-based layout)
+1. **Redesign Gen1 Studio UI** (card-based layout)
 2. **Add wallet connect** to On-Chain Actions card
 3. **Implement mint functionality** with wagmi
 4. **Create fetch & update functions** for existing NFTs

@@ -1,4 +1,4 @@
-# Gen3 NFT Evolution Mapping
+# Gen1 NFT Evolution Mapping
 
 ## How Data Becomes Visual Changes
 
@@ -12,7 +12,7 @@
 - Generates colors that match personality/mood
 - Example: Creative person → purple/blue, Technical → blue/cyan
 
-**Code**: `app/services/gen3-data-analyzer.ts` → `generateColorsWithAI()`
+**Code**: `app/services/gen1-data-analyzer.ts` → `generateColorsWithAI()`
 
 ---
 
@@ -28,7 +28,7 @@
 - User posts 5 times/day → 1.5x frequency
 - User posts 20 times/day → 2.0x frequency (capped)
 
-**Code**: `app/services/gen3-data-analyzer.ts` → `modifySettings()` line
+**Code**: `app/services/gen1-data-analyzer.ts` → `modifySettings()` line
 
 ---
 

@@ -3,29 +3,29 @@ import { Providers } from './providers';
 
 const miniappEmbed = {
   version: "1",
-  imageUrl: "https://bushleague.xyz/digitalpumpkin.png",
+  imageUrl: "https://bushleague.xyz/splash-200.png",
   button: {
-    title: "Carve Your NFT",
+    title: "Gen1 NFT Studio",
     action: {
       type: "launch_miniapp",
-      name: "Pumpkin Carving NFT",
-      splashImageUrl: "https://bushleague.xyz/digitalpumpkin.png",
+      name: "Gen1 NFT Studio",
+      splashImageUrl: "https://bushleague.xyz/splash-200.png",
       splashBackgroundColor: "#0F1535"
     }
   }
 };
 
 export const metadata = {
-  title: 'Pumpkin Carving NFT',
-  description: 'Carve your personality into a spooky NFT on Base',
+  title: 'Gen1 NFT Studio',
+  description: 'Evolving generative art NFTs on Base',
   icons: {
-    icon: '/digitalpumpkin.png',
-    apple: '/digitalpumpkin.png',
+    icon: '/splash-200.png',
+    apple: '/splash-200.png',
   },
   openGraph: {
-    title: 'Pumpkin Carving NFT',
-    description: 'Carve your personality into a spooky NFT on Base',
-    images: ['https://bushleague.xyz/digitalpumpkin.png'],
+    title: 'Gen1 NFT Studio',
+    description: 'Evolving generative art NFTs on Base',
+    images: ['https://bushleague.xyz/splash-200.png'],
   },
 };
 
