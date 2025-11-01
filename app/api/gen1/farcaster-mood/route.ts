@@ -24,7 +24,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Try to get user - userId can be FID or username
-    // First try FID lookup
     let fid: number | null = null;
     let username: string | null = null;
     let bio: string | null = null;
@@ -33,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (!isNaN(Number(userId))) {
       fid = Number(userId);
     } else {
-      // Try username lookup
+      // Try username lookup to get FID
       try {
         const userResponse = await neynarClient.lookupUserByUsername(userId);
         // @ts-ignore - SDK types may be incomplete
@@ -46,29 +45,12 @@ export async function POST(req: NextRequest) {
           bio = userResponse.profile?.bio?.text || '';
         }
       } catch (e) {
-        // Username lookup failed, continue
+        // Username lookup failed
       }
     }
 
     if (!fid) {
       return NextResponse.json({ error: 'Farcaster user not found' }, { status: 404 });
-    }
-
-    // If we didn't get username from lookup, try FID lookup
-    if (!username) {
-      try {
-        const userResponse = await neynarClient.lookupUserByFid(fid);
-        // @ts-ignore
-        if (userResponse && userResponse.username) {
-          // @ts-ignore
-          username = userResponse.username;
-          // @ts-ignore
-          bio = userResponse.profile?.bio?.text || '';
-        }
-      } catch (e) {
-        // FID lookup failed, use userId as fallback
-        username = String(userId);
-      }
     }
 
     const castsResponse = await neynarClient.fetchCastsForUser({ fid, limit: 100 });
@@ -98,7 +80,7 @@ export async function POST(req: NextRequest) {
     const analysisPrompt = `
 Analyze the following Farcaster user's recent posts to understand their personality and mood:
 
-USERNAME: @${username}
+USERNAME: @${username || userId}
 BIO: "${bio || 'No bio provided'}"
 
 RECENT POSTS (${postsAnalyzed} total):
