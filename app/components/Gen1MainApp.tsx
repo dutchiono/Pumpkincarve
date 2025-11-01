@@ -297,6 +297,15 @@ function Gen1AppContent() {
     fetchProfile();
   }, [isConnected, address, userData, loading]);
 
+  const handleOpenCreator = () => {
+    window.location.href = '/gen1-creator';
+  };
+
+  const handleUpdateNFT = () => {
+    if (userTokenId) {
+      window.location.href = `/gen1-creator?tokenId=${userTokenId}`;
+    }
+  };
 
   return (
     <div
