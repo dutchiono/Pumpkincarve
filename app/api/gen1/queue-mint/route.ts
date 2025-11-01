@@ -4,7 +4,7 @@ import { getQueue } from '@/app/services/queue';
 export async function POST(request: NextRequest) {
   try {
     const { settings, walletAddress } = await request.json();
-    
+
     // Add job to queue
     const queue = getQueue();
     const job = await queue.add('render-nft', {

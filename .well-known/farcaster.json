@@ -27,5 +27,8 @@
     "ogDescription": "Mint Your Personality",
     "ogImageUrl": "https://bushleague.xyz/digitalpumpkin.png",
     "webhookUrl": "https://api.neynar.com/f/app/4359b582-99fa-463d-a506-35d85d625a7b/event"
+  },
+  "baseBuilder": {
+    "ownerAddress": "0xa4dc9443252Cce442eEBFfD8D4Ba8Ebd1a4018eA"
   }
 }
