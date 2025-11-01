@@ -307,6 +307,34 @@ function Gen1AppContent() {
     }
   };
 
+  const handleTestComposeCast = async () => {
+    if (!isAdmin) return;
+
+    try {
+      setLoadingMessage('📤 Testing composeCast...');
+
+      const result = await sdk.actions.composeCast({
+        text: '🧪 Testing composeCast from admin panel!\n\nThis is a test message to verify the miniapp share functionality.',
+        embeds: ['https://bushleague.xyz'] as [string],
+      });
+
+      if (result?.cast) {
+        setError(null);
+        setLoadingMessage('🎉 Test cast posted to Farcaster!');
+        setTimeout(() => {
+          setLoadingMessage('');
+          setError(null);
+        }, 3000);
+      } else {
+        setLoadingMessage('');
+      }
+    } catch (err: any) {
+      console.error('❌ Test composeCast error:', err);
+      setError('Failed to test composeCast: ' + (err.message || String(err)));
+      setLoadingMessage('');
+    }
+  };
+
   return (
     <div
       className="min-h-screen pb-32 relative"
