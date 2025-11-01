@@ -506,7 +506,7 @@ const Gen1App: React.FC = () => {
 
           // Step 3: Mint on-chain
           const totalValue = contractMintPrice * BigInt(mintCount);
-          console.log('🎃 Minting with IPFS URLs from queue...');
+          console.log('🚀 Minting with IPFS URLs from queue...');
           console.log('Image URL:', status.result.imageUrl);
           console.log('Metadata URL:', status.result.metadataUrl);
 
@@ -1615,7 +1615,7 @@ const Gen1App: React.FC = () => {
                   <button
                     type="button"
                     onClick={async () => {
-                      console.log('🎃 Mint button clicked!');
+                      console.log('🚀 Mint button clicked!');
 
                       if (!contractMintPrice) {
                         alert('⏳ Loading mint price from contract... Please wait a few seconds and try again.');
@@ -1711,7 +1711,7 @@ const Gen1App: React.FC = () => {
 
                         // Step 5: Mint with real IPFS URLs
                         const totalValue = contractMintPrice * BigInt(mintCount);
-                        console.log('🎃 Minting with real IPFS URLs...');
+                        console.log('🚀 Minting with real IPFS URLs...');
                         console.log('Image URL:', imageUrl);
                         console.log('Metadata URL:', metadataUrl);
                         console.log('Total value:', totalValue.toString(), 'wei');
@@ -1734,7 +1734,7 @@ const Gen1App: React.FC = () => {
                     disabled={!isConnected || !contractMintPrice || mintCount < 1 || mintCount > 10 || isMinting || isConfirming}
                     className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isMinting ? 'Minting...' : isConfirming ? 'Confirming...' : contractMintPrice ? `🎃 Mint ${mintCount} NFT (Browser)` : 'Loading Price...'}
+                    {isMinting ? 'Minting...' : isConfirming ? 'Confirming...' : contractMintPrice ? `🚀 Mint ${mintCount} NFT (Browser)` : 'Loading Price...'}
                   </button>
 
                   <button
