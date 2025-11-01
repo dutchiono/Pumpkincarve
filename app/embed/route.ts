@@ -19,25 +19,25 @@ export async function GET(request: NextRequest) {
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="${miniappUrl}">
-  <meta property="og:title" content="🎃 Pumpkin Carving NFT">
-  <meta property="og:description" content="Carve your personality into a spooky NFT on Base">
+  <meta property="og:title" content="Gen1 NFT Studio">
+  <meta property="og:description" content="Animated generative art NFTs on Base">
   <meta property="og:image" content="${imageUrl}">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="${miniappUrl}">
-  <meta name="twitter:title" content="🎃 Pumpkin Carving NFT">
-  <meta name="twitter:description" content="Carve your personality into a spooky NFT on Base">
+  <meta name="twitter:title" content="Gen1 NFT Studio">
+  <meta name="twitter:description" content="Animated generative art NFTs on Base">
   <meta name="twitter:image" content="${imageUrl}">
 
   <!-- Farcaster Mini App -->
-  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"${imageUrl}","button":{"title":"🎃 Carve Your NFT","action":{"type":"launch_miniapp","name":"Pumpkin Carving NFT","splashImageUrl":"https://bushleague.xyz/digitalpumpkin.png","splashBackgroundColor":"#0F1535"}}}'>
+  <meta name="fc:miniapp" content='{"version":"1","imageUrl":"${imageUrl}","button":{"title":"Create NFT","action":{"type":"launch_miniapp","name":"Gen1 NFT Studio","splashImageUrl":"https://bushleague.xyz/splash-200.png","splashBackgroundColor":"#0f172a"}}}'>
 
-  <title>🎃 Pumpkin Carving NFT</title>
+  <title>Gen1 NFT Studio</title>
 </head>
 <body>
-  <h1>🎃 Pumpkin Carving NFT</h1>
-  <p>Carve your personality into a spooky NFT on Base</p>
+  <h1>Gen1 NFT Studio</h1>
+  <p>Animated generative art NFTs on Base</p>
 </body>
 </html>`;
 

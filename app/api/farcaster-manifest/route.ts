@@ -9,26 +9,26 @@ export async function GET() {
     },
     miniapp: {
       version: "1",
-      name: "Pumpkin Carving!",
-      subtitle: "AI-powered personality NFTs",
-      description: "Carve your personality into a spooky NFT",
-      tagline: "Your Farcaster posts, carved into a unique pumpkin NFT on Base",
-      iconUrl: "https://bushleague.xyz/digitalpumpkin.png",
+      name: "Gen1 NFT Studio",
+      subtitle: "Generative art NFTs on Base",
+      description: "Animated GIF NFTs powered by generative art algorithms",
+      tagline: "Evolving generative art NFTs",
+      iconUrl: "https://bushleague.xyz/splash-200.png",
       homeUrl: "https://bushleague.xyz",
-      imageUrl: "https://bushleague.xyz/digitalpumpkin.png",
-      heroImageUrl: "https://bushleague.xyz/digitalpumpkin.png",
-      buttonTitle: "Carve",
-      splashImageUrl: "https://bushleague.xyz/digitalpumpkin.png",
-      splashBackgroundColor: "#0F1535",
+      imageUrl: "https://bushleague.xyz/splash-200.png",
+      heroImageUrl: "https://bushleague.xyz/splash-200.png",
+      buttonTitle: "Create",
+      splashImageUrl: "https://bushleague.xyz/splash-200.png",
+      splashBackgroundColor: "#0f172a",
       primaryCategory: "NFT",
-      tags: ["AI", "NFT", "Halloween", "Personality", "Base", "Farcaster"],
+      tags: ["AI", "NFT", "Generative", "Base", "Farcaster"],
       screenshotUrls: [
-        "https://bushleague.xyz/digitalpumpkin.png"
+        "https://bushleague.xyz/splash-200.png"
       ],
       castShareUrl: "https://bushleague.xyz",
-      ogTitle: "Pumpkin Carving NFT - Carve Your Personality",
-      ogDescription: "AI-generated pumpkin carving NFT from your Farcaster posts on Base",
-      ogImageUrl: "https://bushleague.xyz/digitalpumpkin.png",
+      ogTitle: "Gen1 NFT Studio - Generative Art NFTs",
+      ogDescription: "Animated generative art NFTs on Base",
+      ogImageUrl: "https://bushleague.xyz/splash-200.png",
       webhookUrl: "https://api.neynar.com/f/app/4359b582-99fa-463d-a506-35d85d625a7b/event"
     }
   };

@@ -10,7 +10,7 @@ const miniappEmbed = {
       type: "launch_miniapp",
       name: "Gen1 NFT Studio",
       splashImageUrl: "https://bushleague.xyz/splash-200.png",
-      splashBackgroundColor: "#0F1535"
+      splashBackgroundColor: "#0f172a"
     }
   }
 };
