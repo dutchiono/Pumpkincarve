@@ -2,9 +2,7 @@
 
 import { sdk } from '@farcaster/miniapp-sdk';
 import { useEffect, useState, useRef } from 'react';
-import { parseEther } from 'viem';
-import { useAccount, usePublicClient } from 'wagmi';
-import { gen1ABI } from '../gen1-creator/abi';
+import { useAccount } from 'wagmi';
 
 interface UserData {
   posts: any[];
@@ -19,15 +17,12 @@ const GEN1_CONTRACT_ADDRESS = '0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6';
 
 function Gen1AppContent() {
   const { address, isConnected } = useAccount();
-  const publicClient = usePublicClient();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'gen1' | 'leaderboard' | 'profile'>('gen1');
-  const [userBalance, setUserBalance] = useState<bigint | null>(null);
-  const [userTokenId, setUserTokenId] = useState<number | null>(null);
   const isAdmin = userData?.fid === 474867;
   const [topMinters, setTopMinters] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
   const [topHolders, setTopHolders] = useState<{ address: string; count: number; username: string | null; fid: number | null; pfp: string | null }[]>([]);
@@ -89,55 +84,56 @@ function Gen1AppContent() {
 
 
 
-  // Check user's NFT balance
-  useEffect(() => {
-    const checkBalance = async () => {
-      if (!address || !publicClient) return;
+  // Balance check disabled - contract is on Sepolia testnet, not mainnet
+  // This was causing 30-60s hangs when the miniapp loads on mainnet
+  // useEffect(() => {
+  //   const checkBalance = async () => {
+  //     if (!address || !publicClient) return;
 
-      try {
-        const balance = await publicClient.readContract({
-          address: GEN1_CONTRACT_ADDRESS as `0x${string}`,
-          abi: gen1ABI,
-          functionName: 'balanceOf',
-          args: [address],
-        });
+  //     try {
+  //       const balance = await publicClient.readContract({
+  //         address: GEN1_CONTRACT_ADDRESS as `0x${string}`,
+  //         abi: gen1ABI,
+  //         functionName: 'balanceOf',
+  //         args: [address],
+  //       });
 
-        const balanceValue = BigInt(balance as unknown as bigint);
-        setUserBalance(balanceValue);
+  //       const balanceValue = BigInt(balance as unknown as bigint);
+  //       setUserBalance(balanceValue);
 
-        // If user has NFTs, find the first tokenId they own
-        if (balanceValue > BigInt(0)) {
-          // For now, we'll find the tokenId by checking sequentially (inefficient but simple)
-          // In production, you might want to cache this or use an indexer
-          for (let i = 1; i <= 1111; i++) {
-            try {
-              const owner = await publicClient.readContract({
-                address: GEN1_CONTRACT_ADDRESS as `0x${string}`,
-                abi: gen1ABI,
-                functionName: 'ownerOf',
-                args: [BigInt(i)],
-              });
+  //       // If user has NFTs, find the first tokenId they own
+  //       if (balanceValue > BigInt(0)) {
+  //         // For now, we'll find the tokenId by checking sequentially (inefficient but simple)
+  //         // In production, you might want to cache this or use an indexer
+  //         for (let i = 1; i <= 1111; i++) {
+  //           try {
+  //             const owner = await publicClient.readContract({
+  //               address: GEN1_CONTRACT_ADDRESS as `0x${string}`,
+  //               abi: gen1ABI,
+  //               functionName: 'ownerOf',
+  //               args: [BigInt(i)],
+  //             });
 
-              const ownerAddress = owner as string;
-              if (ownerAddress.toLowerCase() === address.toLowerCase()) {
-                setUserTokenId(i);
-                break;
-              }
-            } catch {
-              // Token doesn't exist yet, continue
-              continue;
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error checking balance:', err);
-      }
-    };
+  //             const ownerAddress = owner as string;
+  //             if (ownerAddress.toLowerCase() === address.toLowerCase()) {
+  //               setUserTokenId(i);
+  //               break;
+  //             }
+  //           } catch {
+  //             // Token doesn't exist yet, continue
+  //             continue;
+  //           }
+  //         }
+  //       }
+  //     } catch (err) {
+  //       console.error('Error checking balance:', err);
+  //     }
+  //   };
 
-    checkBalance();
-    const interval = setInterval(checkBalance, 10000); // Check every 10 seconds
-    return () => clearInterval(interval);
-  }, [address, publicClient]);
+  //   checkBalance();
+  //   const interval = setInterval(checkBalance, 10000); // Check every 10 seconds
+  //   return () => clearInterval(interval);
+  // }, [address, publicClient]);
 
   // Handle "Add App" button click
   const handleAddApp = async () => {
