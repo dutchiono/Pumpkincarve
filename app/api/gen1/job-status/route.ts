@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { nftRenderQueue } from '@/app/services/queue';
+import { getQueue } from '@/app/services/queue';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const jobId = searchParams.get('jobId');
-
+  
   if (!jobId) {
     return NextResponse.json({ error: 'jobId required' }, { status: 400 });
   }
-
-  const job = await nftRenderQueue.getJob(jobId);
+  
+  const queue = getQueue();
+  const job = await queue.getJob(jobId);
 
   if (!job) {
     return NextResponse.json({ error: 'Job not found' }, { status: 404 });

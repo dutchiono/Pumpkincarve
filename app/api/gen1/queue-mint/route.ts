@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { nftRenderQueue } from '@/app/services/queue';
+import { getQueue } from '@/app/services/queue';
 
 export async function POST(request: NextRequest) {
   try {
     const { settings, walletAddress } = await request.json();
-
+    
     // Add job to queue
-    const job = await nftRenderQueue.add('render-nft', {
+    const queue = getQueue();
+    const job = await queue.add('render-nft', {
       settings,
       walletAddress,
       userId: walletAddress, // Or from auth
