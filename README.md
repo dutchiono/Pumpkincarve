@@ -26,6 +26,30 @@ An AI-powered Base mini app that creates personalized pumpkin carving designs ba
 npm install
 ```
 
+### 1.5. Install Redis (Required for NFT Rendering)
+
+Redis is required for the background NFT rendering worker queue.
+
+#### On Ubuntu/Debian:
+```bash
+sudo apt update
+sudo apt install redis-server
+sudo systemctl start redis-server
+sudo systemctl enable redis-server
+```
+
+#### On macOS:
+```bash
+brew install redis
+brew services start redis
+```
+
+#### Verify Redis is running:
+```bash
+redis-cli ping
+# Should return: PONG
+```
+
 ### 2. Environment Variables
 
 Copy `env.example` to `.env.local` and fill in your API keys:
@@ -44,6 +68,19 @@ Required API keys:
 Deploy the NFT contract to Base network using the provided Solidity code in `app/services/nft.ts`.
 
 Update `NEXT_PUBLIC_NFT_CONTRACT_ADDRESS` in your environment variables.
+
+### 3.5. Start the NFT Rendering Worker (Production Only)
+
+In production, you need to run the worker to process NFT rendering jobs:
+
+```bash
+npm run worker
+```
+
+Or for development with auto-reload:
+```bash
+npm run worker:dev
+```
 
 ### 4. Run Development Server
 
@@ -86,14 +123,54 @@ pumpkin-carving-nft/
 
 ## Deployment
 
-### Deploy to Base Mini App Platform
+### Deploy to Production Server
 
-1. Build the project:
+1. **Install Redis** on your server:
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install redis-server -y
+sudo systemctl start redis-server
+sudo systemctl enable redis-server
+
+# Verify Redis is running
+redis-cli ping  # Should return: PONG
+```
+
+2. **Set environment variables** on server (copy from `.env.local`)
+
+3. **Build the project**:
 ```bash
 npm run build
 ```
 
-2. Follow Base's mini app deployment guide to deploy to their platform
+4. **Start the Next.js app**:
+```bash
+npm start
+```
+
+5. **Start the NFT rendering worker** (in a separate terminal or process manager like PM2):
+```bash
+npm run worker
+```
+
+### PM2 Setup (Recommended for Production)
+
+Install PM2 globally:
+```bash
+npm install -g pm2
+```
+
+Start both app and worker:
+```bash
+pm2 start npm --name "pumpkin-app" -- start
+pm2 start npm --name "pumpkin-worker" -- run worker
+pm2 save
+pm2 startup
+```
+
+### Deploy to Base Mini App Platform
+
+Follow Base's mini app deployment guide to deploy to their platform
 
 ### Deploy NFT Contract
 
