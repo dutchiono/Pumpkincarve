@@ -65,7 +65,7 @@ const defaultSettings: TraitSettings = {
 };
 
 const DEFAULT_FARCASTER_USER_ID = '';
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || '0x9d394EAD99Acab4cF8e65cdA3c8e440fB7D27087';
+const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || '0x9d394EAD99Acab4cF8e65cdA3c8e440fB7D27087') as `0x${string}`;
 
 const Gen1App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
