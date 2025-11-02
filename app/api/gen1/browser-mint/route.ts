@@ -14,15 +14,15 @@ export async function POST(request: NextRequest) {
     console.log('Uploading GIF to IPFS...');
     const arrayBuffer = await gifBlob.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    
+
     const imageCid = await uploadToIPFS(buffer, 'image/gif', 'gen1-animation.gif');
     const imageUrl = `ipfs://${imageCid}`;
-    
+
     console.log('Image uploaded:', imageUrl);
 
     // Parse settings
     const settings = JSON.parse(settingsJson);
-    
+
     // Create metadata
     const metadata = {
       name: `Gen1 NFT #${Date.now()}`,
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const metadataBuffer = Buffer.from(JSON.stringify(metadata));
     const metadataCid = await uploadToIPFS(metadataBuffer, 'application/json', 'metadata.json');
     const metadataUrl = `ipfs://${metadataCid}`;
-    
+
     console.log('Metadata uploaded:', metadataUrl);
 
     return NextResponse.json({

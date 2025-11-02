@@ -101,47 +101,47 @@ export function getContourWavefieldValue(x: number, y: number, t: number, settin
 
 export function renderFlowField(ctx: CanvasRenderingContext2D, size: number, t: number, settings: Gen1Settings) {
   if (!settings.flowField.enabled) return;
-  
+
   const angle = (t / 100) * settings.flowField.direction;
   const x0 = size / 2 + Math.cos(angle) * size;
   const y0 = size / 2 + Math.sin(angle) * size;
   const x1 = size / 2 - Math.cos(angle) * size;
   const y1 = size / 2 - Math.sin(angle) * size;
-  
+
   const gradient = ctx.createLinearGradient(x0, y0, x1, y1);
   gradient.addColorStop(0, settings.flowField.color1);
   gradient.addColorStop(1, settings.flowField.color2);
-  
+
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, size, size);
 }
 
 export function renderFlowFields(ctx: CanvasRenderingContext2D, size: number, t: number, settings: Gen1Settings) {
   if (!settings.flowFields.enabled) return;
-  
+
   const gridSize = Math.floor(size * settings.flowFields.lineDensity);
   const cellSize = size / gridSize;
   const rotationRad = (settings.flowFields.rotation * Math.PI) / 180;
-  
+
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
   ctx.lineWidth = 1;
-  
+
   for (let py = 0; py < gridSize; py++) {
     for (let px = 0; px < gridSize; px++) {
       const x = px * cellSize;
       const y = py * cellSize;
       const eps = 1;
       let gradX, gradY;
-      
+
       if (settings.contourAffectsFlow && settings.contour.enabled) {
         const contourValue = getContourWavefieldValue(x, y, t, settings);
         gradX = getContourWavefieldValue(x + eps, y, t, settings) - contourValue;
         gradY = getContourWavefieldValue(x, y + eps, t, settings) - contourValue;
-        
+
         const flowFieldsValue = getFlowFieldsWavefieldValue(x, y, t, settings);
         const flowFieldsGradX = getFlowFieldsWavefieldValue(x + eps, y, t, settings) - flowFieldsValue;
         const flowFieldsGradY = getFlowFieldsWavefieldValue(x, y + eps, t, settings) - flowFieldsValue;
-        
+
         gradX = (gradX + flowFieldsGradX) / 2;
         gradY = (gradY + flowFieldsGradY) / 2;
       } else {
@@ -149,23 +149,23 @@ export function renderFlowFields(ctx: CanvasRenderingContext2D, size: number, t:
         gradX = getFlowFieldsWavefieldValue(x + eps, y, t, settings) - flowFieldsValue;
         gradY = getFlowFieldsWavefieldValue(x, y + eps, t, settings) - flowFieldsValue;
       }
-      
+
       const length = Math.sqrt(gradX * gradX + gradY * gradY);
       if (length > 0) {
         let dirX = gradX / length;
         let dirY = gradY / length;
-        
+
         const rotatedDirX = dirX * Math.cos(rotationRad) - dirY * Math.sin(rotationRad);
         const rotatedDirY = dirX * Math.sin(rotationRad) + dirY * Math.cos(rotationRad);
-        
+
         const finalDirX = rotatedDirX * settings.flowFields.direction;
         const finalDirY = rotatedDirY * Math.abs(settings.flowFields.direction);
-        
+
         const startX = x + cellSize / 2;
         const startY = y + cellSize / 2;
         const endX = startX + finalDirX * settings.flowFields.lineLength;
         const endY = startY + finalDirY * settings.flowFields.lineLength;
-        
+
         ctx.beginPath();
         ctx.moveTo(startX, startY);
         ctx.lineTo(endX, endY);
@@ -177,18 +177,18 @@ export function renderFlowFields(ctx: CanvasRenderingContext2D, size: number, t:
 
 export function renderContourMapping(ctx: CanvasRenderingContext2D, size: number, t: number, settings: Gen1Settings) {
   if (!settings.contour.enabled) return;
-  
+
   const gridSize = 64;
   const cellSize = size / gridSize;
   const levels: number[] = [];
   for (let i = 0; i < settings.contour.levels; i++) {
     levels.push((i / settings.contour.levels) * 2 - 1);
   }
-  
+
   levels.forEach((level, levelIndex) => {
     const alpha = (levelIndex + 1) / settings.contour.levels * 0.3;
     ctx.fillStyle = `rgba(100, 150, 255, ${alpha})`;
-    
+
     for (let py = 0; py < gridSize; py++) {
       for (let px = 0; px < gridSize; px++) {
         const x = px * cellSize;
@@ -196,7 +196,7 @@ export function renderContourMapping(ctx: CanvasRenderingContext2D, size: number
         const centerX = x + cellSize / 2;
         const centerY = y + cellSize / 2;
         const waveValue = getContourWavefieldValue(centerX, centerY, t, settings);
-        
+
         const nextLevel = levelIndex < levels.length - 1 ? levels[levelIndex + 1] : 1;
         if (waveValue >= level && waveValue < nextLevel) {
           let smoothFactor = 1;
@@ -216,36 +216,36 @@ export function renderContourMapping(ctx: CanvasRenderingContext2D, size: number
       }
     }
   });
-  
+
   ctx.globalAlpha = 1;
 }
 
 export async function renderGen1GIF(settings: Gen1Settings = defaultGen1Settings, size: number = 512): Promise<Blob> {
   const totalFrames = 1000;
-  
+
   const tempCanvas = document.createElement('canvas');
   tempCanvas.width = size;
   tempCanvas.height = size;
   const tempCtx = tempCanvas.getContext('2d');
-  
+
   if (!tempCtx) {
     throw new Error('Failed to get canvas context');
   }
-  
+
   const frames: ImageData[] = [];
-  
+
   for (let frame = 0; frame < totalFrames; frame++) {
     tempCtx.clearRect(0, 0, size, size);
-    
+
     const t = (frame / totalFrames) * 200;
-    
+
     renderFlowField(tempCtx, size, t, settings);
     renderFlowFields(tempCtx, size, t, settings);
     renderContourMapping(tempCtx, size, t, settings);
-    
+
     frames.push(tempCtx.getImageData(0, 0, size, size));
   }
-  
+
   const gif = new GIF({
     workers: 2,
     quality: 10,
@@ -253,7 +253,7 @@ export async function renderGen1GIF(settings: Gen1Settings = defaultGen1Settings
     height: size,
     workerScript: '/gif.worker.js',
   } as any);
-  
+
   frames.forEach(frameData => {
     const frameCanvas = document.createElement('canvas');
     frameCanvas.width = size;
@@ -264,7 +264,7 @@ export async function renderGen1GIF(settings: Gen1Settings = defaultGen1Settings
       gif.addFrame(frameCanvas, { delay: 1000 / 30 });
     }
   });
-  
+
   return new Promise((resolve, reject) => {
     gif.on('finished', (blob: Blob) => resolve(blob));
     gif.on('error', (error: any) => reject(error));

@@ -28,7 +28,7 @@ npm install
 
 ### 1.5. Install Redis (Required for NFT Rendering)
 
-Redis is required for the background NFT rendering worker queue.
+Redis must be manually installed and running before starting the application. It is required for the background NFT rendering worker queue. No automated installation happens during npm install.
 
 #### On Ubuntu/Debian:
 ```bash
@@ -136,19 +136,25 @@ sudo systemctl enable redis-server
 redis-cli ping  # Should return: PONG
 ```
 
-2. **Set environment variables** on server (copy from `.env.local`)
+2. **Install Node.js dependencies** on server:
+```bash
+npm install
+# Note: canvas package will install as optional dependency (builds on Linux/macOS)
+```
 
-3. **Build the project**:
+3. **Set environment variables** on server (copy from `.env.local`)
+
+4. **Build the project**:
 ```bash
 npm run build
 ```
 
-4. **Start the Next.js app**:
+5. **Start the Next.js app**:
 ```bash
 npm start
 ```
 
-5. **Start the NFT rendering worker** (in a separate terminal or process manager like PM2):
+6. **Start the NFT rendering worker** (in a separate terminal or process manager like PM2):
 ```bash
 npm run worker
 ```
