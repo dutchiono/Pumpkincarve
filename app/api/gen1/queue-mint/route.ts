@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
 
     // Add job to queue
     const queue = getQueue();
-    const job = await queue.add('render-nft', {
+    const job = await queue.add('nft-render', {
       settings,
       walletAddress,
       userId: walletAddress, // Or from auth

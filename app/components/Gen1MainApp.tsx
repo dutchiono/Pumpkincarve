@@ -2,7 +2,8 @@
 
 import { sdk } from '@farcaster/miniapp-sdk';
 import { useEffect, useState, useRef } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { gen1ABI } from '../gen1-creator/abi';
 
 interface UserData {
   posts: any[];
@@ -13,10 +14,14 @@ interface UserData {
   displayName: string;
 }
 
-const GEN1_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || '0x9d394EAD99Acab4cF8e65cdA3c8e440fB7D27087';
+const GEN1_CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || '0x9d394EAD99Acab4cF8e65cdA3c8e440fB7D27087') as `0x${string}`;
 
 function Gen1AppContent() {
   const { address, isConnected } = useAccount();
+  const publicClient = usePublicClient();
+  const { writeContract, data: hash } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -34,6 +39,13 @@ function Gen1AppContent() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [testNotificationText, setTestNotificationText] = useState('');
   const [leaderboardNotice, setLeaderboardNotice] = useState<string | null>(null);
+
+  // Mint state
+  const [isMinting, setIsMinting] = useState(false);
+  const [mintProgress, setMintProgress] = useState(0);
+  const [contractMintPrice, setContractMintPrice] = useState<bigint | null>(null);
+  const [totalSupply, setTotalSupply] = useState<bigint | null>(null);
+  const MAX_SUPPLY = 1111;
 
   // Mount state to prevent hydration errors
   useEffect(() => {
@@ -144,6 +156,129 @@ function Gen1AppContent() {
       alert('Failed to add app: ' + error.message);
     }
   };
+
+  // Fetch mint price and supply
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!publicClient) return;
+
+      try {
+        const price: any = await publicClient.readContract({
+          address: GEN1_CONTRACT_ADDRESS,
+          abi: gen1ABI,
+          functionName: 'mintPrice',
+        });
+        setContractMintPrice(price as bigint);
+
+        const supply: any = await publicClient.readContract({
+          address: GEN1_CONTRACT_ADDRESS,
+          abi: gen1ABI,
+          functionName: 'totalSupply',
+        });
+        setTotalSupply(supply as bigint);
+      } catch (err) {
+        console.error('Error fetching contract data:', err);
+      }
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, [publicClient]);
+
+  // Handle mint
+  const handleMint = async () => {
+    if (!isConnected || !address) {
+      alert('Please connect your wallet');
+      return;
+    }
+
+    if (!contractMintPrice) {
+      alert('Loading mint price... please wait');
+      return;
+    }
+
+    if (totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY) {
+      alert(`Maximum supply of ${MAX_SUPPLY} reached!`);
+      return;
+    }
+
+    setIsMinting(true);
+    setMintProgress(0);
+
+    try {
+      // Step 1: Queue the render job with default Gen1 base settings
+      setLoadingMessage('🎨 Generating unique animation...');
+      const response = await fetch('/api/gen1/queue-mint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: {
+            flowField: { enabled: true, baseFrequency: 0.02, amplitude: 1, octaves: 1, color1: '#4ade80', color2: '#22d3ee', rotation: 0.5, direction: 1 },
+            flowFields: { enabled: true, baseFrequency: 0.01, amplitude: 1, octaves: 1, lineLength: 20, lineDensity: 0.1, rotation: 0.3, direction: 1 },
+            contour: { enabled: true, baseFrequency: 0.01, amplitude: 1, octaves: 4, levels: 5, smoothness: 0.3 },
+            contourAffectsFlow: true,
+          },
+          walletAddress: address,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to queue mint');
+
+      const { jobId } = await response.json();
+      console.log('Job queued:', jobId);
+
+      // Step 2: Poll for completion
+      const interval = setInterval(async () => {
+        const statusRes = await fetch(`/api/gen1/job-status?jobId=${jobId}`);
+        const status = await statusRes.json();
+
+        setMintProgress(status.progress || 0);
+
+        if (status.status === 'completed') {
+          clearInterval(interval);
+          setLoadingMessage('📝 Minting on-chain...');
+
+          // Step 3: Mint on-chain
+          writeContract({
+            address: GEN1_CONTRACT_ADDRESS,
+            abi: gen1ABI,
+            functionName: 'mint',
+            args: [status.result.imageUrl, status.result.metadataUrl],
+            value: contractMintPrice,
+            chainId: 8453,
+          } as any);
+
+          setLoadingMessage('');
+          setIsMinting(false);
+        } else if (status.status === 'failed') {
+          clearInterval(interval);
+          setIsMinting(false);
+          setLoadingMessage('');
+          alert('Failed to generate animation. Please try again.');
+        }
+      }, 2000);
+    } catch (err: any) {
+      console.error('Mint error:', err);
+      setIsMinting(false);
+      setLoadingMessage('');
+      alert('Error: ' + err.message);
+    }
+  };
+
+  // Handle mint confirmation
+  useEffect(() => {
+    if (isConfirmed) {
+      alert('✅ Mint successful!');
+      setIsMinting(false);
+      setLoadingMessage('');
+      setMintProgress(0);
+      // Refresh leaderboard
+      if (activeTab === 'leaderboard') {
+        fetch('/api/top-minters').then(r => r.json()).then(setTopMinters);
+      }
+    }
+  }, [isConfirmed, activeTab]);
 
   // Handle test notification
   const handleTestNotification = async () => {
@@ -805,6 +940,48 @@ function Gen1AppContent() {
                 Customize colors, speeds, and complexity for billions of unique combinations.
               </p>
             </div>
+
+            {/* Mint Button */}
+            <button
+              onClick={handleMint}
+              disabled={!isConnected || isMinting || isConfirming || !contractMintPrice}
+              style={{
+                width: '100%',
+                padding: '16px 24px',
+                borderRadius: '16px',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                color: '#ffffff',
+                background: isConnected && !isMinting && !isConfirming && contractMintPrice
+                  ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
+                  : 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+                border: 'none',
+                cursor: isConnected && !isMinting && !isConfirming && contractMintPrice ? 'pointer' : 'not-allowed',
+                opacity: isConnected && !isMinting && !isConfirming && contractMintPrice ? 1 : 0.6,
+                transition: 'all 0.3s',
+                boxShadow: isConnected && !isMinting && !isConfirming && contractMintPrice
+                  ? '0 4px 12px rgba(249, 115, 22, 0.4)'
+                  : 'none',
+              }}
+            >
+              {!isConnected ? '🔗 Connect Wallet to Mint' :
+               isMinting ? `🎨 Generating ${mintProgress}%...` :
+               isConfirming ? '⏳ Minting on-chain...' :
+               totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY ? '❌ Sold Out' :
+               contractMintPrice ? `🚀 Mint Gen1 NFT (${Number(contractMintPrice) / 1e18} ETH)` :
+               '⏳ Loading...'}
+            </button>
+
+            {contractMintPrice && totalSupply !== null && (
+              <p style={{
+                textAlign: 'center',
+                marginTop: '12px',
+                fontSize: '13px',
+                color: 'rgba(255, 255, 255, 0.6)'
+              }}>
+                {totalSupply.toString()} / {MAX_SUPPLY} minted
+              </p>
+            )}
 
           </div>
         )}
