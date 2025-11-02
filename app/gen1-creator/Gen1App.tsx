@@ -65,7 +65,7 @@ const defaultSettings: TraitSettings = {
 };
 
 const DEFAULT_FARCASTER_USER_ID = '';
-const CONTRACT_ADDRESS_BASE_SEPOLIA = '0xc03bC9D0BD59b98535aEBD2102221AeD87c820A6';
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || '0x9d394EAD99Acab4cF8e65cdA3c8e440fB7D27087';
 
 const Gen1App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -265,7 +265,7 @@ const Gen1App: React.FC = () => {
       // Check contract owner/authority (not token owner)
       console.log('🔍 Checking contract owner/authority...');
       const contractOwner: any = await publicClient.readContract({
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: CONTRACT_ADDRESS,
         abi: gen1ABI,
         functionName: 'owner',
       });
@@ -379,11 +379,11 @@ const Gen1App: React.FC = () => {
 
       // Call updateMetadata with the metadata JSON string
       writeContract({
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: CONTRACT_ADDRESS,
         abi: gen1ABI,
         functionName: 'updateMetadata',
         args: [BigInt(tokenIdToUpdate), JSON.stringify(metadata)],
-        chainId: 84532,
+        chainId: 8453,
       } as any);
 
       console.log('✓ UpdateMetadata transaction initiated - check wallet to sign');
@@ -511,12 +511,12 @@ const Gen1App: React.FC = () => {
           console.log('Metadata URL:', status.result.metadataUrl);
 
           writeContract({
-            address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+            address: CONTRACT_ADDRESS,
             abi: gen1ABI,
             functionName: 'mint',
             args: [status.result.imageUrl, status.result.metadataUrl],
             value: totalValue,
-            chainId: 84532,
+            chainId: 8453,
           } as any);
 
           console.log('✓ WriteContract called');
@@ -589,7 +589,7 @@ const Gen1App: React.FC = () => {
 
       // First, get the tokenURI from the contract
       const tokenURIResult: any = await publicClient.readContract({
-        address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+        address: CONTRACT_ADDRESS,
         abi: gen1ABI,
         functionName: 'tokenURI',
         args: [BigInt(tokenIdToUpdate)],
@@ -1078,7 +1078,7 @@ const Gen1App: React.FC = () => {
 
       try {
         const price: any = await publicClient.readContract({
-          address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+          address: CONTRACT_ADDRESS,
           abi: gen1ABI,
           functionName: 'mintPrice',
         });
@@ -1099,7 +1099,7 @@ const Gen1App: React.FC = () => {
 
       try {
         const supply: any = await publicClient.readContract({
-          address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+          address: CONTRACT_ADDRESS,
           abi: gen1ABI,
           functionName: 'totalSupply',
         });
@@ -1717,12 +1717,12 @@ const Gen1App: React.FC = () => {
                         console.log('Total value:', totalValue.toString(), 'wei');
 
                         writeContract({
-                      address: CONTRACT_ADDRESS_BASE_SEPOLIA,
+                      address: CONTRACT_ADDRESS,
                       abi: gen1ABI,
                       functionName: 'mint',
                           args: [imageUrl, metadataUrl],
                           value: totalValue,
-                          chainId: 84532,
+                          chainId: 8453,
                         } as any);
 
                         console.log('✓ WriteContract called - Phantom should pop up now');
@@ -1747,7 +1747,7 @@ const Gen1App: React.FC = () => {
                   </button>
                 </div>
                 <p className="text-sm text-yellow-400">Note: Browser rendering works best on desktop Chrome. Queue rendering works on all devices and handles concurrent mints.</p>
-                {hash && <p className="text-sm text-gray-400">Transaction Hash: <a href={`https://sepolia.basescan.org/tx/${hash}`} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">{hash.slice(0, 6)}...{hash.slice(-4)}</a></p>}
+                {hash && <p className="text-sm text-gray-400">Transaction Hash: <a href={`https://basescan.org/tx/${hash}`} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">{hash.slice(0, 6)}...{hash.slice(-4)}</a></p>}
                 {isConfirming && <p className="text-sm text-gray-400">Waiting for confirmation...</p>}
                 {isConfirmed && <p className="text-sm text-green-400">Mint successful!</p>}
                 {confirmError && <p className="text-sm text-red-400">Error confirming transaction: {confirmError.message}</p>}
