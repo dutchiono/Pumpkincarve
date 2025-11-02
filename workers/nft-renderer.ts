@@ -55,7 +55,7 @@ const worker = new Worker('nft-render', async (job: Job<RenderJobData>) => {
   try {
     // Dynamic import for optional canvas dependency
     const { createCanvas } = await import('canvas');
-    
+
     // Step 1: Render GIF server-side
     gifBuffer = await renderGIF(settings, createCanvas);
     await job.updateProgress(33);

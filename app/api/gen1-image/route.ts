@@ -180,6 +180,12 @@ export async function GET(request: Request) {
 
   } catch (error: any) {
     console.error('Error fetching Gen1 image:', error);
+    
+    // If token doesn't exist, return a better error
+    if (error.message?.includes('Token does not exist') || error.reason === 'Token does not exist') {
+      return NextResponse.json({ error: `Token #${tokenId} does not exist` }, { status: 404 });
+    }
+    
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
