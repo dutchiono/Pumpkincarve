@@ -77,7 +77,10 @@ const Gen1App: React.FC = () => {
   const [postsAnalyzed, setPostsAnalyzed] = useState<number>(0);
   const [recommendedColor1, setRecommendedColor1] = useState<string | null>(null);
   const [recommendedColor2, setRecommendedColor2] = useState<string | null>(null);
-  const [recommendedFrequency, setRecommendedFrequency] = useState<number | null>(null);
+  const [recommendedFrequency, setRecommendedFrequency] = useState<number | null>(null); // Legacy, for backward compatibility
+  const [recommendedFlowFieldBaseFreq, setRecommendedFlowFieldBaseFreq] = useState<number | null>(null);
+  const [recommendedFlowFieldsBaseFreq, setRecommendedFlowFieldsBaseFreq] = useState<number | null>(null);
+  const [recommendedFlowLineDensity, setRecommendedFlowLineDensity] = useState<number | null>(null);
   const [aiReasoning, setAiReasoning] = useState<string | null>(null);
   const [contractMintPrice, setContractMintPrice] = useState<bigint | null>(null);
   const [totalSupply, setTotalSupply] = useState<bigint | null>(null);
@@ -260,6 +263,29 @@ const Gen1App: React.FC = () => {
   const handleUpdateOnChain = useCallback(async () => {
     if (!tokenIdToUpdate) return;
 
+    // Password protection
+    const password = prompt('🔐 Enter password to update NFT:');
+    if (!password) {
+      return; // User cancelled
+    }
+
+    try {
+      const response = await fetch('/api/gen1/check-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
+        alert(`❌ ${errorData.error || 'Invalid password'}`);
+        return;
+      }
+    } catch (error: any) {
+      alert(`❌ Error checking password: ${error.message}`);
+      return;
+    }
+
     // Check ownership FIRST before doing any expensive operations
     if (!publicClient) {
       alert('❌ Public client not available. Please reconnect your wallet.');
@@ -407,6 +433,29 @@ const Gen1App: React.FC = () => {
   }, [tokenIdToUpdate, enableFlowField, enableFlowFields, enableContourMapping, flowColor1, flowColor2, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowFieldRotation, flowFieldDirection, flowFieldsBaseFreq, flowFieldsAmplitude, flowFieldsOctaves, flowLineLength, flowLineDensity, flowFieldsRotation, flowFieldsDirection, contourBaseFreq, contourAmplitude, contourOctaves, contourLevels, contourSmoothness, contourAffectsFlow, currentNFTImageCid, currentNFTMetadataCid, address, publicClient, writeContract]);
 
   const handleRunBatchUpdateScript = useCallback(async () => {
+    // Password protection
+    const password = prompt('🔐 Enter password to run batch script:');
+    if (!password) {
+      return; // User cancelled
+    }
+
+    try {
+      const response = await fetch('/api/gen1/check-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
+        alert(`❌ ${errorData.error || 'Invalid password'}`);
+        return;
+      }
+    } catch (error: any) {
+      alert(`❌ Error checking password: ${error.message}`);
+      return;
+    }
+
     setIsBatchRunning(true);
     setBatchStatus('Running...');
     // Placeholder for actual batch script execution
@@ -420,6 +469,29 @@ const Gen1App: React.FC = () => {
   const handleSaveSnapshot = useCallback(async () => {
     if (!parentTokenId || !publicClient || !address || !savePrice) {
       alert('Please connect wallet and enter a valid parent token ID');
+      return;
+    }
+
+    // Password protection
+    const password = prompt('🔐 Enter password to save snapshot:');
+    if (!password) {
+      return; // User cancelled
+    }
+
+    try {
+      const response = await fetch('/api/gen1/check-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
+        alert(`❌ ${errorData.error || 'Invalid password'}`);
+        return;
+      }
+    } catch (error: any) {
+      alert(`❌ Error checking password: ${error.message}`);
       return;
     }
 
@@ -604,6 +676,29 @@ const Gen1App: React.FC = () => {
       return;
     }
 
+    // Password protection
+    const password = prompt('🔐 Enter password to mint:');
+    if (!password) {
+      return; // User cancelled
+    }
+
+    try {
+      const response = await fetch('/api/gen1/check-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
+        alert(`❌ ${errorData.error || 'Invalid password'}`);
+        return;
+      }
+    } catch (error: any) {
+      alert(`❌ Error checking password: ${error.message}`);
+      return;
+    }
+
     setQueueStatus('processing');
     setQueueProgress(0);
 
@@ -709,7 +804,7 @@ const Gen1App: React.FC = () => {
 
   // Apply mood-based settings to Canvas (for new NFTs)
   const handleApplyMoodToCanvas = useCallback(() => {
-    if (!recommendedColor1 || !recommendedColor2 || recommendedFrequency === null) {
+    if (!recommendedColor1 || !recommendedColor2) {
       alert('Please analyze a Farcaster mood first!');
       return;
     }
@@ -717,12 +812,36 @@ const Gen1App: React.FC = () => {
     // Apply AI-recommended settings
     setFlowColor1(recommendedColor1);
     setFlowColor2(recommendedColor2);
-    setFlowFieldBaseFreq(recommendedFrequency);
-    setFlowFieldsBaseFreq(recommendedFrequency);
-    setContourBaseFreq(recommendedFrequency);
 
-    alert(`✓ Mood settings applied to canvas!\n\nColors: ${recommendedColor1} & ${recommendedColor2}\nFrequency: ${recommendedFrequency}`);
-  }, [recommendedColor1, recommendedColor2, recommendedFrequency]);
+    // Use new specific frequencies if available, otherwise fall back to legacy frequency
+    if (recommendedFlowFieldBaseFreq !== null) {
+      setFlowFieldBaseFreq(recommendedFlowFieldBaseFreq);
+    } else if (recommendedFrequency !== null) {
+      setFlowFieldBaseFreq(recommendedFrequency);
+    }
+
+    if (recommendedFlowFieldsBaseFreq !== null) {
+      setFlowFieldsBaseFreq(recommendedFlowFieldsBaseFreq);
+    } else if (recommendedFrequency !== null) {
+      setFlowFieldsBaseFreq(recommendedFrequency);
+    }
+
+    if (recommendedFlowLineDensity !== null) {
+      setFlowLineDensity(Math.min(recommendedFlowLineDensity, 0.5)); // Ensure never exceeds 0.5
+    }
+
+    // Use flowFieldBaseFreq for contour as well (or legacy frequency)
+    const contourFreq = recommendedFlowFieldBaseFreq ?? recommendedFrequency;
+    if (contourFreq !== null) {
+      setContourBaseFreq(contourFreq);
+    }
+
+    const freqInfo = recommendedFlowFieldBaseFreq !== null && recommendedFlowFieldsBaseFreq !== null
+      ? `Background: ${recommendedFlowFieldBaseFreq}, Lines: ${recommendedFlowFieldsBaseFreq}, Density: ${recommendedFlowLineDensity || 'default'}`
+      : `Frequency: ${recommendedFrequency || 'default'}`;
+
+    alert(`✓ Mood settings applied to canvas!\n\nColors: ${recommendedColor1} & ${recommendedColor2}\n${freqInfo}`);
+  }, [recommendedColor1, recommendedColor2, recommendedFrequency, recommendedFlowFieldBaseFreq, recommendedFlowFieldsBaseFreq, recommendedFlowLineDensity]);
 
   // Apply mood-based settings to existing NFT (preserves NFT history)
   const handleApplyMoodToNFT = useCallback(() => {
@@ -730,7 +849,7 @@ const Gen1App: React.FC = () => {
       alert('Please load an NFT first (use NFT Viewer card)');
       return;
     }
-    if (!recommendedColor1 || !recommendedColor2 || recommendedFrequency === null) {
+    if (!recommendedColor1 || !recommendedColor2) {
       alert('Please analyze a Farcaster mood first!');
       return;
     }
@@ -738,12 +857,32 @@ const Gen1App: React.FC = () => {
     // Apply AI-recommended settings
     setFlowColor1(recommendedColor1);
     setFlowColor2(recommendedColor2);
-    setFlowFieldBaseFreq(recommendedFrequency);
-    setFlowFieldsBaseFreq(recommendedFrequency);
-    setContourBaseFreq(recommendedFrequency);
+
+    // Use new specific frequencies if available, otherwise fall back to legacy frequency
+    if (recommendedFlowFieldBaseFreq !== null) {
+      setFlowFieldBaseFreq(recommendedFlowFieldBaseFreq);
+    } else if (recommendedFrequency !== null) {
+      setFlowFieldBaseFreq(recommendedFrequency);
+    }
+
+    if (recommendedFlowFieldsBaseFreq !== null) {
+      setFlowFieldsBaseFreq(recommendedFlowFieldsBaseFreq);
+    } else if (recommendedFrequency !== null) {
+      setFlowFieldsBaseFreq(recommendedFrequency);
+    }
+
+    if (recommendedFlowLineDensity !== null) {
+      setFlowLineDensity(Math.min(recommendedFlowLineDensity, 0.5)); // Ensure never exceeds 0.5
+    }
+
+    // Use flowFieldBaseFreq for contour as well (or legacy frequency)
+    const contourFreq = recommendedFlowFieldBaseFreq ?? recommendedFrequency;
+    if (contourFreq !== null) {
+      setContourBaseFreq(contourFreq);
+    }
 
     alert(`✓ Mood settings applied to NFT #${tokenIdToUpdate}!\n\nNext steps:\n1. Check the canvas preview\n2. Click "Generate Render" in On-Chain Actions\n3. Upload to IPFS\n4. Update On-Chain`);
-  }, [currentNFTMetadata, tokenIdToUpdate, recommendedColor1, recommendedColor2, recommendedFrequency]);
+  }, [currentNFTMetadata, tokenIdToUpdate, recommendedColor1, recommendedColor2, recommendedFrequency, recommendedFlowFieldBaseFreq, recommendedFlowFieldsBaseFreq, recommendedFlowLineDensity]);
 
   const handleFetchNFTMetadata = useCallback(async () => {
     if (tokenIdToUpdate === undefined) return;
@@ -816,7 +955,7 @@ const Gen1App: React.FC = () => {
       });
 
       if (response.ok) {
-        const { mood, personality, traits, interests, postsAnalyzed, color1, color2, baseFrequency, reasoning } = await response.json();
+        const { mood, personality, traits, interests, postsAnalyzed, color1, color2, baseFrequency, flowFieldBaseFrequency, flowFieldsBaseFrequency, flowLineDensity, reasoning } = await response.json();
         setFarcasterMood(mood);
         setFarcasterPersonality(personality || null);
         setFarcasterTraits(traits || []);
@@ -824,7 +963,10 @@ const Gen1App: React.FC = () => {
         setPostsAnalyzed(postsAnalyzed || 0);
         setRecommendedColor1(color1 || null);
         setRecommendedColor2(color2 || null);
-        setRecommendedFrequency(baseFrequency || null);
+        setRecommendedFrequency(baseFrequency || flowFieldBaseFrequency || null); // Legacy
+        setRecommendedFlowFieldBaseFreq(flowFieldBaseFrequency || baseFrequency || null);
+        setRecommendedFlowFieldsBaseFreq(flowFieldsBaseFrequency || null);
+        setRecommendedFlowLineDensity(flowLineDensity || null);
         setAiReasoning(reasoning || null);
       } else {
         console.error('Error fetching Farcaster mood:', await response.text());
@@ -840,26 +982,52 @@ const Gen1App: React.FC = () => {
       alert('Please enter a username or FID');
       return;
     }
+
+    // Password protection - prompt for password
+    const password = prompt('🔐 Enter password to use Mood Analysis:');
+    if (!password) {
+      return; // User cancelled
+    }
+
     try {
       const response = await fetch('/api/gen1/farcaster-mood', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: farcasterUserId }),
+        body: JSON.stringify({
+          userId: farcasterUserId,
+          password: password
+        }),
       });
 
       if (response.ok) {
-        const { mood, personality, postsAnalyzed, color1, color2, baseFrequency, reasoning } = await response.json();
+        const { mood, personality, postsAnalyzed, color1, color2, baseFrequency, flowFieldBaseFrequency, flowFieldsBaseFrequency, flowLineDensity, reasoning } = await response.json();
         setFarcasterMood(mood);
         setFarcasterPersonality(personality || null);
         setPostsAnalyzed(postsAnalyzed || 0);
         setRecommendedColor1(color1 || null);
         setRecommendedColor2(color2 || null);
-        setRecommendedFrequency(baseFrequency || null);
+        setRecommendedFrequency(baseFrequency || flowFieldBaseFrequency || null); // Legacy
+        setRecommendedFlowFieldBaseFreq(flowFieldBaseFrequency || baseFrequency || null);
+        setRecommendedFlowFieldsBaseFreq(flowFieldsBaseFrequency || null);
+        setRecommendedFlowLineDensity(flowLineDensity || null);
         setAiReasoning(reasoning || null);
       } else {
-        const errorText = await response.text();
-        console.error('Error fetching Farcaster mood:', errorText);
-        alert(`Error: ${errorText}`);
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          const errorText = await response.text();
+          errorData = { error: errorText };
+        }
+        console.error('Error fetching Farcaster mood:', errorData);
+
+        if (response.status === 401) {
+          alert('❌ Invalid password. Access denied.');
+        } else if (response.status === 503) {
+          alert('⚠️ Mood analysis is currently disabled. Please contact the administrator.');
+        } else {
+          alert(`Error: ${errorData.error || 'Failed to analyze mood'}`);
+        }
       }
     } catch (error) {
       console.error('Error fetching Farcaster mood:', error);
@@ -1814,6 +1982,29 @@ const Gen1App: React.FC = () => {
                     type="button"
                     onClick={async () => {
                       console.log('🚀 Mint button clicked!');
+
+                      // Password protection
+                      const password = prompt('🔐 Enter password to mint:');
+                      if (!password) {
+                        return; // User cancelled
+                      }
+
+                      try {
+                        const response = await fetch('/api/gen1/check-password', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ password }),
+                        });
+
+                        if (!response.ok) {
+                          const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
+                          alert(`❌ ${errorData.error || 'Invalid password'}`);
+                          return;
+                        }
+                      } catch (error: any) {
+                        alert(`❌ Error checking password: ${error.message}`);
+                        return;
+                      }
 
                       if (!contractMintPrice) {
                         alert('⏳ Loading mint price from contract... Please wait a few seconds and try again.');

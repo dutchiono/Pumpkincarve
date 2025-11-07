@@ -63,11 +63,23 @@ export async function POST(req: NextRequest) {
     const neynarConfig = new Configuration({ apiKey: trimmedKey });
     const neynarClient = new NeynarAPIClient(neynarConfig);
 
-    const { userId } = await req.json();
+    const { userId, password } = await req.json();
 
     if (!userId) {
       console.error('[Farcaster Mood API] userId is required');
       return NextResponse.json({ error: 'Farcaster User ID is required' }, { status: 400 });
+    }
+
+    // Password protection - check password
+    const MOOD_ANALYSIS_PASSWORD = getEnvVar('MOOD_ANALYSIS_PASSWORD');
+    if (!MOOD_ANALYSIS_PASSWORD || MOOD_ANALYSIS_PASSWORD.trim() === '') {
+      console.error('[Farcaster Mood API] MOOD_ANALYSIS_PASSWORD not configured in .env file');
+      return NextResponse.json({ error: 'Mood analysis is currently disabled (password not configured)' }, { status: 503 });
+    }
+
+    if (!password || password !== MOOD_ANALYSIS_PASSWORD.trim()) {
+      console.error('[Farcaster Mood API] Invalid password attempt');
+      return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
     }
 
     console.log('[Farcaster Mood API] Analyzing mood for user:', userId);
@@ -151,7 +163,7 @@ export async function POST(req: NextRequest) {
     try {
       // Try to get bio from the first cast's author info, or skip if not available
       if (casts.length > 0 && casts[0]?.author) {
-        const author = casts[0].author;
+        const author = casts[0].author as any;
         if (author?.profile?.bio) {
           userBio = typeof author.profile.bio === 'string' ? author.profile.bio : (author.profile.bio.text || '');
         } else if (author?.bio) {
@@ -173,6 +185,9 @@ export async function POST(req: NextRequest) {
         color1: '#4ade80',
         color2: '#22d3ee',
         baseFrequency: 0.02,
+        flowFieldBaseFrequency: 0.02,
+        flowFieldsBaseFrequency: 0.01,
+        flowLineDensity: 0.15,
       });
     }
 
@@ -201,7 +216,10 @@ Based on their bio and posting patterns, provide a comprehensive personality and
   "reasoning": "A thoughtful 2-3 sentence explanation of your analysis, referencing specific patterns from their posts and bio",
   "color1": "#HEXCODE (dominant color representing their energy and personality - be creative and specific, avoid generic colors like #ff0000 or #0000ff)",
   "color2": "#HEXCODE (complementary or contrasting color that pairs well with color1 - create an interesting color palette)",
-  "baseFrequency": 0.015 (recommended NFT animation frequency between 0.01-0.03, where lower=calmer/more contemplative, higher=more energetic/active)
+  "baseFrequency": 0.015 (legacy field, recommended NFT animation frequency between 0.01-0.03, where lower=calmer/more contemplative, higher=more energetic/active),
+  "flowFieldBaseFrequency": 0.02 (background flow field base frequency between 0.01-0.05, controls background animation smoothness and speed),
+  "flowFieldsBaseFrequency": 0.01 (flow field lines base frequency between 0.005-0.03, controls line animation smoothness and complexity),
+  "flowLineDensity": 0.15 (line density between 0.05-0.5, controls how many lines appear - NEVER above 0.5, lower=fewer lines/more minimal, higher=more lines/dense patterns)
 }
 
 Analysis Guidelines:
@@ -211,7 +229,10 @@ Analysis Guidelines:
 - interests: Identify the top 3 topics, themes, or subjects they discuss most frequently
 - reasoning: Provide specific examples from their content that led to your analysis
 - color1/color2: Choose colors that genuinely represent their personality - be creative but meaningful (e.g., if they're energetic and creative, use vibrant but sophisticated colors; if contemplative, use deeper, richer tones)
-- baseFrequency: Match the animation speed to their posting frequency and energy level
+- baseFrequency: Legacy field for backward compatibility (match to flowFieldBaseFrequency)
+- flowFieldBaseFrequency: Background animation speed - energetic people might have slightly higher values (0.025-0.04), calm/contemplative people lower (0.01-0.02)
+- flowFieldsBaseFrequency: Line animation complexity - technical/analytical people might prefer slightly higher complexity (0.015-0.025), artistic/flowing people lower (0.005-0.015)
+- flowLineDensity: Visual density of lines - minimal/aesthetic people lower (0.05-0.2), detail-oriented/active people higher (0.2-0.4), but NEVER exceed 0.5
 
 Return ONLY valid JSON, no markdown formatting, no code blocks, no additional text.
 `;
@@ -254,8 +275,14 @@ Return ONLY valid JSON, no markdown formatting, no code blocks, no additional te
         color1: '#4ade80',
         color2: '#22d3ee',
         baseFrequency: 0.02,
+        flowFieldBaseFrequency: 0.02,
+        flowFieldsBaseFrequency: 0.01,
+        flowLineDensity: 0.15,
       };
     }
+
+    // Ensure flowLineDensity never exceeds 0.5
+    const flowLineDensity = Math.min(analysis.flowLineDensity || 0.15, 0.5);
 
     return NextResponse.json({
       mood: analysis.mood || 'neutral',
@@ -266,7 +293,10 @@ Return ONLY valid JSON, no markdown formatting, no code blocks, no additional te
       postsAnalyzed,
       color1: analysis.color1 || '#4ade80',
       color2: analysis.color2 || '#22d3ee',
-      baseFrequency: analysis.baseFrequency || 0.02,
+      baseFrequency: analysis.baseFrequency || analysis.flowFieldBaseFrequency || 0.02,
+      flowFieldBaseFrequency: analysis.flowFieldBaseFrequency || analysis.baseFrequency || 0.02,
+      flowFieldsBaseFrequency: analysis.flowFieldsBaseFrequency || 0.01,
+      flowLineDensity: flowLineDensity,
     });
   } catch (error: any) {
     console.error('[Farcaster Mood API] Error:', error);

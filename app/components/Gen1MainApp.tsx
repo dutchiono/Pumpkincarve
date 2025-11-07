@@ -215,6 +215,29 @@ function Gen1AppContent() {
       return;
     }
 
+    // Password protection
+    const password = prompt('🔐 Enter password to mint:');
+    if (!password) {
+      return; // User cancelled
+    }
+
+    try {
+      const response = await fetch('/api/gen1/check-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
+        alert(`❌ ${errorData.error || 'Invalid password'}`);
+        return;
+      }
+    } catch (error: any) {
+      alert(`❌ Error checking password: ${error.message}`);
+      return;
+    }
+
     setIsMinting(true);
     setMintProgress(0);
 
@@ -458,6 +481,16 @@ function Gen1AppContent() {
               </ul>
               <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '13px', lineHeight: '1.6', marginTop: '12px', marginBottom: 0, textAlign: 'left' }}>
                 Customize colors, speeds, and complexity for billions of unique combinations.
+              </p>
+            </div>
+
+            {/* Early buyer notice */}
+            <div style={{ backgroundColor: 'rgba(147, 51, 234, 0.15)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(147, 51, 234, 0.4)', marginBottom: '24px', textAlign: 'center' }}>
+              <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
+                💡 <strong style={{ color: '#9333ea' }}>Early Buyer Advantage:</strong> Price may increase as new features are added. Early buyers are smart! 🔥
+              </p>
+              <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', marginTop: '8px', marginBottom: 0 }}>
+                Limited to {MAX_SUPPLY} total mints
               </p>
             </div>
 
