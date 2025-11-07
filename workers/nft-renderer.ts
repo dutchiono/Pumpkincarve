@@ -1,18 +1,8 @@
 import { Worker, Job } from 'bullmq';
 import { uploadToIPFS } from '../app/services/ipfs';
-import { createRequire } from 'module';
 import { getRedisConnection } from '../app/services/redis';
-
-const require = createRequire(import.meta.url);
-const GIFModule = require('gif.js/dist/gif.node.js');
-const GIFConstructor = GIFModule.default || GIFModule.GIF || GIFModule;
+import GIFEncoder from 'gifencoder';
 let hasLoggedCanvasLoad = false;
-
-if (typeof GIFConstructor !== 'function') {
-  throw new Error(
-    'gif.js node build did not expose a constructor. Ensure gif.js/dist/gif.node.js is available and compatible.',
-  );
-}
 
 interface RenderJobData {
   settings: {
@@ -275,15 +265,12 @@ async function renderGIF(settings: any, createCanvas: any): Promise<Buffer> {
 
   console.log(`Rendering ${totalFrames} frames...`);
 
-  // Create GIF using GIF.js
-  const gif = new GIFConstructor({
-    workers: 2,
-    quality: 10,
-    width: size,
-    height: size,
-  } as any);
+  const encoder = new GIFEncoder(size, size);
+  encoder.start();
+  encoder.setRepeat(0);
+  encoder.setDelay(Math.round(1000 / 30));
+  encoder.setQuality(10);
 
-  // Render frames and add to GIF
   for (let frame = 0; frame < totalFrames; frame++) {
     tempCtx.clearRect(0, 0, size, size);
 
@@ -293,23 +280,12 @@ async function renderGIF(settings: any, createCanvas: any): Promise<Buffer> {
     renderFlowFields(tempCtx, size, t, settings);
     renderContourMapping(tempCtx, size, t, settings);
 
-    // Add frame to GIF
-    gif.addFrame(tempCanvas, { delay: 1000 / 30 });
+    encoder.addFrame(tempCtx);
   }
 
-  console.log('Encoding GIF...');
-
-  return new Promise((resolve, reject) => {
-    gif.on('finished', (blob: Blob) => {
-      console.log('GIF encoding complete');
-      resolve(Buffer.from(blob as any));
-    });
-    gif.on('error', (error: any) => {
-      console.error('GIF encoding error:', error);
-      reject(error);
-    });
-    gif.render();
-  });
+  encoder.finish();
+  console.log('GIF encoding complete');
+  return Buffer.from(encoder.out.getData());
 }
 
 worker.on('completed', (job) => {
