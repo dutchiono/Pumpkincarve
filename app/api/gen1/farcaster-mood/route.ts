@@ -82,17 +82,14 @@ export async function POST(req: NextRequest) {
       // Try username lookup - remove @ symbol if present
       const cleanUsername = userId.replace(/^@/, '');
       try {
-        const userResponse = await neynarClient.lookupUserByUsername({ username: cleanUsername });
-        // @ts-ignore - SDK types may be incomplete
+        const userResponse: any = await neynarClient.lookupUserByUsername({ username: cleanUsername });
+        // Handle different response structures from Neynar SDK
         if (userResponse && userResponse.result && userResponse.result.user && userResponse.result.user.fid) {
-          // @ts-ignore
           fid = userResponse.result.user.fid;
         } else if (userResponse && userResponse.user && userResponse.user.fid) {
-          // @ts-ignore - Alternative response structure
           fid = userResponse.user.fid;
-        } else if (userResponse && userResponse.fid) {
-          // @ts-ignore - Direct fid in response
-          fid = userResponse.fid;
+        } else if (userResponse && (userResponse as any).fid) {
+          fid = (userResponse as any).fid;
         }
       } catch (e: any) {
         console.error('[Farcaster Mood API] Username lookup failed:', e?.message || e);
