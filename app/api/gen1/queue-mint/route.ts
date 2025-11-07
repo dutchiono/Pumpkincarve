@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getQueue } from '@/app/services/queue';
+import { waitForQueueReady } from '@/app/services/queue';
 
 export async function POST(request: NextRequest) {
   try {
     const { settings, walletAddress } = await request.json();
 
-    // Add job to queue
-    const queue = getQueue();
+    const queue = await waitForQueueReady();
     const job = await queue.add('nft-render', {
       settings,
       walletAddress,
@@ -19,7 +18,20 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMessage = error?.message || 'Failed to queue job';
+    const isConnectionError =
+      errorMessage.includes('ECONNREFUSED') ||
+      errorMessage.includes('ENOTFOUND') ||
+      error?.code === 'ECONNREFUSED';
+
+    return NextResponse.json(
+      {
+        error: isConnectionError
+          ? 'Rendering queue is not available. Check Redis connection and worker status.'
+          : errorMessage,
+      },
+      { status: isConnectionError ? 503 : 500 },
+    );
   }
 }
 

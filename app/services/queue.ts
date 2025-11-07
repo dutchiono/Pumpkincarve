@@ -1,25 +1,12 @@
-import { Queue } from 'bullmq';
-import Redis from 'ioredis';
+import { Queue, type QueueOptions } from 'bullmq';
+import { getRedisConnection } from './redis';
 
-let connection: Redis | null = null;
 let nftRenderQueue: Queue | null = null;
-
-function getConnection() {
-  if (!connection) {
-    connection = new Redis({
-      host: process.env.REDIS_HOST || '127.0.0.1',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      maxRetriesPerRequest: null,
-      lazyConnect: true, // Don't connect immediately
-    });
-  }
-  return connection;
-}
 
 export function getQueue() {
   if (!nftRenderQueue) {
-    nftRenderQueue = new Queue('nft-render', {
-      connection: getConnection(),
+    const queueOptions: QueueOptions = {
+      connection: getRedisConnection(),
       defaultJobOptions: {
         attempts: 3,
         backoff: {
@@ -28,9 +15,26 @@ export function getQueue() {
         },
         removeOnComplete: 100,
         removeOnFail: 500,
-      }
+      },
+    };
+
+    nftRenderQueue = new Queue('nft-render', queueOptions);
+    nftRenderQueue.on('error', (error) => {
+      console.error('[Queue] nft-render error', error);
     });
   }
+
   return nftRenderQueue;
+}
+
+export async function waitForQueueReady() {
+  const queue = getQueue();
+  try {
+    await queue.waitUntilReady();
+  } catch (error) {
+    console.error('[Queue] waitUntilReady failed', error);
+    throw error;
+  }
+  return queue;
 }
 

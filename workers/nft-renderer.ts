@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq';
-import Redis from 'ioredis';
-import { uploadToIPFS } from '../app/services/ipfs.js';
+import { uploadToIPFS } from '../app/services/ipfs';
 import { createRequire } from 'module';
+import { getRedisConnection } from '../app/services/redis';
 
 // Use createRequire to import CommonJS module (gif.js exports as default)
 const require = createRequire(import.meta.url);
@@ -45,11 +45,7 @@ interface RenderJobData {
   walletAddress: string;
 }
 
-const connection = new Redis({
-  host: process.env.REDIS_HOST || '127.0.0.1',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  maxRetriesPerRequest: null,
-});
+const connection = getRedisConnection();
 
 const worker = new Worker('nft-render', async (job: Job<RenderJobData>) => {
   console.log(`Processing job ${job.id} for user ${job.data.walletAddress}`);

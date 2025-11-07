@@ -1525,9 +1525,9 @@ const Gen1App: React.FC = () => {
         </div>
       </header>
       <main className="p-2 md:p-4 w-full max-w-full overflow-x-hidden box-border">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 auto-rows-min w-full max-w-full">
+        <div className="flex flex-col gap-3 md:grid md:grid-cols-3 md:gap-4 md:auto-rows-min w-full max-w-full">
           {/* Canvas Card */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4 md:row-span-2">
+          <div className="order-1 md:order-none bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4 md:row-span-2">
             <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">CANVAS (Live Loop)</h2>
             <div className="bg-slate-900 rounded-lg p-2 w-full overflow-hidden">
               <canvas ref={canvasRef} className="rounded-lg shadow-2xl w-full h-auto max-w-full" style={{aspectRatio: '1/1', maxWidth: '100%'}} />
@@ -1535,7 +1535,7 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* NFT Viewer Card */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4 md:row-span-2">
+          <div className="order-2 md:order-none bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4 md:row-span-2">
             <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">NFT Viewer</h2>
             <div className="bg-slate-900 rounded-lg p-3 md:p-4 space-y-3">
               <div>
@@ -1580,7 +1580,7 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* CARD 3: PLACEHOLDER - TBD */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+          <div className="order-10 md:order-none bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
             <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">Card 3 - TBD</h2>
             <div className="flex items-center justify-center h-24 md:h-32 text-gray-500 text-xs md:text-sm">
               <p>Placeholder for future feature</p>
@@ -1588,7 +1588,7 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* CARD 4: Contour Mapping */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+          <div className="order-3 md:order-none bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
             <div className="flex items-center justify-between mb-2 md:mb-3">
               <h2 className="text-base md:text-lg font-bold text-cyan-300">Contour Mapping</h2>
               <label className="flex items-center space-x-2 cursor-pointer">
@@ -1640,7 +1640,7 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* Flow Field Parameters Card */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+          <div className="order-4 md:order-none bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
             <div className="flex items-center justify-between mb-2 md:mb-3">
               <h2 className="text-base md:text-lg font-bold text-cyan-300">Flow Field (Background)</h2>
               <label className="flex items-center space-x-2 cursor-pointer">
@@ -1696,7 +1696,7 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* Flow Fields (Lines) Parameters Card */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+          <div className="order-5 md:order-none bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
             <div className="flex items-center justify-between mb-2 md:mb-3">
               <h2 className="text-base md:text-lg font-bold text-cyan-300">Flow Fields (Lines)</h2>
               <label className="flex items-center space-x-2 cursor-pointer">
@@ -1751,7 +1751,7 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* CARD 7: Data Influence Modifiers */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+          <div className="order-6 md:order-none bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
             <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">DATA INFLUENCE MODIFIERS</h2>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -1807,7 +1807,7 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* CARD 8: Farcaster Mood Readout - NEW */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+          <div className="order-7 md:order-none bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
             <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">Farcaster Mood Readout</h2>
             <div className="space-y-3">
             <div>
@@ -1909,7 +1909,7 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* On-Chain Actions Card - Card #6 */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4 md:col-span-3">
+          <div className="order-9 md:order-none bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4 md:col-span-3">
               <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">ON-CHAIN ACTIONS</h2>
               <div className="space-y-3">
             {!isConnected && (
