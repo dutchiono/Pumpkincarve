@@ -42,7 +42,9 @@ interface RenderJobData {
 
 const connection = getRedisConnection();
 
-const worker = new Worker('nft-render', async (job: Job<RenderJobData>) => {
+const worker = new Worker(
+  'nft-render',
+  async (job: Job<RenderJobData>) => {
   console.log(`Processing job ${job.id} for user ${job.data.walletAddress}`);
 
   const { settings } = job.data;
@@ -57,20 +59,20 @@ const worker = new Worker('nft-render', async (job: Job<RenderJobData>) => {
     // Dynamic import for optional canvas dependency
     const { createCanvas } = await import('canvas');
 
-    // Step 1: Render GIF server-side
-    gifBuffer = await renderGIF(settings, createCanvas);
-    await job.updateProgress(33);
+    // Step 1: Render GIF server-side (0 - 70%)
+    gifBuffer = await renderGIF(settings, createCanvas, job);
+    await job.updateProgress(70);
   } catch (error: any) {
     console.error('⚠️ Server-side rendering failed (canvas not installed?):', error.message);
     throw new Error('Server-side rendering requires canvas package. Install on Linux server with: npm install canvas');
   }
 
-  // Step 2: Upload GIF to IPFS
+  // Step 2: Upload GIF to IPFS (70 - 85%)
   const gifCid = await uploadToIPFS(gifBuffer, 'image/gif', 'gen1-animation.gif');
   const imageUrl = `ipfs://${gifCid}`;
-  await job.updateProgress(66);
+  await job.updateProgress(85);
 
-  // Step 3: Upload metadata to IPFS
+  // Step 3: Upload metadata to IPFS (85 - 100%)
   const metadata = {
     name: `Gen1 NFT #${Date.now()}`,
     description: 'Generative Gen1 NFT',
@@ -91,10 +93,15 @@ const worker = new Worker('nft-render', async (job: Job<RenderJobData>) => {
     gifCid,
     metadataCid,
   };
-}, {
-  connection,
-  concurrency: 3,
-});
+  },
+  {
+    connection,
+    concurrency: 1,
+    lockDuration: 1000 * 60 * 10, // allow up to 10 minutes for rendering
+    stalledInterval: 1000 * 30,
+    maxStalledCount: 5,
+  },
+);
 
 // Server-side GIF rendering functions
 function getFlowFieldWavefieldValue(x: number, y: number, t: number, settings: any): number {
@@ -252,7 +259,11 @@ function renderContourMapping(ctx: any, size: number, t: number, settings: any) 
 }
 
 // Server-side GIF rendering function
-async function renderGIF(settings: any, createCanvas: any): Promise<Buffer> {
+async function renderGIF(
+  settings: any,
+  createCanvas: any,
+  job: Job<RenderJobData>,
+): Promise<Buffer> {
   const size = 512;
   const totalFrames = 1000;
 
@@ -271,6 +282,9 @@ async function renderGIF(settings: any, createCanvas: any): Promise<Buffer> {
   encoder.setDelay(Math.round(1000 / 30));
   encoder.setQuality(10);
 
+  const renderProgressStart = 5;
+  const renderProgressEnd = 70;
+
   for (let frame = 0; frame < totalFrames; frame++) {
     tempCtx.clearRect(0, 0, size, size);
 
@@ -281,6 +295,14 @@ async function renderGIF(settings: any, createCanvas: any): Promise<Buffer> {
     renderContourMapping(tempCtx, size, t, settings);
 
     encoder.addFrame(tempCtx);
+
+    if ((frame + 1) % 20 === 0 || frame === totalFrames - 1) {
+      const progressRange = renderProgressEnd - renderProgressStart;
+      const frameProgress =
+        renderProgressStart + progressRange * ((frame + 1) / totalFrames);
+      await job.updateProgress(Math.round(frameProgress));
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    }
   }
 
   encoder.finish();
