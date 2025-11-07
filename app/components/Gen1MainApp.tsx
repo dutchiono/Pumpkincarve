@@ -411,21 +411,22 @@ function Gen1AppContent() {
                   : process.env.NEXT_PUBLIC_APP_URL || 'https://bushleague.xyz';
 
                 // Prepare embeds: use image/video if available, otherwise just miniapp URL
-                let embeds: string[] = [];
+                // Type must be: [] | [string] | [string, string] | undefined
+                let embeds: [] | [string] | [string, string] | undefined;
                 if (mintedImageUrl) {
                   // Convert IPFS URL to gateway URL for Farcaster
                   const imageUrl = mintedImageUrl.startsWith('ipfs://')
                     ? `https://ipfs.io/ipfs/${mintedImageUrl.replace('ipfs://', '')}`
                     : mintedImageUrl;
-                  embeds = [imageUrl, appUrl];
+                  embeds = [imageUrl, appUrl]; // Type: [string, string]
                 } else {
-                  embeds = [appUrl];
+                  embeds = [appUrl]; // Type: [string]
                 }
 
                 // Compose cast with mint message
                 const castResult = await sdk.actions.composeCast({
                   text: 'I just minted my Mood NFT by @ionoi!',
-                  embeds: embeds as [string, string?],
+                  embeds: embeds,
                 });
 
                 if (castResult?.cast) {
