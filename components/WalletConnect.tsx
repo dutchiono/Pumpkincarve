@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ethers } from 'ethers'
 import { useFarcasterContext } from '@/lib/hooks/useFarcasterContext'
+import { notify } from '@/app/utils/notify'
 
 interface WalletConnectProps {
   onConnect?: (address: string) => void
@@ -50,7 +51,7 @@ export default function WalletConnect({ onConnect }: WalletConnectProps) {
 
   const handleConnect = async () => {
     if (typeof window === 'undefined' || !window.ethereum) {
-      alert('Please install a wallet extension like MetaMask')
+      notify('Please install a wallet extension like MetaMask', 'warning')
       return
     }
 
@@ -67,7 +68,7 @@ export default function WalletConnect({ onConnect }: WalletConnectProps) {
     } catch (error: any) {
       console.error('Error connecting wallet:', error)
       if (error.code !== 4001) { // User rejected
-        alert('Failed to connect wallet. Please try again.')
+        notify('Failed to connect wallet. Please try again.', 'error')
       }
     } finally {
       setIsConnecting(false)

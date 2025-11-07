@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { sdk } from '@farcaster/miniapp-sdk';
 import { useFarcasterContext } from '@/lib/hooks/useFarcasterContext';
+import { notify } from '@/app/utils/notify';
 
 interface UserData {
   posts: any[];
@@ -165,7 +166,7 @@ export default function ProfilePage() {
   // Handle test notification
   const handleTestNotification = async () => {
     if (!testNotificationText.trim()) {
-      alert('Please enter notification text');
+      notify('Please enter notification text', 'warning');
       return;
     }
 
@@ -182,21 +183,21 @@ export default function ProfilePage() {
       });
 
       if (response.ok) {
-        alert('✅ Test notification sent!');
+        notify('✅ Test notification sent!', 'success');
         setTestNotificationText('');
       } else {
         const error = await response.json();
-        alert('❌ Failed: ' + error.error);
+        notify('❌ Failed: ' + error.error, 'error');
       }
     } catch (error: any) {
-      alert('Error: ' + error.message);
+      notify('Error: ' + error.message, 'error');
     }
   };
 
   // Handle test mint cast (admin only)
   const handleTestMintCast = async () => {
     if (!isAdmin) {
-      alert('Admin access required');
+      notify('Admin access required', 'warning');
       return;
     }
 
@@ -215,14 +216,14 @@ export default function ProfilePage() {
       });
 
       if (result?.cast) {
-        alert('✅ Test cast posted successfully!');
+        notify('✅ Test cast posted successfully!', 'success');
       } else {
         // User cancelled
         console.log('User cancelled test cast');
       }
     } catch (error: any) {
       console.error('Test cast error:', error);
-      alert('Failed to post test cast: ' + (error.message || String(error)));
+      notify('Failed to post test cast: ' + (error.message || String(error)), 'error');
     }
   };
 

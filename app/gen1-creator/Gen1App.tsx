@@ -5,6 +5,7 @@ import GIF from 'gif.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAccount, useConnect, useDisconnect, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
 import { gen1ABI } from './abi';
+import { notify } from '@/app/utils/notify';
 
 // Define types for our settings
 interface FlowFieldSettings {
@@ -122,7 +123,7 @@ const Gen1App: React.FC = () => {
   useEffect(() => {
     if (writeError) {
       console.error('❌ WriteContract error:', writeError);
-      alert('Transaction error: ' + writeError.message);
+      notify('Transaction error: ' + writeError.message, 'error');
     }
   }, [writeError]);
 
@@ -222,7 +223,7 @@ const Gen1App: React.FC = () => {
   const handleGenerateNewRender = useCallback(async () => {
     // This is now just a trigger for handleUpdateOnChain
     // The actual rendering, upload, and update happens in handleUpdateOnChain
-    alert('Click "Update On-Chain" to generate new render, upload to IPFS, and update the contract.');
+    notify('Click "Update On-Chain" to generate new render, upload to IPFS, and update the contract.');
   }, []);
 
   // Helper to unpin old IPFS files
@@ -277,12 +278,12 @@ const Gen1App: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
-        alert(`❌ ${errorData.error || 'Invalid password'}`);
+        notify(`❌ ${errorData.error || 'Invalid password'}`, 'error');
         return false;
       }
       return true;
     } catch (error: any) {
-      alert(`❌ Error checking password: ${error.message}`);
+      notify(`❌ Error checking password: ${error.message}`, 'error');
       return false;
     }
   };
@@ -298,7 +299,7 @@ const Gen1App: React.FC = () => {
   // Handle password submission
   const handlePasswordSubmit = useCallback(async () => {
     if (!passwordInput.trim()) {
-      alert('Please enter a password');
+      notify('Please enter a password', 'warning');
       return;
     }
 
@@ -325,7 +326,7 @@ const Gen1App: React.FC = () => {
 
     // Check ownership FIRST before doing any expensive operations
     if (!publicClient) {
-      alert('❌ Public client not available. Please reconnect your wallet.');
+      notify('❌ Public client not available. Please reconnect your wallet.', 'error');
       return;
     }
 
@@ -344,7 +345,7 @@ const Gen1App: React.FC = () => {
       console.log('Connected address:', address);
 
       if (String(contractOwner).toLowerCase() !== address?.toLowerCase()) {
-        alert(`❌ Cannot update NFT #${tokenIdToUpdate}\n\nYou are NOT the contract owner/authority.\nContract Owner: ${contractOwner}\nConnected: ${address}\n\nPlease connect the authority wallet.`);
+        notify(`❌ Cannot update NFT #${tokenIdToUpdate}\n\nYou are NOT the contract owner/authority.\nContract Owner: ${contractOwner}\nConnected: ${address}\n\nPlease connect the authority wallet.`, 'error');
         throw new Error(`Not the contract owner. Connected: ${address}, Owner: ${contractOwner}`);
       }
 
@@ -462,7 +463,7 @@ const Gen1App: React.FC = () => {
       console.error('Error updating NFT:', err);
       // Only show alert if it's not the ownership check
       if (!err.message?.includes('Not the owner')) {
-        alert('Error updating NFT: ' + err.message);
+        notify('Error updating NFT: ' + err.message, 'error');
       }
     } finally {
       setIsUpdatingOnChain(false);
@@ -491,7 +492,7 @@ const Gen1App: React.FC = () => {
   // Internal handler to save snapshot of current NFT state as child NFT
   const handleSaveSnapshotInternal = useCallback(async () => {
     if (!parentTokenId || !publicClient || !address || !savePrice) {
-      alert('Please connect wallet and enter a valid parent token ID');
+      notify('Please connect wallet and enter a valid parent token ID', 'warning');
       return;
     }
 
@@ -645,7 +646,7 @@ const Gen1App: React.FC = () => {
     } catch (err: any) {
       console.error('Error saving snapshot:', err);
       setSaveSnapshotError(err.message);
-      alert('Error saving snapshot: ' + err.message);
+      notify('Error saving snapshot: ' + err.message, 'error');
     } finally {
       setIsSavingSnapshot(false);
     }
@@ -672,12 +673,12 @@ const Gen1App: React.FC = () => {
   // Queue-based mint handler
   const handleQueueMintInternal = useCallback(async () => {
     if (!isConnected || !contractMintPrice || !address) {
-      alert('Please connect your wallet first');
+      notify('Please connect your wallet first', 'warning');
       return;
     }
 
     if (totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY) {
-      alert(`⚠️ Maximum supply of ${MAX_SUPPLY} reached! Minting is disabled.`);
+      notify(`⚠️ Maximum supply of ${MAX_SUPPLY} reached! Minting is disabled.`, 'warning');
       return;
     }
 
@@ -746,7 +747,7 @@ const Gen1App: React.FC = () => {
 
           // Check supply before minting
           if (totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY) {
-            alert(`⚠️ Maximum supply of ${MAX_SUPPLY} reached! Cannot mint.`);
+            notify(`⚠️ Maximum supply of ${MAX_SUPPLY} reached! Cannot mint.`, 'warning');
             setQueueStatus('error');
             return;
           }
@@ -771,7 +772,7 @@ const Gen1App: React.FC = () => {
         } else if (status.status === 'failed') {
           clearInterval(interval);
           setQueueStatus('error');
-          alert('Rendering failed. Please try again.');
+          notify('Rendering failed. Please try again.', 'error');
           setQueueJobId(null);
         }
       }, 2000); // Poll every 2 seconds
@@ -779,7 +780,7 @@ const Gen1App: React.FC = () => {
     } catch (err: any) {
       console.error('Queue mint error:', err);
       setQueueStatus('error');
-      alert('Error: ' + err.message);
+      notify('Error: ' + err.message, 'error');
       setQueueJobId(null);
     }
   }, [isConnected, contractMintPrice, address, mintCount, enableFlowField, enableFlowFields, enableContourMapping, flowColor1, flowColor2, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowFieldRotation, flowFieldDirection, flowFieldsBaseFreq, flowFieldsAmplitude, flowFieldsOctaves, flowLineLength, flowLineDensity, flowFieldsRotation, flowFieldsDirection, contourBaseFreq, contourAmplitude, contourOctaves, contourLevels, contourSmoothness, contourAffectsFlow, writeContract, totalSupply]);
@@ -792,7 +793,7 @@ const Gen1App: React.FC = () => {
   // Apply mood-based settings to Canvas (for new NFTs)
   const handleApplyMoodToCanvas = useCallback(() => {
     if (!recommendedColor1 || !recommendedColor2) {
-      alert('Please analyze a Farcaster mood first!');
+      notify('Please analyze a Farcaster mood first!', 'warning');
       return;
     }
 
@@ -827,17 +828,17 @@ const Gen1App: React.FC = () => {
       ? `Background: ${recommendedFlowFieldBaseFreq}, Lines: ${recommendedFlowFieldsBaseFreq}, Density: ${recommendedFlowLineDensity || 'default'}`
       : `Frequency: ${recommendedFrequency || 'default'}`;
 
-    alert(`✓ Mood settings applied to canvas!\n\nColors: ${recommendedColor1} & ${recommendedColor2}\n${freqInfo}`);
+    notify(`✓ Mood settings applied to canvas!\n\nColors: ${recommendedColor1} & ${recommendedColor2}\n${freqInfo}`, 'success');
   }, [recommendedColor1, recommendedColor2, recommendedFrequency, recommendedFlowFieldBaseFreq, recommendedFlowFieldsBaseFreq, recommendedFlowLineDensity]);
 
   // Apply mood-based settings to existing NFT (preserves NFT history)
   const handleApplyMoodToNFT = useCallback(() => {
     if (!currentNFTMetadata) {
-      alert('Please load an NFT first (use NFT Viewer card)');
+      notify('Please load an NFT first (use NFT Viewer card)', 'warning');
       return;
     }
     if (!recommendedColor1 || !recommendedColor2) {
-      alert('Please analyze a Farcaster mood first!');
+      notify('Please analyze a Farcaster mood first!', 'warning');
       return;
     }
 
@@ -868,7 +869,7 @@ const Gen1App: React.FC = () => {
       setContourBaseFreq(contourFreq);
     }
 
-    alert(`✓ Mood settings applied to NFT #${tokenIdToUpdate}!\n\nNext steps:\n1. Check the canvas preview\n2. Click "Generate Render" in On-Chain Actions\n3. Upload to IPFS\n4. Update On-Chain`);
+    notify(`✓ Mood settings applied to NFT #${tokenIdToUpdate}!\n\nNext steps:\n1. Check the canvas preview\n2. Click "Generate Render" in On-Chain Actions\n3. Upload to IPFS\n4. Update On-Chain`, 'success');
   }, [currentNFTMetadata, tokenIdToUpdate, recommendedColor1, recommendedColor2, recommendedFrequency, recommendedFlowFieldBaseFreq, recommendedFlowFieldsBaseFreq, recommendedFlowLineDensity]);
 
   const handleFetchNFTMetadata = useCallback(async () => {
@@ -966,7 +967,7 @@ const Gen1App: React.FC = () => {
   // Test function for the Farcaster Mood Readout card (no checkbox required)
   const testFarcasterMood = useCallback(async () => {
     if (!farcasterUserId || farcasterUserId.trim() === '') {
-      alert('Please enter a username or FID');
+      notify('Please enter a username or FID', 'warning');
       return;
     }
 
@@ -1009,16 +1010,16 @@ const Gen1App: React.FC = () => {
         console.error('Error fetching Farcaster mood:', errorData);
 
         if (response.status === 401) {
-          alert('❌ Invalid password. Access denied.');
+          notify('❌ Invalid password. Access denied.', 'error');
         } else if (response.status === 503) {
-          alert('⚠️ Mood analysis is currently disabled. Please contact the administrator.');
+          notify('⚠️ Mood analysis is currently disabled. Please contact the administrator.', 'warning');
         } else {
-          alert(`Error: ${errorData.error || 'Failed to analyze mood'}`);
+          notify(`Error: ${errorData.error || 'Failed to analyze mood'}`, 'error');
         }
       }
     } catch (error) {
       console.error('Error fetching Farcaster mood:', error);
-      alert(`Error: ${error}`);
+      notify(`Error: ${error}`, 'error');
     }
   }, [farcasterUserId]);
 
@@ -1321,7 +1322,7 @@ const Gen1App: React.FC = () => {
 
     const jsonStr = JSON.stringify(settings, null, 2);
     navigator.clipboard.writeText(jsonStr);
-    alert('Settings copied! Use for batch rendering. These become the BASE settings.\n\nLATER: You can modify colors/params based on holder data and rerender!');
+    notify('Settings copied! Use for batch rendering. These become the BASE settings.\n\nLater you can modify colors/params based on holder data and rerender.', 'success');
     console.log('=== GEN1 BASE SETTINGS FOR BATCH RENDERING ===');
     console.log('Use these for initial mint. Then modify params based on holder activity!');
     console.log(jsonStr);
@@ -1985,21 +1986,21 @@ const Gen1App: React.FC = () => {
 
                         if (!response.ok) {
                           const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
-                          alert(`❌ ${errorData.error || 'Invalid password'}`);
+                          notify(`❌ ${errorData.error || 'Invalid password'}`, 'error');
                           return;
                         }
                       } catch (error: any) {
-                        alert(`❌ Error checking password: ${error.message}`);
+                        notify(`❌ Error checking password: ${error.message}`, 'error');
                         return;
                       }
 
                       if (!contractMintPrice) {
-                        alert('⏳ Loading mint price from contract... Please wait a few seconds and try again.');
+                        notify('⏳ Loading mint price from contract... Please wait a few seconds and try again.', 'warning');
                         return;
                       }
 
                       if (totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY) {
-                        alert(`⚠️ Maximum supply of ${MAX_SUPPLY} reached! Minting is disabled.`);
+                        notify(`⚠️ Maximum supply of ${MAX_SUPPLY} reached! Minting is disabled.`, 'warning');
                         return;
                       }
 
@@ -2104,7 +2105,7 @@ const Gen1App: React.FC = () => {
                         console.log('✓ WriteContract called - Phantom should pop up now');
                       } catch (err: any) {
                         console.error('WriteContract error:', err);
-                        alert('Error: ' + err.message);
+                        notify('Error: ' + err.message, 'error');
                       }
                     }}
                     disabled={!isConnected || !contractMintPrice || mintCount < 1 || mintCount > 10 || isMinting || isConfirming}

@@ -3,11 +3,16 @@ import { uploadToIPFS } from '../app/services/ipfs';
 import { createRequire } from 'module';
 import { getRedisConnection } from '../app/services/redis';
 
-// Use createRequire to import CommonJS module (gif.js exports as default)
 const require = createRequire(import.meta.url);
-const GIFModule = require('gif.js');
-// gif.js exports the constructor as default or as the module itself
-const GIF = GIFModule.default || GIFModule.GIF || GIFModule;
+const GIFModule = require('gif.js/dist/gif.node.js');
+const GIFConstructor = GIFModule.default || GIFModule.GIF || GIFModule;
+let hasLoggedCanvasLoad = false;
+
+if (typeof GIFConstructor !== 'function') {
+  throw new Error(
+    'gif.js node build did not expose a constructor. Ensure gif.js/dist/gif.node.js is available and compatible.',
+  );
+}
 
 interface RenderJobData {
   settings: {
@@ -55,6 +60,10 @@ const worker = new Worker('nft-render', async (job: Job<RenderJobData>) => {
   // Try to use server-side rendering with optional canvas package
   let gifBuffer: Buffer;
   try {
+    if (!hasLoggedCanvasLoad) {
+      console.info('[Worker] Loading canvas for server-side rendering');
+      hasLoggedCanvasLoad = true;
+    }
     // Dynamic import for optional canvas dependency
     const { createCanvas } = await import('canvas');
 
@@ -267,7 +276,7 @@ async function renderGIF(settings: any, createCanvas: any): Promise<Buffer> {
   console.log(`Rendering ${totalFrames} frames...`);
 
   // Create GIF using GIF.js
-  const gif = new GIF({
+  const gif = new GIFConstructor({
     workers: 2,
     quality: 10,
     width: size,

@@ -1,5 +1,6 @@
 import './globals.css';
 import { Providers } from './providers';
+import NotificationCenter from '@/app/components/NotificationCenter';
 import FarcasterSDKInit from '@/components/FarcasterSDKInit';
 import Navigation from '@/components/Navigation';
 
@@ -43,11 +44,30 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="fc:miniapp" content={JSON.stringify(miniappEmbed)} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function() {
+  if (typeof SVGElement === 'undefined') return;
+  const originalSetAttribute = SVGElement.prototype.setAttribute;
+  SVGElement.prototype.setAttribute = function(name, value) {
+    if ((name === 'width' || name === 'height') && value === 'small') {
+      return originalSetAttribute.call(this, name, '16');
+    }
+    return originalSetAttribute.call(this, name, value);
+  };
+})();
+            `,
+          }}
+        />
       </head>
       <body className="pt-16">
         <FarcasterSDKInit />
         <Navigation />
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <NotificationCenter />
+        </Providers>
       </body>
     </html>
   );

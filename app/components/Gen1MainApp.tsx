@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { decodeEventLog } from 'viem';
 import { useAccount, useConnect, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
 import { gen1ABI } from '../gen1-creator/abi';
+import { notify } from '@/app/utils/notify';
 
 const GEN1_CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || '0x9d394EAD99Acab4cF8e65cdA3c8e440fB7D27087') as `0x${string}`;
 
@@ -203,17 +204,17 @@ function Gen1AppContent() {
   // Handle mint
   const handleMint = async () => {
     if (!isConnected || !address) {
-      alert('Please connect your wallet');
+      notify('Please connect your wallet', 'warning');
       return;
     }
 
     if (!contractMintPrice) {
-      alert('Loading mint price... please wait');
+      notify('Loading mint price... please wait', 'warning');
       return;
     }
 
     if (totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY) {
-      alert(`Maximum supply of ${MAX_SUPPLY} reached!`);
+      notify(`Maximum supply of ${MAX_SUPPLY} reached!`, 'warning');
       return;
     }
 
@@ -338,14 +339,14 @@ function Gen1AppContent() {
           clearInterval(interval);
           setIsMinting(false);
           setLoadingMessage('');
-          alert('Failed to generate animation. Please try again.');
+          notify('Failed to generate animation. Please try again.', 'error');
         }
       }, 2000);
     } catch (err: any) {
       console.error('Mint error:', err);
       setIsMinting(false);
       setLoadingMessage('');
-      alert('Error: ' + err.message);
+      notify('Error: ' + err.message, 'error');
     }
   };
 
@@ -379,7 +380,7 @@ function Gen1AppContent() {
             }
           }
 
-          alert('✅ Mint successful!');
+          notify('✅ Mint successful!', 'success');
           setIsMinting(false);
           setLoadingMessage('');
           setMintProgress(0);
@@ -534,7 +535,7 @@ function Gen1AppContent() {
           setMintedImageUrl(null);
         } catch (error) {
           console.error('[Mint] Error handling mint success:', error);
-          alert('✅ Mint successful! (Note: Some post-mint actions may have failed)');
+          notify('✅ Mint successful! (Note: Some post-mint actions may have failed)', 'success');
           setIsMinting(false);
           setLoadingMessage('');
           setMintProgress(0);

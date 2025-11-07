@@ -5,6 +5,7 @@ import GIF from 'gif.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAccount, useConnect, useDisconnect, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
 import { gen2ABI } from './abi';
+import { notify } from '@/app/utils/notify';
 
 // Define types for our settings
 interface FlowFieldSettings {
@@ -103,7 +104,7 @@ const Gen3App: React.FC = () => {
   useEffect(() => {
     if (writeError) {
       console.error('❌ WriteContract error:', writeError);
-      alert('Transaction error: ' + writeError.message);
+      notify('Transaction error: ' + writeError.message, 'error');
     }
   }, [writeError]);
 
@@ -197,7 +198,7 @@ const Gen3App: React.FC = () => {
   const handleGenerateNewRender = useCallback(async () => {
     // This is now just a trigger for handleUpdateOnChain
     // The actual rendering, upload, and update happens in handleUpdateOnChain
-    alert('Click "Update On-Chain" to generate new render, upload to IPFS, and update the contract.');
+    notify('Click "Update On-Chain" to generate new render, upload to IPFS, and update the contract.');
   }, []);
 
   // Helper to unpin old IPFS files
@@ -246,7 +247,7 @@ const Gen3App: React.FC = () => {
 
     // Check ownership FIRST before doing any expensive operations
     if (!publicClient) {
-      alert('❌ Public client not available. Please reconnect your wallet.');
+      notify('❌ Public client not available. Please reconnect your wallet.', 'error');
       return;
     }
 
@@ -265,7 +266,7 @@ const Gen3App: React.FC = () => {
       console.log('Connected address:', address);
 
       if (String(contractOwner).toLowerCase() !== address?.toLowerCase()) {
-        alert(`❌ Cannot update NFT #${tokenIdToUpdate}\n\nYou are NOT the contract owner/authority.\nContract Owner: ${contractOwner}\nConnected: ${address}\n\nPlease connect the authority wallet.`);
+        notify(`❌ Cannot update NFT #${tokenIdToUpdate}\n\nYou are NOT the contract owner/authority.\nContract Owner: ${contractOwner}\nConnected: ${address}\n\nPlease connect the authority wallet.`, 'error');
         throw new Error(`Not the contract owner. Connected: ${address}, Owner: ${contractOwner}`);
       }
 
@@ -381,12 +382,12 @@ const Gen3App: React.FC = () => {
 
     } catch (err: any) {
       console.error('Error updating NFT:', err);
-      // Only show alert if it's not the ownership check
+      // Only show notification if it's not the ownership check
       if (!err.message?.includes('Not the owner')) {
-        alert('Error updating NFT: ' + err.message);
+        notify('Error updating NFT: ' + err.message, 'error');
       }
     } finally {
-    setIsUpdatingOnChain(false);
+      setIsUpdatingOnChain(false);
     }
   }, [tokenIdToUpdate, enableFlowField, enableFlowFields, enableContourMapping, flowColor1, flowColor2, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowFieldRotation, flowFieldDirection, flowFieldsBaseFreq, flowFieldsAmplitude, flowFieldsOctaves, flowLineLength, flowLineDensity, flowFieldsRotation, flowFieldsDirection, contourBaseFreq, contourAmplitude, contourOctaves, contourLevels, contourSmoothness, contourAffectsFlow, currentNFTImageCid, currentNFTMetadataCid, address, publicClient, writeContract]);
 
@@ -416,7 +417,7 @@ const Gen3App: React.FC = () => {
   // Apply mood-based settings to Canvas (for new NFTs)
   const handleApplyMoodToCanvas = useCallback(() => {
     if (!recommendedColor1 || !recommendedColor2 || recommendedFrequency === null) {
-      alert('Please analyze a Farcaster mood first!');
+      notify('Please analyze a Farcaster mood first!', 'warning');
       return;
     }
 
@@ -427,17 +428,17 @@ const Gen3App: React.FC = () => {
     setFlowFieldsBaseFreq(recommendedFrequency);
     setContourBaseFreq(recommendedFrequency);
 
-    alert(`✓ Mood settings applied to canvas!\n\nColors: ${recommendedColor1} & ${recommendedColor2}\nFrequency: ${recommendedFrequency}`);
+    notify(`✓ Mood settings applied to canvas!\n\nColors: ${recommendedColor1} & ${recommendedColor2}\nFrequency: ${recommendedFrequency}`, 'success');
   }, [recommendedColor1, recommendedColor2, recommendedFrequency]);
 
   // Apply mood-based settings to existing NFT (preserves NFT history)
   const handleApplyMoodToNFT = useCallback(() => {
     if (!currentNFTMetadata) {
-      alert('Please load an NFT first (use NFT Viewer card)');
+      notify('Please load an NFT first (use NFT Viewer card)', 'warning');
       return;
     }
     if (!recommendedColor1 || !recommendedColor2 || recommendedFrequency === null) {
-      alert('Please analyze a Farcaster mood first!');
+      notify('Please analyze a Farcaster mood first!', 'warning');
       return;
     }
 
@@ -448,7 +449,7 @@ const Gen3App: React.FC = () => {
     setFlowFieldsBaseFreq(recommendedFrequency);
     setContourBaseFreq(recommendedFrequency);
 
-    alert(`✓ Mood settings applied to NFT #${tokenIdToUpdate}!\n\nNext steps:\n1. Check the canvas preview\n2. Click "Generate Render" in On-Chain Actions\n3. Upload to IPFS\n4. Update On-Chain`);
+    notify(`✓ Mood settings applied to NFT #${tokenIdToUpdate}!\n\nNext steps:\n1. Check the canvas preview\n2. Click "Generate Render" in On-Chain Actions\n3. Upload to IPFS\n4. Update On-Chain`, 'success');
   }, [currentNFTMetadata, tokenIdToUpdate, recommendedColor1, recommendedColor2, recommendedFrequency]);
 
   const handleFetchNFTMetadata = useCallback(async () => {
@@ -541,7 +542,7 @@ const Gen3App: React.FC = () => {
   // Test function for the Farcaster Mood Readout card (no checkbox required)
   const testFarcasterMood = useCallback(async () => {
     if (!farcasterUserId || farcasterUserId.trim() === '') {
-      alert('Please enter a username or FID');
+      notify('Please enter a username or FID', 'warning');
       return;
     }
     try {
@@ -563,11 +564,11 @@ const Gen3App: React.FC = () => {
       } else {
         const errorText = await response.text();
         console.error('Error fetching Farcaster mood:', errorText);
-        alert(`Error: ${errorText}`);
+        notify(`Error: ${errorText}`, 'error');
       }
     } catch (error) {
       console.error('Error fetching Farcaster mood:', error);
-      alert(`Error: ${error}`);
+      notify(`Error: ${error}`, 'error');
     }
   }, [farcasterUserId]);
 
@@ -870,7 +871,7 @@ const Gen3App: React.FC = () => {
 
     const jsonStr = JSON.stringify(settings, null, 2);
     navigator.clipboard.writeText(jsonStr);
-    alert('Settings copied! Use for batch rendering. These become the BASE settings.\n\nLATER: You can modify colors/params based on holder data and rerender!');
+    notify('Settings copied! Use for batch rendering. These become the BASE settings.\n\nLater you can modify colors/params based on holder data and rerender.', 'success');
     console.log('=== GEN3 BASE SETTINGS FOR BATCH RENDERING ===');
     console.log('Use these for initial mint. Then modify params based on holder activity!');
     console.log(jsonStr);
@@ -1436,7 +1437,7 @@ const Gen3App: React.FC = () => {
                     console.log('🎃 Mint button clicked!');
 
                     if (!contractMintPrice) {
-                      alert('⏳ Loading mint price from contract... Please wait a few seconds and try again.');
+                      notify('⏳ Loading mint price from contract... Please wait a few seconds and try again.', 'warning');
                       return;
                     }
 
@@ -1541,7 +1542,7 @@ const Gen3App: React.FC = () => {
                       console.log('✓ WriteContract called - Phantom should pop up now');
                     } catch (err: any) {
                       console.error('WriteContract error:', err);
-                      alert('Error: ' + err.message);
+                      notify('Error: ' + err.message, 'error');
                     }
                   }}
                   disabled={!isConnected || !contractMintPrice || mintCount < 1 || mintCount > 10 || isMinting || isConfirming}

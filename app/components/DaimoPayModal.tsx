@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { notify } from '@/app/utils/notify';
 
 interface DaimoPayModalProps {
   amount: number; // Amount in USD
@@ -62,11 +63,11 @@ export default function DaimoPayModal({
       // onPaymentComplete(txHash);
 
       // Placeholder: Simulate payment
-      alert(`Daimo Pay integration needed. Would pay $${amount} ${selectedCurrency === 'ETH' ? 'in ETH' : 'USDC'} to ${recipient}`);
+      notify(`Daimo Pay integration needed. Would pay $${amount} ${selectedCurrency === 'ETH' ? 'in ETH' : 'USDC'} to ${recipient}`, 'info');
       onCancel();
     } catch (error: any) {
       console.error('Payment error:', error);
-      alert('Payment failed: ' + error.message);
+      notify('Payment failed: ' + error.message, 'error');
     } finally {
       setIsProcessing(false);
     }

@@ -19,6 +19,7 @@ const ERC721_ABI = [
 
 const CACHE_DIR = join(process.cwd(), '.cache');
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour cache for demo NFT
+const PLACEHOLDER_CACHE_MAX_AGE = 60; // seconds
 
 // Ensure cache directory exists
 if (!existsSync(CACHE_DIR)) {
@@ -30,6 +31,39 @@ type ImageCacheData = {
   contentType: string;
   lastUpdate: number;
 };
+
+function createPlaceholderSvg(tokenId: string, message: string) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#gradient)"/>
+  <g fill="none" stroke="#38bdf8" stroke-width="8" opacity="0.6">
+    <circle cx="256" cy="256" r="200"/>
+    <circle cx="256" cy="256" r="150"/>
+    <circle cx="256" cy="256" r="100"/>
+  </g>
+  <text x="50%" y="45%" text-anchor="middle" fill="#e2e8f0" font-size="42" font-family="Verdana, sans-serif">Gen1 NFT</text>
+  <text x="50%" y="55%" text-anchor="middle" fill="#38bdf8" font-size="28" font-family="Verdana, sans-serif">#${tokenId}</text>
+  <text x="50%" y="66%" text-anchor="middle" fill="#cbd5f5" font-size="20" font-family="Verdana, sans-serif">${message}</text>
+</svg>`;
+}
+
+function placeholderResponse(tokenId: string, message: string, status = 200) {
+  const svg = createPlaceholderSvg(tokenId, message);
+  return new NextResponse(svg, {
+    status,
+    headers: {
+      'Content-Type': 'image/svg+xml',
+      'Cache-Control': `public, max-age=${PLACEHOLDER_CACHE_MAX_AGE}`,
+      'X-Gen1-Image-Placeholder': 'true',
+    },
+  });
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -90,12 +124,12 @@ export async function GET(request: Request) {
       if (tokenURI.startsWith('ipfs://') || tokenURI.startsWith('http')) {
         imageUrl = tokenURI;
       } else {
-        return NextResponse.json({ error: 'Could not parse metadata' }, { status: 400 });
+        return placeholderResponse(tokenId, 'Metadata unavailable', 200);
       }
     }
 
     if (!imageUrl) {
-      return NextResponse.json({ error: 'Invalid token URI format' }, { status: 400 });
+      return placeholderResponse(tokenId, 'Invalid token URI', 200);
     }
 
     // Fetch and proxy the image with caching
@@ -147,7 +181,7 @@ export async function GET(request: Request) {
       imageResponse = await fetch(httpUrl);
 
       if (!imageResponse.ok) {
-        throw new Error(`Failed to fetch Gen1 image: ${imageResponse.statusText}`);
+        throw new Error(`Failed to fetch Gen1 image: ${imageResponse.status} ${imageResponse.statusText}`);
       }
     }
 
@@ -182,11 +216,12 @@ export async function GET(request: Request) {
     console.error('Error fetching Gen1 image:', error);
 
     // If token doesn't exist, return a better error
+    const message = error.message || 'Unexpected error';
     if (error.message?.includes('Token does not exist') || error.reason === 'Token does not exist') {
-      return NextResponse.json({ error: `Token #${tokenId} does not exist` }, { status: 404 });
+      return placeholderResponse(tokenId, 'Token not minted yet', 200);
     }
 
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return placeholderResponse(tokenId, 'Preview unavailable', 200);
   }
 }
 
