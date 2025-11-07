@@ -1,7 +1,9 @@
 import { Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
-import GIF from 'gif.js';
 import { uploadToIPFS } from '../app/services/ipfs.js';
+
+// Dynamic import for gif.js (CommonJS module)
+let GIF: any;
 
 interface RenderJobData {
   settings: {
@@ -252,6 +254,12 @@ function renderContourMapping(ctx: any, size: number, t: number, settings: any) 
 
 // Server-side GIF rendering function
 async function renderGIF(settings: any, createCanvas: any): Promise<Buffer> {
+  // Dynamically import gif.js (CommonJS module)
+  if (!GIF) {
+    const gifModule = await import('gif.js');
+    GIF = gifModule.default || gifModule;
+  }
+
   const size = 512;
   const totalFrames = 1000;
 

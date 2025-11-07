@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { useAccount, usePublicClient, useWriteContract, useWaitForTransactionReceipt, useConnect } from 'wagmi';
-import { decodeEventLog } from 'viem';
-import { gen1ABI } from '../gen1-creator/abi';
 import { useFarcasterContext } from '@/lib/hooks/useFarcasterContext';
 import { sdk } from '@farcaster/miniapp-sdk';
+import { useEffect, useRef, useState } from 'react';
+import { decodeEventLog } from 'viem';
+import { useAccount, useConnect, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
+import { gen1ABI } from '../gen1-creator/abi';
 
 const GEN1_CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || '0x9d394EAD99Acab4cF8e65cdA3c8e440fB7D27087') as `0x${string}`;
 
@@ -221,18 +221,84 @@ function Gen1AppContent() {
     setMintProgress(0);
 
     try {
-      // Step 1: Queue the render job with default Gen1 base settings
+      // Step 1: Get AI analysis FIRST (if user has Farcaster account)
+      let renderSettings = {
+        flowField: { enabled: true, baseFrequency: 0.02, amplitude: 1, octaves: 1, color1: '#4ade80', color2: '#22d3ee', rotation: 0.5, direction: 1 },
+        flowFields: { enabled: true, baseFrequency: 0.01, amplitude: 1, octaves: 1, lineLength: 20, lineDensity: 0.1, rotation: 0.3, direction: 1 },
+        contour: { enabled: true, baseFrequency: 0.01, amplitude: 1, octaves: 4, levels: 5, smoothness: 0.3 },
+        contourAffectsFlow: true,
+      };
+
+      // If user is in Farcaster, run AI analysis first
+      if (isInFarcaster) {
+        try {
+          setLoadingMessage('🤖 Analyzing your Farcaster mood...');
+          const context = await sdk.context;
+          const username = context?.user?.username;
+
+          if (username) {
+            const moodResponse = await fetch('/api/gen1/farcaster-mood', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: username,
+                password: '',
+                autoTrigger: true, // Auto-trigger for minting
+              }),
+            });
+
+            if (moodResponse.ok) {
+              const moodData = await moodResponse.json();
+
+              // Use AI-recommended settings for rendering
+              renderSettings = {
+                flowField: {
+                  enabled: true,
+                  baseFrequency: moodData.flowFieldBaseFrequency || moodData.baseFrequency || 0.02,
+                  amplitude: 1,
+                  octaves: 1,
+                  color1: moodData.color1 || '#4ade80',
+                  color2: moodData.color2 || '#22d3ee',
+                  rotation: 0.5,
+                  direction: 1,
+                },
+                flowFields: {
+                  enabled: true,
+                  baseFrequency: moodData.flowFieldsBaseFrequency || moodData.baseFrequency || 0.01,
+                  amplitude: 1,
+                  octaves: 1,
+                  lineLength: 20,
+                  lineDensity: Math.min(moodData.flowLineDensity || 0.1, 0.5), // Never exceed 0.5
+                  rotation: 0.3,
+                  direction: 1,
+                },
+                contour: {
+                  enabled: true,
+                  baseFrequency: moodData.flowFieldBaseFrequency || moodData.baseFrequency || 0.01,
+                  amplitude: 1,
+                  octaves: 4,
+                  levels: 5,
+                  smoothness: 0.3,
+                },
+                contourAffectsFlow: true,
+              };
+
+              console.log('✅ Using AI-recommended settings for rendering:', renderSettings);
+            }
+          }
+        } catch (error) {
+          console.log('⚠️ AI analysis failed, using default settings:', error);
+          // Continue with default settings if AI analysis fails
+        }
+      }
+
+      // Step 2: Queue the render job with AI settings (or defaults)
       setLoadingMessage('🎨 Generating unique animation...');
       const response = await fetch('/api/gen1/queue-mint', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          settings: {
-            flowField: { enabled: true, baseFrequency: 0.02, amplitude: 1, octaves: 1, color1: '#4ade80', color2: '#22d3ee', rotation: 0.5, direction: 1 },
-            flowFields: { enabled: true, baseFrequency: 0.01, amplitude: 1, octaves: 1, lineLength: 20, lineDensity: 0.1, rotation: 0.3, direction: 1 },
-            contour: { enabled: true, baseFrequency: 0.01, amplitude: 1, octaves: 4, levels: 5, smoothness: 0.3 },
-            contourAffectsFlow: true,
-          },
+          settings: renderSettings,
           walletAddress: address,
         }),
       });
