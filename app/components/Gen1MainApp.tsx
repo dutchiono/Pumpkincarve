@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useAccount, usePublicClient, useWriteContract, useWaitForTransactionReceipt, useConnect } from 'wagmi';
+import { decodeEventLog } from 'viem';
 import { gen1ABI } from '../gen1-creator/abi';
 import { useFarcasterContext } from '@/lib/hooks/useFarcasterContext';
 import { sdk } from '@farcaster/miniapp-sdk';
@@ -295,7 +296,7 @@ function Gen1AppContent() {
             // Parse Gen1Minted event to get tokenId
             for (const log of receipt.logs) {
               try {
-                const parsedLog = publicClient.decodeEventLog({
+                const parsedLog = decodeEventLog({
                   abi: gen1ABI,
                   data: log.data,
                   topics: log.topics,
