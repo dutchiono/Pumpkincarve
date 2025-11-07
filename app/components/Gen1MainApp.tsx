@@ -302,7 +302,7 @@ function Gen1AppContent() {
                   topics: log.topics,
                 });
 
-                if (parsedLog.eventName === 'Gen1Minted' && parsedLog.args.tokenId) {
+                if (parsedLog.eventName === 'Gen1Minted' && parsedLog.args && 'tokenId' in parsedLog.args && parsedLog.args.tokenId) {
                   tokenId = parsedLog.args.tokenId as bigint;
                   console.log('[Mint] Token ID from event:', tokenId.toString());
                   break;
