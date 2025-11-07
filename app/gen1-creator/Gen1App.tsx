@@ -319,11 +319,7 @@ const Gen1App: React.FC = () => {
     }
   }, [passwordInput, passwordAction, checkPassword]);
 
-  // Wrapper for handleUpdateOnChain that shows password modal
-  const handleUpdateOnChain = useCallback(() => {
-    showPasswordModalWithAction(handleUpdateOnChainInternal, 'Update NFT');
-  }, [showPasswordModalWithAction, handleUpdateOnChainInternal]);
-
+  // Internal handler for updating NFT on-chain
   const handleUpdateOnChainInternal = useCallback(async () => {
     if (!tokenIdToUpdate) return;
 
@@ -473,6 +469,11 @@ const Gen1App: React.FC = () => {
     }
   }, [tokenIdToUpdate, enableFlowField, enableFlowFields, enableContourMapping, flowColor1, flowColor2, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowFieldRotation, flowFieldDirection, flowFieldsBaseFreq, flowFieldsAmplitude, flowFieldsOctaves, flowLineLength, flowLineDensity, flowFieldsRotation, flowFieldsDirection, contourBaseFreq, contourAmplitude, contourOctaves, contourLevels, contourSmoothness, contourAffectsFlow, currentNFTImageCid, currentNFTMetadataCid, address, publicClient, writeContract]);
 
+  // Wrapper for handleUpdateOnChain that shows password modal
+  const handleUpdateOnChain = useCallback(() => {
+    showPasswordModalWithAction(handleUpdateOnChainInternal, 'Update NFT');
+  }, [showPasswordModalWithAction, handleUpdateOnChainInternal]);
+
   const handleRunBatchUpdateScriptInternal = useCallback(async () => {
     setIsBatchRunning(true);
     setBatchStatus('Running...');
@@ -487,7 +488,7 @@ const Gen1App: React.FC = () => {
     showPasswordModalWithAction(handleRunBatchUpdateScriptInternal, 'Run Batch Script');
   }, [showPasswordModalWithAction, handleRunBatchUpdateScriptInternal]);
 
-  // Handler to save snapshot of current NFT state as child NFT
+  // Internal handler to save snapshot of current NFT state as child NFT
   const handleSaveSnapshotInternal = useCallback(async () => {
     if (!parentTokenId || !publicClient || !address || !savePrice) {
       alert('Please connect wallet and enter a valid parent token ID');
@@ -650,6 +651,11 @@ const Gen1App: React.FC = () => {
     }
   }, [parentTokenId, publicClient, address, savePrice, snapshotCount, enableFlowField, enableFlowFields, enableContourMapping, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowColor1, flowColor2, flowFieldRotation, flowFieldDirection, flowFieldsBaseFreq, flowFieldsAmplitude, flowFieldsOctaves, flowLineLength, flowLineDensity, flowFieldsRotation, flowFieldsDirection, contourBaseFreq, contourAmplitude, contourOctaves, contourLevels, contourSmoothness, contourAffectsFlow, writeContract]);
 
+  // Wrapper for handleSaveSnapshotInternal that shows password modal
+  const handleSaveSnapshot = useCallback(() => {
+    showPasswordModalWithAction(handleSaveSnapshotInternal, 'Save Snapshot');
+  }, [showPasswordModalWithAction, handleSaveSnapshotInternal]);
+
   const handleClearOverrides = useCallback(() => {
     setFlowColor1('#4ade80'); // Default color 1
     setFlowColor2('#22d3ee'); // Default color 2
@@ -782,11 +788,6 @@ const Gen1App: React.FC = () => {
   const handleQueueMint = useCallback(() => {
     showPasswordModalWithAction(handleQueueMintInternal, 'Queue Mint');
   }, [showPasswordModalWithAction, handleQueueMintInternal]);
-
-  // Wrapper for handleSaveSnapshotInternal that shows password modal
-  const handleSaveSnapshot = useCallback(() => {
-    showPasswordModalWithAction(handleSaveSnapshotInternal, 'Save Snapshot');
-  }, [showPasswordModalWithAction, handleSaveSnapshotInternal]);
 
   // Apply mood-based settings to Canvas (for new NFTs)
   const handleApplyMoodToCanvas = useCallback(() => {
