@@ -101,6 +101,13 @@ const Gen1App: React.FC = () => {
   const [isFetchingNFTMetadata, setIsFetchingNFTMetadata] = useState<boolean>(false);
   const [fetchNFTMetadataError, setFetchNFTMetadataError] = useState<Error | null>(null);
 
+  // Save snapshot state
+  const [parentTokenId, setParentTokenId] = useState<number | undefined>(undefined);
+  const [savePrice, setSavePrice] = useState<bigint | null>(null);
+  const [snapshotCount, setSnapshotCount] = useState<number | null>(null);
+  const [isSavingSnapshot, setIsSavingSnapshot] = useState<boolean>(false);
+  const [saveSnapshotError, setSaveSnapshotError] = useState<string | null>(null);
+
   // Queue-based rendering state
   const [queueJobId, setQueueJobId] = useState<string | null>(null);
   const [queueProgress, setQueueProgress] = useState<number>(0);
@@ -408,6 +415,169 @@ const Gen1App: React.FC = () => {
     setLastBatchRunTimestamp(Date.now());
     setIsBatchRunning(false);
   }, []);
+
+  // Handler to save snapshot of current NFT state as child NFT
+  const handleSaveSnapshot = useCallback(async () => {
+    if (!parentTokenId || !publicClient || !address || !savePrice) {
+      alert('Please connect wallet and enter a valid parent token ID');
+      return;
+    }
+
+    setIsSavingSnapshot(true);
+    setSaveSnapshotError(null);
+
+    try {
+      // Step 1: Verify ownership
+      console.log('🔍 Verifying ownership of NFT #' + parentTokenId);
+      const owner = await publicClient.readContract({
+        address: CONTRACT_ADDRESS,
+        abi: gen1ABI,
+        functionName: 'ownerOf',
+        args: [BigInt(parentTokenId)],
+      });
+
+      if (String(owner).toLowerCase() !== address?.toLowerCase()) {
+        throw new Error(`You don't own NFT #${parentTokenId}. Only the owner can save snapshots.`);
+      }
+
+      console.log('✓ Ownership verified');
+
+      // Step 2: Fetch current NFT metadata
+      console.log('📥 Fetching current NFT metadata...');
+      const tokenURI = await publicClient.readContract({
+        address: CONTRACT_ADDRESS,
+        abi: gen1ABI,
+        functionName: 'tokenURI',
+        args: [BigInt(parentTokenId)],
+      });
+
+      const metadataResponse = await fetch(String(tokenURI).replace('ipfs://', 'https://ipfs.io/ipfs/'));
+      const currentMetadata = await metadataResponse.json();
+      console.log('✓ Metadata fetched:', currentMetadata);
+
+      // Step 3: Extract render settings from metadata
+      const attributes = currentMetadata.attributes || {};
+      const settings = {
+        flowField: attributes.flowField || {
+          enabled: enableFlowField,
+          baseFrequency: flowFieldBaseFreq,
+          amplitude: flowFieldAmplitude,
+          octaves: flowFieldOctaves,
+          color1: flowColor1,
+          color2: flowColor2,
+          rotation: flowFieldRotation,
+          direction: flowFieldDirection,
+        },
+        flowFields: attributes.flowFields || {
+          enabled: enableFlowFields,
+          baseFrequency: flowFieldsBaseFreq,
+          amplitude: flowFieldsAmplitude,
+          octaves: flowFieldsOctaves,
+          lineLength: flowLineLength,
+          lineDensity: flowLineDensity,
+          rotation: flowFieldsRotation,
+          direction: flowFieldsDirection,
+        },
+        contour: attributes.contour || {
+          enabled: enableContourMapping,
+          baseFrequency: contourBaseFreq,
+          amplitude: contourAmplitude,
+          octaves: contourOctaves,
+          levels: contourLevels,
+          smoothness: contourSmoothness,
+        },
+        contourAffectsFlow: attributes.contourAffectsFlow ?? contourAffectsFlow,
+      };
+
+      // Step 4: Render GIF using current settings
+      // Note: For now, we'll use the current canvas state. In a full implementation,
+      // we'd temporarily apply the settings, render, then restore.
+      console.log('📹 Rendering snapshot GIF...');
+      const gifBlob = await exportCanvasAsGIF();
+      console.log('✓ GIF rendered, size:', gifBlob.size, 'bytes');
+
+      // Step 5: Upload GIF to IPFS
+      console.log('🌐 Uploading snapshot GIF to IPFS...');
+      const formData = new FormData();
+      formData.append('gif', gifBlob, 'gen1-snapshot.gif');
+
+      const uploadResponse = await fetch('/api/gen1/upload-gif', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Failed to upload GIF to IPFS');
+      }
+
+      const { ipfsUrl: imageUrl } = await uploadResponse.json();
+      console.log('✓ Image uploaded to IPFS:', imageUrl);
+
+      // Step 6: Create snapshot metadata
+      const snapshotNumber = (snapshotCount || 0) + 1;
+      const snapshotMetadata = {
+        name: `Gen1 Snapshot #${snapshotNumber} of NFT #${parentTokenId}`,
+        description: `A snapshot of Gen1 NFT #${parentTokenId} saved before updating. This preserves the mood state at generation ${snapshotNumber}.`,
+        image: imageUrl,
+        animation_url: imageUrl,
+        attributes: {
+          ...settings,
+          snapshotOf: parentTokenId,
+          snapshotNumber,
+          savedAt: new Date().toISOString(),
+        },
+      };
+
+      // Step 7: Upload metadata to IPFS
+      console.log('🌐 Uploading snapshot metadata to IPFS...');
+      const metadataBuffer = Buffer.from(JSON.stringify(snapshotMetadata));
+      const metadataFormData = new FormData();
+      metadataFormData.append('gif', new Blob([metadataBuffer], { type: 'application/json' }), 'metadata.json');
+
+      const metadataUploadResponse = await fetch('/api/gen1/upload-gif', {
+        method: 'POST',
+        body: metadataFormData,
+      });
+
+      if (!metadataUploadResponse.ok) {
+        const errorData = await metadataUploadResponse.json();
+        throw new Error(errorData.error || 'Failed to upload metadata to IPFS');
+      }
+
+      const { ipfsUrl: metadataUrl } = await metadataUploadResponse.json();
+      console.log('✓ Metadata uploaded to IPFS:', metadataUrl);
+
+      // Step 8: Show payment modal (Daimo Pay integration will go here)
+      // For now, we'll proceed directly with the contract call
+      // TODO: Integrate Daimo Pay modal here for $0.25 USD payment
+
+      // Step 9: Call saveAsChild contract function
+      console.log('💾 Saving snapshot on-chain...');
+      writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: gen1ABI,
+        functionName: 'saveAsChild',
+        args: [BigInt(parentTokenId), imageUrl, JSON.stringify(snapshotMetadata)],
+        value: savePrice,
+        chainId: 8453,
+      } as any);
+
+      console.log('✓ Save snapshot transaction initiated - check wallet to sign');
+
+      // Update snapshot count after successful save
+      if (snapshotCount !== null) {
+        setSnapshotCount(snapshotCount + 1);
+      }
+
+    } catch (err: any) {
+      console.error('Error saving snapshot:', err);
+      setSaveSnapshotError(err.message);
+      alert('Error saving snapshot: ' + err.message);
+    } finally {
+      setIsSavingSnapshot(false);
+    }
+  }, [parentTokenId, publicClient, address, savePrice, snapshotCount, enableFlowField, enableFlowFields, enableContourMapping, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowColor1, flowColor2, flowFieldRotation, flowFieldDirection, flowFieldsBaseFreq, flowFieldsAmplitude, flowFieldsOctaves, flowLineLength, flowLineDensity, flowFieldsRotation, flowFieldsDirection, contourBaseFreq, contourAmplitude, contourOctaves, contourLevels, contourSmoothness, contourAffectsFlow, writeContract]);
 
   const handleClearOverrides = useCallback(() => {
     setFlowColor1('#4ade80'); // Default color 1
@@ -1092,6 +1262,34 @@ const Gen1App: React.FC = () => {
     fetchMintPrice();
   }, [publicClient]);
 
+  // Fetch save price and snapshot count from contract
+  useEffect(() => {
+    if (!publicClient || !parentTokenId) return;
+
+    const fetchSaveData = async () => {
+      try {
+        const price = await publicClient.readContract({
+          address: CONTRACT_ADDRESS,
+          abi: gen1ABI,
+          functionName: 'savePrice',
+        });
+        setSavePrice(price as bigint);
+
+        const count = await publicClient.readContract({
+          address: CONTRACT_ADDRESS,
+          abi: gen1ABI,
+          functionName: 'snapshotCount',
+          args: [BigInt(parentTokenId)],
+        });
+        setSnapshotCount(Number(count));
+      } catch (err) {
+        console.error('Error fetching save data:', err);
+      }
+    };
+
+    fetchSaveData();
+  }, [publicClient, parentTokenId]);
+
   // Fetch the total supply from the contract
   useEffect(() => {
     const fetchTotalSupply = async () => {
@@ -1752,6 +1950,48 @@ const Gen1App: React.FC = () => {
                 {isConfirmed && <p className="text-sm text-green-400">Mint successful!</p>}
                 {confirmError && <p className="text-sm text-red-400">Error confirming transaction: {confirmError.message}</p>}
               </div>
+
+                <div className="border-t border-slate-600 pt-3">
+                  <h3 className="text-md font-bold text-cyan-400 mb-2">Save Snapshot (Before Updating)</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label htmlFor="parent-token-id" className="block text-sm font-medium text-gray-400 mb-1">Parent Token ID:</label>
+                      <input
+                        type="number"
+                        id="parent-token-id"
+                        value={parentTokenId || ''}
+                        onChange={(e) => setParentTokenId(parseInt(e.target.value))}
+                        min="1"
+                        className="block w-full pl-2 pr-2 py-1 text-sm border-gray-600 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 rounded-md bg-slate-700 text-white"
+                      />
+                    </div>
+                    {savePrice && (
+                      <p className="text-sm text-gray-400">
+                        Save Price: {(Number(savePrice) / 1e18).toFixed(6)} ETH (~$0.25 USD)
+                      </p>
+                    )}
+                    {snapshotCount !== null && (
+                      <p className="text-sm text-gray-400">
+                        Snapshots saved: {snapshotCount}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleSaveSnapshot}
+                      disabled={!parentTokenId || !isConnected || !savePrice || isSavingSnapshot}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSavingSnapshot ? 'Saving Snapshot...' : '💾 Save Current Generation as Child NFT'}
+                    </button>
+                    {saveSnapshotError && (
+                      <p className="text-sm text-red-400">Error: {saveSnapshotError}</p>
+                    )}
+                    <p className="text-xs text-gray-400 text-center mt-2">
+                      This will save a snapshot of your NFT's current state (mood) as a child NFT before you update it.
+                      The parent NFT can continue evolving while the snapshot preserves this moment.
+                    </p>
+                  </div>
+                </div>
 
                 <div className="border-t border-slate-600 pt-3">
                   <h3 className="text-md font-bold text-cyan-400 mb-2">Update Existing NFT</h3>

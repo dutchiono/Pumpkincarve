@@ -1,5 +1,9 @@
 import './globals.css';
 import { Providers } from './providers';
+import FarcasterSDKInit from '@/components/FarcasterSDKInit';
+import Navigation from '@/components/Navigation';
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://bushleague.xyz';
 
 const miniappEmbed = {
   version: "1",
@@ -12,7 +16,8 @@ const miniappEmbed = {
       splashImageUrl: "https://bushleague.xyz/splash-200.png",
       splashBackgroundColor: "#0f172a"
     }
-  }
+  },
+  castShareUrl: `${APP_URL}/cast-share`
 };
 
 export const metadata = {
@@ -39,7 +44,9 @@ export default function RootLayout({
       <head>
         <meta name="fc:miniapp" content={JSON.stringify(miniappEmbed)} />
       </head>
-      <body>
+      <body className="pt-16">
+        <FarcasterSDKInit />
+        <Navigation />
         <Providers>{children}</Providers>
       </body>
     </html>

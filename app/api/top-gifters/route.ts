@@ -5,7 +5,7 @@ import { join } from 'path';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
 
 const TRANSFER_ABI = [
   {

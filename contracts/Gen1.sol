@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/interfaces/IERC4906.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-contract Gen3 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, IERC4906, ReentrancyGuardUpgradeable {
+contract Gen1 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, IERC4906, ReentrancyGuardUpgradeable {
     // Storage variables - MUST NOT CHANGE ORDER for upgrade compatibility
     uint256 public nextTokenId;
     uint256 public mintPrice;
@@ -59,7 +59,7 @@ contract Gen3 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
     event RelationRemoved(uint256 indexed a, uint256 indexed b, bytes32 relationType);
 
     // Events
-    event Gen3Minted(
+    event Gen1Minted(
         address indexed to,
         uint256 indexed tokenId,
         string imageUrl
@@ -72,7 +72,10 @@ contract Gen3 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
     // Living NFT action events
     event ActionPerformed(uint256 indexed tokenId, uint256 newEnergy);
 
-    
+    // Snapshot save event
+    event SnapshotSaved(uint256 indexed parentId, uint256 indexed childId, uint256 snapshotNumber);
+
+
 
     /**
      * @dev Initialize the contract (called by proxy)
@@ -83,7 +86,7 @@ contract Gen3 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 _mintPrice,
         address _paymentRecipient
     ) public initializer {
-        __ERC721_init("Gen3", "G3");
+        __ERC721_init("Gen1", "G1");
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
@@ -116,26 +119,7 @@ contract Gen3 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
         _tokenMetadata[tokenId] = metadataJSON;
         _tokenExists[tokenId] = true;
 
-        emit Gen3Minted(msg.sender, tokenId, imageUrl);
-    }
-
-    /**
-     * @dev Mint with just image URL (backward compatible, generates basic metadata)
-     */
-    function mint(string memory imageUrl) public payable {
-        // Auto-generate basic metadata
-        uint256 tokenId = nextTokenId;
-        string memory metadata = string(abi.encodePacked(
-            '{"name":"Gen3 #',
-            _toString(tokenId),
-            '","description":"AI-generated NFT Generation 3","image":"',
-            imageUrl,
-            '","attributes":[{"trait_type":"Type","value":"Gen3"},{"trait_type":"Token ID","value":',
-            _toString(tokenId),
-            '}]}'
-        ));
-
-        mint(imageUrl, metadata);
+        emit Gen1Minted(msg.sender, tokenId, imageUrl);
     }
 
     /**
@@ -208,6 +192,26 @@ contract Gen3 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
+     * @dev Free mint for owner and whitelisted addresses
+     * Allows owner to mint without payment for testing purposes
+     */
+    function mintFree(string memory imageUrl, string memory metadataJSON) external {
+        require(msg.sender == owner() || whitelisted[msg.sender], "Not authorized for free mint");
+
+        uint256 tokenId = nextTokenId;
+        nextTokenId++;
+
+        _mint(msg.sender, tokenId);
+
+        // Store IPFS image URL, metadata, and mark as existing
+        _tokenImageUrl[tokenId] = imageUrl;
+        _tokenMetadata[tokenId] = metadataJSON;
+        _tokenExists[tokenId] = true;
+
+        emit Gen1Minted(msg.sender, tokenId, imageUrl);
+    }
+
+    /**
      * @dev Add new feature - whitelist functionality (example of adding features)
      * This can be added in future upgrades
      */
@@ -219,6 +223,28 @@ contract Gen3 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
 
     function removeFromWhitelist(address _user) external onlyOwner {
         whitelisted[_user] = false;
+    }
+
+    // NEW STORAGE VARIABLES - MUST BE ADDED AT THE END FOR UPGRADE COMPATIBILITY
+    uint256 public savePrice; // Price to save snapshot as child NFT (in wei, $0.25 USD default)
+    mapping(uint256 => uint256) public snapshotCount; // parentId => number of snapshots saved
+
+    /**
+     * @dev Initialize new storage variables after upgrade
+     * This should be called once after upgrading to set initial values
+     */
+    function initializeSavePrice() external onlyOwner {
+        require(savePrice == 0, "Save price already initialized");
+        // Default save price: $0.25 USD in wei (approximately 0.000075 ETH at $3300/ETH)
+        savePrice = 75000000000000; // ~0.000075 ETH (will be updated to exact $0.25 USD)
+    }
+
+    /**
+     * @dev Update save price (owner only)
+     * Allows owner to change the price for saving snapshots
+     */
+    function setSavePrice(uint256 _newPrice) external onlyOwner {
+        savePrice = _newPrice;
     }
 
     /**
@@ -302,6 +328,60 @@ contract Gen3 is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgra
      */
     function getChildrenCount(uint256 parentId) external view returns (uint256) {
         return _children[parentId].length;
+    }
+
+    /**
+     * @dev Save current NFT state as a child NFT snapshot
+     * Allows parent NFT owner to save the current visual state (mood) before updating
+     * @param parentId The parent NFT token ID to save a snapshot of
+     * @param imageUrl IPFS URL to the snapshot image (should match parent's current state)
+     * @param metadataJSON Full JSON metadata for the snapshot
+     * @return childId The token ID of the newly created child NFT
+     */
+    function saveAsChild(
+        uint256 parentId,
+        string memory imageUrl,
+        string memory metadataJSON
+    ) external payable nonReentrant returns (uint256) {
+        // Verify parent exists
+        require(_tokenExists[parentId], "Parent doesn't exist");
+
+        // Verify caller owns the parent NFT
+        require(ownerOf(parentId) == msg.sender, "Not parent owner");
+
+        // Check payment amount
+        require(msg.value == savePrice, "Incorrect payment amount");
+
+        // Send payment to recipient
+        (bool success, ) = paymentRecipient.call{value: msg.value}("");
+        require(success, "Payment transfer failed");
+
+        // Mint new child NFT
+        uint256 childId = nextTokenId;
+        nextTokenId++;
+
+        _mint(msg.sender, childId);
+
+        // Store IPFS image URL, metadata, and mark as existing
+        _tokenImageUrl[childId] = imageUrl;
+        _tokenMetadata[childId] = metadataJSON;
+        _tokenExists[childId] = true;
+
+        // Increment snapshot count for parent
+        snapshotCount[parentId]++;
+
+        // Automatically attach child to parent
+        _children[parentId].push(childId);
+        _parent[childId] = parentId;
+        _childIndex[parentId][childId] = _children[parentId].length;
+
+        // Emit events
+        emit Gen1Minted(msg.sender, childId, imageUrl);
+        emit ChildAttached(parentId, childId);
+        emit SnapshotSaved(parentId, childId, snapshotCount[parentId]);
+        emit MetadataUpdate(parentId); // Signal parent metadata might have changed (snapshot count)
+
+        return childId;
     }
 
     /**

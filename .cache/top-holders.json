@@ -2,10 +2,10 @@
   "holders": [
     {
       "address": "0x8dfbdeec8c5d4970bb5f481c6ec7f73fa1c65be5",
-      "count": 7,
+      "count": 8,
       "username": "ionoi",
       "fid": 474867,
-      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/3ff80cd0-0e6d-4bd4-c93c-2b3d8e575e00/original"
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/5363eb3d-25b6-434c-a55b-73901c5ac800/original"
     },
     {
       "address": "0xdf087b724174a3e4ed2338c0798193932e851f1b",
@@ -19,7 +19,7 @@
       "count": 2,
       "username": "mxjxn",
       "fid": 4905,
-      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/b961f26b-88f7-4990-e45d-0fd9c6e49500/original"
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/cf770808-7303-4e49-af47-c17758731500/original"
     },
     {
       "address": "0x6bfd104298be1036dfb4df8b0803c45137135321",
@@ -38,9 +38,9 @@
     {
       "address": "0xa272bc9d6f462f4f08849adeaf6e49a5d4430c38",
       "count": 1,
-      "username": "warpl.eth",
+      "username": "mvr",
       "fid": 230238,
-      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/eafa3ee3-7dbb-4d8f-62bb-5d83d5e4d900/original"
+      "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/4b6228ac-5a61-4429-675d-b8d62665a300/original"
     },
     {
       "address": "0xdd8a40a15f0fe67d4ec52adf0ee24489e8d8a58a",
@@ -71,5 +71,5 @@
       "pfp": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/c1359f0e-e483-4c28-2afb-01bdb82d8b00/original"
     }
   ],
-  "lastUpdate": 1761786205753
+  "lastUpdate": 1762482968434
 }

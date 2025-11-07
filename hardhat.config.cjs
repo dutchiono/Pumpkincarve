@@ -24,9 +24,17 @@ const config = {
     },
   },
   etherscan: {
-    apiKey: {
-      base: process.env.BASESCAN_API_KEY || "",
-    },
+    apiKey: process.env.ETHERSCAN_API_KEY || "",
+    customChains: [
+      {
+        network: "base",
+        chainId: 8453,
+        urls: {
+          apiURL: "https://api.basescan.org/api/v2",
+          browserURL: "https://basescan.org",
+        },
+      },
+    ],
   },
 };
 

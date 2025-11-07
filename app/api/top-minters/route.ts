@@ -45,12 +45,12 @@ function saveMintersCache(data: MinterCacheData) {
   }
 }
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
 
-const PUMPKIN_MINT_ABI = [
+const GEN1_MINT_ABI = [
   {
     type: 'event',
-    name: 'PumpkinCarvingMinted',
+    name: 'Gen1Minted',
     inputs: [
       { name: 'to', type: 'address', indexed: true },
       { name: 'tokenId', type: 'uint256', indexed: true },
@@ -105,7 +105,7 @@ export async function GET() {
 
       const logs = await mainnetClient.getLogs({
         address: CONTRACT_ADDRESS as `0x${string}`,
-        event: PUMPKIN_MINT_ABI[0],
+        event: GEN1_MINT_ABI[0],
         fromBlock: fromBlock,
         toBlock: toBlock,
       });
