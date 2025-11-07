@@ -322,7 +322,7 @@ const Gen1App: React.FC = () => {
   // Wrapper for handleUpdateOnChain that shows password modal
   const handleUpdateOnChain = useCallback(() => {
     showPasswordModalWithAction(handleUpdateOnChainInternal, 'Update NFT');
-  }, [showPasswordModalWithAction]);
+  }, [showPasswordModalWithAction, handleUpdateOnChainInternal]);
 
   const handleUpdateOnChainInternal = useCallback(async () => {
     if (!tokenIdToUpdate) return;
@@ -776,7 +776,17 @@ const Gen1App: React.FC = () => {
       alert('Error: ' + err.message);
       setQueueJobId(null);
     }
-  }, [isConnected, contractMintPrice, address, mintCount, enableFlowField, enableFlowFields, enableContourMapping, flowColor1, flowColor2, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowFieldRotation, flowFieldDirection, flowFieldsBaseFreq, flowFieldsAmplitude, flowFieldsOctaves, flowLineLength, flowLineDensity, flowFieldsRotation, flowFieldsDirection, contourBaseFreq, contourAmplitude, contourOctaves, contourLevels, contourSmoothness, contourAffectsFlow, writeContract]);
+  }, [isConnected, contractMintPrice, address, mintCount, enableFlowField, enableFlowFields, enableContourMapping, flowColor1, flowColor2, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowFieldRotation, flowFieldDirection, flowFieldsBaseFreq, flowFieldsAmplitude, flowFieldsOctaves, flowLineLength, flowLineDensity, flowFieldsRotation, flowFieldsDirection, contourBaseFreq, contourAmplitude, contourOctaves, contourLevels, contourSmoothness, contourAffectsFlow, writeContract, totalSupply]);
+
+  // Wrapper for handleQueueMintInternal that shows password modal
+  const handleQueueMint = useCallback(() => {
+    showPasswordModalWithAction(handleQueueMintInternal, 'Queue Mint');
+  }, [showPasswordModalWithAction, handleQueueMintInternal]);
+
+  // Wrapper for handleSaveSnapshotInternal that shows password modal
+  const handleSaveSnapshot = useCallback(() => {
+    showPasswordModalWithAction(handleSaveSnapshotInternal, 'Save Snapshot');
+  }, [showPasswordModalWithAction, handleSaveSnapshotInternal]);
 
   // Apply mood-based settings to Canvas (for new NFTs)
   const handleApplyMoodToCanvas = useCallback(() => {
