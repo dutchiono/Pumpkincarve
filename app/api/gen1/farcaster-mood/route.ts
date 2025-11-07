@@ -63,7 +63,15 @@ export async function POST(req: NextRequest) {
     const neynarConfig = new Configuration({ apiKey: trimmedKey });
     const neynarClient = new NeynarAPIClient(neynarConfig);
 
-    const { userId, password, autoTrigger } = await req.json();
+    const body = await req.json();
+    const { userId, password, autoTrigger } = body;
+
+    // Log for debugging
+    console.log('[Farcaster Mood API] Request received:', {
+      hasUserId: !!userId,
+      hasPassword: !!password,
+      autoTrigger: autoTrigger === true || autoTrigger === 'true'
+    });
 
     if (!userId) {
       console.error('[Farcaster Mood API] userId is required');
@@ -71,7 +79,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Password protection - check password (skip for auto-trigger from mint flow)
-    if (!autoTrigger) {
+    // Handle autoTrigger as boolean or string
+    const isAutoTrigger = autoTrigger === true || autoTrigger === 'true' || autoTrigger === 1;
+
+    if (!isAutoTrigger) {
       const MOOD_ANALYSIS_PASSWORD = getEnvVar('MOOD_ANALYSIS_PASSWORD');
       if (!MOOD_ANALYSIS_PASSWORD || MOOD_ANALYSIS_PASSWORD.trim() === '') {
         console.error('[Farcaster Mood API] MOOD_ANALYSIS_PASSWORD not configured in .env file');
@@ -121,6 +132,24 @@ export async function POST(req: NextRequest) {
           console.error('[Farcaster Mood API] Neynar API returned 401 Unauthorized');
           console.error('[Farcaster Mood API] API Key (first 8 chars):', NEYNAR_API_KEY?.substring(0, 8) || 'MISSING');
           console.error('[Farcaster Mood API] API Key length:', NEYNAR_API_KEY?.length || 0);
+
+          // For auto-trigger mode, return a more graceful error that won't break the mint flow
+          if (isAutoTrigger) {
+            console.log('[Farcaster Mood API] Auto-trigger mode: Neynar API failed, returning default settings');
+            return NextResponse.json({
+              mood: 'neutral',
+              personality: 'Balanced',
+              reasoning: 'AI analysis unavailable (Neynar API error), using default settings',
+              postsAnalyzed: 0,
+              color1: '#4ade80',
+              color2: '#22d3ee',
+              baseFrequency: 0.02,
+              flowFieldBaseFrequency: 0.02,
+              flowFieldsBaseFrequency: 0.01,
+              flowLineDensity: 0.15,
+            });
+          }
+
           return NextResponse.json({
             error: 'Neynar API authentication failed',
             details: 'The API key may be incorrect, expired, or missing permissions. Please verify your NEYNAR_API_KEY in .env matches your Neynar dashboard.',
@@ -151,6 +180,23 @@ export async function POST(req: NextRequest) {
     } catch (e: any) {
       console.error('[Farcaster Mood API] Failed to fetch casts:', e?.message || e);
       if (e?.response?.status === 401 || e?.status === 401 || e?.message?.includes('401') || e?.message?.includes('Unauthorized')) {
+        // For auto-trigger mode, return default settings instead of failing
+        if (isAutoTrigger) {
+          console.log('[Farcaster Mood API] Auto-trigger mode: Failed to fetch casts (Neynar API error), returning default settings');
+          return NextResponse.json({
+            mood: 'neutral',
+            personality: 'Balanced',
+            reasoning: 'AI analysis unavailable (Neynar API error), using default settings',
+            postsAnalyzed: 0,
+            color1: '#4ade80',
+            color2: '#22d3ee',
+            baseFrequency: 0.02,
+            flowFieldBaseFrequency: 0.02,
+            flowFieldsBaseFrequency: 0.01,
+            flowLineDensity: 0.15,
+          });
+        }
+
         return NextResponse.json({
           error: 'Neynar API authentication failed while fetching casts',
           details: 'The API key may be incorrect, expired, or missing permissions'
