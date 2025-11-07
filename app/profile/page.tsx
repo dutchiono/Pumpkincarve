@@ -201,8 +201,9 @@ export default function ProfilePage() {
     }
 
     try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bushleague.xyz';
-      const miniappUrl = appUrl;
+      const appUrl = typeof window !== 'undefined'
+        ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin)
+        : process.env.NEXT_PUBLIC_APP_URL || 'https://bushleague.xyz';
 
       // Try to get a placeholder image if available (optional)
       let imageUrl: string | null = null;
@@ -213,12 +214,22 @@ export default function ProfilePage() {
         console.log('No placeholder image available, testing without image');
       }
 
-      // Prepare embeds: [imageUrl, miniappUrl] if image exists, else [miniappUrl]
-      const embeds: string[] = imageUrl ? [imageUrl, miniappUrl] : [miniappUrl];
+      // Prepare embeds: use image/video if available, otherwise just miniapp URL
+      // Type must be: [] | [string] | [string, string] | undefined
+      let embeds: [] | [string] | [string, string] | undefined;
+      if (imageUrl) {
+        // Convert IPFS URL to gateway URL for Farcaster if needed
+        const imageUrlForCast = imageUrl.startsWith('ipfs://')
+          ? `https://ipfs.io/ipfs/${imageUrl.replace('ipfs://', '')}`
+          : imageUrl;
+        embeds = [imageUrlForCast, appUrl]; // Type: [string, string]
+      } else {
+        embeds = [appUrl]; // Type: [string]
+      }
 
       const result = await sdk.actions.composeCast({
         text: 'I just minted my Mood NFT by @ionoi!',
-        embeds: embeds as [string, string?],
+        embeds: embeds,
       });
 
       if (result?.cast) {
