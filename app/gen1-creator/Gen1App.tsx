@@ -1485,8 +1485,8 @@ const Gen1App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-gray-200 font-sans">
-      <header className="bg-slate-800 p-3 md:p-4 shadow-lg border-b border-slate-700">
+    <div className="min-h-screen bg-slate-900 text-gray-200 font-sans w-full overflow-x-hidden">
+      <header className="bg-slate-800 p-3 md:p-4 shadow-lg border-b border-slate-700 w-full">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 className="text-xl md:text-3xl font-bold text-cyan-400">Gen1 NFT Studio</h1>
@@ -1524,20 +1524,20 @@ const Gen1App: React.FC = () => {
           </div>
         </div>
       </header>
-      <main className="p-2 md:p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+      <main className="p-2 md:p-4 w-full max-w-full overflow-x-hidden box-border">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 auto-rows-min w-full max-w-full">
           {/* Canvas Card */}
           <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4 md:row-span-2">
             <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">CANVAS (Live Loop)</h2>
-            <div className="bg-slate-900 rounded-lg p-2">
-              <canvas ref={canvasRef} className="rounded-lg shadow-2xl w-full max-w-full" style={{aspectRatio: '1/1'}} />
+            <div className="bg-slate-900 rounded-lg p-2 w-full overflow-hidden">
+              <canvas ref={canvasRef} className="rounded-lg shadow-2xl w-full h-auto max-w-full" style={{aspectRatio: '1/1', maxWidth: '100%'}} />
             </div>
           </div>
 
           {/* NFT Viewer Card */}
           <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4 md:row-span-2">
             <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">NFT Viewer</h2>
-            <div className="bg-slate-900 rounded-lg p-4 space-y-3">
+            <div className="bg-slate-900 rounded-lg p-3 md:p-4 space-y-3">
               <div>
                 <label htmlFor="nft-token-id" className="block text-sm font-medium text-gray-400 mb-2">
                   Load Token ID:
@@ -1696,9 +1696,9 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* Flow Fields (Lines) Parameters Card */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-cyan-300">Flow Fields (Lines)</h2>
+          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+            <div className="flex items-center justify-between mb-2 md:mb-3">
+              <h2 className="text-base md:text-lg font-bold text-cyan-300">Flow Fields (Lines)</h2>
               <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -1807,8 +1807,8 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* CARD 8: Farcaster Mood Readout - NEW */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-4">
-            <h2 className="text-lg font-bold text-cyan-300 mb-3">Farcaster Mood Readout</h2>
+          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+            <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">Farcaster Mood Readout</h2>
             <div className="space-y-3">
             <div>
                 <label htmlFor="test-farcaster-user" className="block text-sm font-medium text-gray-400 mb-2">
@@ -1909,8 +1909,8 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* On-Chain Actions Card - Card #6 */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-4 col-span-3">
-              <h2 className="text-lg font-bold text-cyan-300 mb-3">ON-CHAIN ACTIONS</h2>
+          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4 md:col-span-3">
+              <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">ON-CHAIN ACTIONS</h2>
               <div className="space-y-3">
             {!isConnected && (
               <div className="text-center py-4">

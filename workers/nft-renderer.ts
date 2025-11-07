@@ -3,9 +3,11 @@ import Redis from 'ioredis';
 import { uploadToIPFS } from '../app/services/ipfs.js';
 import { createRequire } from 'module';
 
-// Use createRequire to import CommonJS module
+// Use createRequire to import CommonJS module (gif.js exports as default)
 const require = createRequire(import.meta.url);
-const GIF = require('gif.js');
+const GIFModule = require('gif.js');
+// gif.js exports the constructor as default or as the module itself
+const GIF = GIFModule.default || GIFModule.GIF || GIFModule;
 
 interface RenderJobData {
   settings: {
