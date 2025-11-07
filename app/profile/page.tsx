@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
 import { sdk } from '@farcaster/miniapp-sdk';
+import { useFarcasterContext } from '@/lib/hooks/useFarcasterContext';
 
 interface UserData {
   posts: any[];
@@ -10,9 +12,12 @@ interface UserData {
   bio: string;
   fid: number;
   displayName: string;
+  walletAddress?: string;
 }
 
 export default function ProfilePage() {
+  const { address, isConnected } = useAccount();
+  const { isInFarcaster } = useFarcasterContext();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
   const [testNotificationText, setTestNotificationText] = useState('');
@@ -23,11 +28,20 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const context = await sdk.context;
-        if (context?.user?.fid) {
-          const fid = context.user.fid;
+        // First, try to get Farcaster context (works in miniapp)
+        let fid: number | null = null;
+        try {
+          const context = await sdk.context;
+          if (context?.user?.fid) {
+            fid = context.user.fid;
+            console.log('[Profile] Found Farcaster context, FID:', fid);
+          }
+        } catch (err) {
+          console.log('[Profile] Not in Farcaster miniapp or context unavailable');
+        }
 
-          // Fetch user info from Neynar
+        // If we have a FID, fetch Farcaster user info
+        if (fid) {
           const response = await fetch(`/api/get-user-info?fid=${fid}`);
           if (response.ok) {
             const data = await response.json();
@@ -38,25 +52,45 @@ export default function ProfilePage() {
               bio: data.bio || '',
               fid: fid,
               displayName: data.displayName || data.username || '',
+              walletAddress: address || undefined,
             });
-          }
 
-          // TODO: Fetch notification status from database
-          // For now, we'll check if notifications are enabled via webhook data
-          // Example: const notificationStatus = await fetch(`/api/notifications/status?fid=${fid}`);
-          // setNotificationsEnabled(notificationStatus.enabled);
-          // For now, set to null (unknown) since we don't have database yet
-          setNotificationsEnabled(null);
+            // TODO: Fetch notification status from database
+            setNotificationsEnabled(null);
+            setIsLoading(false);
+            return;
+          }
         }
+
+        // If no FID but wallet is connected, show wallet-based profile
+        if (isConnected && address) {
+          console.log('[Profile] Wallet connected, address:', address);
+          setUserData({
+            posts: [],
+            pfp: '',
+            username: '',
+            bio: '',
+            fid: 0, // No FID for wallet-only connections
+            displayName: `${address.slice(0, 6)}...${address.slice(-4)}`,
+            walletAddress: address,
+          });
+          setNotificationsEnabled(null);
+          setIsLoading(false);
+          return;
+        }
+
+        // No connection found
+        console.log('[Profile] No wallet or Farcaster connection found');
+        setUserData(null);
+        setIsLoading(false);
       } catch (err) {
         console.error('Error fetching profile:', err);
-      } finally {
         setIsLoading(false);
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [address, isConnected, isInFarcaster]);
 
   // Handle test notification
   const handleTestNotification = async () => {
@@ -134,7 +168,12 @@ export default function ProfilePage() {
             textAlign: 'center',
             color: 'rgba(255, 255, 255, 0.7)'
           }}>
-            <p>Please connect your wallet or sign in to view your profile.</p>
+            <p style={{ marginBottom: '16px' }}>Please connect your wallet or sign in to view your profile.</p>
+            {isInFarcaster && (
+              <p style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)' }}>
+                If you're in the Farcaster miniapp, your wallet should connect automatically.
+              </p>
+            )}
           </div>
         </div>
       </main>
@@ -226,15 +265,38 @@ export default function ProfilePage() {
               </p>
             </div>
 
-            <div style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '16px',
-              padding: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
-              <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '4px' }}>FID</p>
-              <p style={{ color: '#ffffff', fontFamily: 'monospace', fontSize: '16px' }}>{userData.fid}</p>
-            </div>
+            {userData.fid > 0 && (
+              <div style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '16px',
+                padding: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '4px' }}>FID</p>
+                <p style={{ color: '#ffffff', fontFamily: 'monospace', fontSize: '16px' }}>{userData.fid}</p>
+              </div>
+            )}
+            {userData.walletAddress && (
+              <div style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '16px',
+                padding: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '4px' }}>Wallet Address</p>
+                <p style={{ color: '#ffffff', fontFamily: 'monospace', fontSize: '16px' }}>
+                  {userData.walletAddress}
+                </p>
+                <a
+                  href={`https://basescan.org/address/${userData.walletAddress}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'underline', marginTop: '8px', display: 'inline-block' }}
+                >
+                  View on Basescan →
+                </a>
+              </div>
+            )}
             {userData.bio && (
               <div style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',

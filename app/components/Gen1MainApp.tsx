@@ -215,29 +215,6 @@ function Gen1AppContent() {
       return;
     }
 
-    // Password protection
-    const password = prompt('🔐 Enter password to mint:');
-    if (!password) {
-      return; // User cancelled
-    }
-
-    try {
-      const response = await fetch('/api/gen1/check-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
-        alert(`❌ ${errorData.error || 'Invalid password'}`);
-        return;
-      }
-    } catch (error: any) {
-      alert(`❌ Error checking password: ${error.message}`);
-      return;
-    }
-
     setIsMinting(true);
     setMintProgress(0);
 
