@@ -34,7 +34,7 @@ export async function GET() {
     const topMintersArray = Object.entries(mintCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10);
-    
+
     const topMinters = topMintersArray.map(([address, count]) => ({ address, count }));
 
     // Look up usernames from Neynar for each address

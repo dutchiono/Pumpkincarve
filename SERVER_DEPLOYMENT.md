@@ -31,30 +31,36 @@ node scripts/setup-database.cjs
 ```
 This will check if tables exist and provide instructions.
 
-### 4. Build and Deploy
+### 4. Initial Setup (One-Time)
 ```bash
+# Build the app
 npm run build
-npm start
+
+# Set up PM2 (manages Next.js app + worker automatically)
+chmod +x scripts/setup-pm2.sh
+./scripts/setup-pm2.sh
+
+# Set up cron job for price automation (optional)
+chmod +x scripts/setup-cron.sh
+./scripts/setup-cron.sh
 ```
 
-### 5. Start Worker (Optional - for NFT rendering queue)
+### 5. Deploy (Every Time)
+**Simple deployment script:**
 ```bash
-npm run worker
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
 ```
 
-Or with PM2:
+**Or manually (what the script does):**
 ```bash
-pm2 start npm --name "nft-worker" -- run worker
-pm2 save
+git pull
+npm install
+npm run build
+pm2 restart all
 ```
 
-### 6. Set Up Price Automation (Optional)
-Add to crontab:
-```bash
-crontab -e
-# Add this line:
-*/10 * * * * cd /path/to/app && node scripts/auto-adjust-mint-price.cjs >> /var/log/price-adjust.log 2>&1
-```
+That's it! PM2 handles both the Next.js app and the worker automatically.
 
 ## What's Been Implemented
 

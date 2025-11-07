@@ -93,38 +93,63 @@ git commit -m "Add Supabase mint tracking, leaderboard migration, and auto-share
 git push
 ```
 
-### 2. Deploy Application
-Deploy to your hosting platform (Vercel, Railway, etc.)
-
-### 3. Set Environment Variables
-Set all environment variables in your hosting platform's dashboard
-
-### 4. Run Database Migrations
-Follow the database setup instructions above
-
-### 5. Start Worker (If Using Queue)
-If using the NFT rendering worker:
+### 2. Initial Server Setup (One-Time)
 ```bash
-npm run worker
+# Install dependencies
+npm install
+
+# Build the app
+npm run build
+
+# Set up PM2 (starts Next.js app + worker)
+chmod +x scripts/setup-pm2.sh
+./scripts/setup-pm2.sh
+
+# Set up cron job for price automation (optional)
+chmod +x scripts/setup-cron.sh
+./scripts/setup-cron.sh
 ```
 
-Or with PM2:
+### 3. Deploy Application
+**Simple deployment (after initial setup):**
 ```bash
-pm2 start npm --name "nft-worker" -- run worker
-pm2 save
-pm2 startup
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
 ```
+
+**Or manually:**
+```bash
+git pull
+npm install
+npm run build
+pm2 restart all
+```
+
+### 4. Set Environment Variables
+Make sure all environment variables are set in `.env` file on the server.
+
+### 5. Run Database Migrations
+Follow the database setup instructions above (if not done already).
 
 ### 6. Set Up Price Automation (Optional)
 Set up a cron job to run price adjustments:
 
+**Option 1: Use setup script (easiest)**
+```bash
+chmod +x scripts/setup-cron.sh
+./scripts/setup-cron.sh
+```
+
+**Option 2: Manual setup**
 ```bash
 # Add to crontab
 crontab -e
 
 # Run every 10 minutes
-*/10 * * * * cd /path/to/pumpkin-carving-nft && node scripts/auto-adjust-mint-price.cjs >> /var/log/price-adjust.log 2>&1
+*/10 * * * * cd /path/to/pumpkin-carving-nft && node scripts/auto-adjust-mint-price.cjs >> /var/log/gen1-nft/price-adjust.log 2>&1
 ```
+
+See `CRON_SETUP.md` for detailed instructions.
 
 ## Post-Deployment Verification
 
