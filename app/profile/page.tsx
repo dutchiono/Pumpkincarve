@@ -201,35 +201,17 @@ export default function ProfilePage() {
     }
 
     try {
+      // For test mint cast, we don't need an image - just the miniapp URL
       const appUrl = typeof window !== 'undefined'
         ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin)
         : process.env.NEXT_PUBLIC_APP_URL || 'https://bushleague.xyz';
 
-      // Try to get a placeholder image if available (optional)
-      let imageUrl: string | null = null;
-      try {
-        // You can add a placeholder/default NFT image URL here if desired
-        // For now, we'll test without an image
-      } catch (err) {
-        console.log('No placeholder image available, testing without image');
-      }
-
-      // Prepare embeds: use image/video if available, otherwise just miniapp URL
-      // Type must be: [] | [string] | [string, string] | undefined
-      let embeds: [] | [string] | [string, string] | undefined;
-      if (imageUrl) {
-        // Convert IPFS URL to gateway URL for Farcaster if needed
-        const imageUrlForCast = imageUrl.startsWith('ipfs://')
-          ? `https://ipfs.io/ipfs/${imageUrl.replace('ipfs://', '')}`
-          : imageUrl;
-        embeds = [imageUrlForCast, appUrl]; // Type: [string, string]
-      } else {
-        embeds = [appUrl]; // Type: [string]
-      }
+      // Prepare embeds: just miniapp URL for test cast (no image needed for test)
+      const embeds: [string] = [appUrl] as [string];
 
       const result = await sdk.actions.composeCast({
         text: 'I just minted my Mood NFT by @ionoi!',
-        embeds: embeds,
+        embeds,
       });
 
       if (result?.cast) {
