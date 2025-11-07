@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "worker": "node workers/start.js",
+    "worker": "tsx workers/start.js",
     "worker:dev": "nodemon workers/start.js",
     "db:setup": "node scripts/setup-database.cjs",
     "db:migrate": "node scripts/run-migrations.js",
@@ -73,6 +73,7 @@
     "nodemon": "^3.1.9",
     "supabase": "^2.54.11",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.2"
   }
 }

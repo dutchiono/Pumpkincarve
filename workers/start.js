@@ -1,4 +1,4 @@
-import worker from './nft-renderer.js';
+import worker from './nft-renderer.ts';
 
 console.log('NFT Renderer Worker started');
 console.log('Waiting for jobs...');
