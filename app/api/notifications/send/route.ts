@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseAdmin } from '@/lib/supabase';
 
 /**
  * POST /api/notifications/send
@@ -29,54 +30,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Fetch notification token and URL from database
-    // Example database query:
-    // const notification = await db.notifications.findUnique({
-    //   where: { fid },
-    //   select: { token: true, url: true, enabled: true }
-    // });
-    //
-    // if (!notification || !notification.enabled) {
-    //   return NextResponse.json(
-    //     { error: 'Notifications not enabled for this user' },
-    //     { status: 400 }
-    //   );
-    //
-    //   const { token, url: notificationUrl } = notification;
+    const supabase = createSupabaseAdmin();
 
-    // For now, we'll return an error since we don't have database storage yet
-    // Once you have database storage set up, uncomment the code above and below
+    // Fetch notification token and URL from database
+    const { data: notification, error: fetchError } = await supabase
+      .from('notifications')
+      .select('token, url, enabled')
+      .eq('fid', fid.toString())
+      .single();
+
+    if (fetchError || !notification) {
+      return NextResponse.json(
+        { error: 'Notifications not enabled for this user' },
+        { status: 400 }
+      );
+    }
+
+    if (!notification.enabled) {
+      return NextResponse.json(
+        { error: 'Notifications are disabled for this user' },
+        { status: 400 }
+      );
+    }
+
+    if (!notification.token || !notification.url) {
+      return NextResponse.json(
+        { error: 'Notification token or URL missing' },
+        { status: 500 }
+      );
+    }
 
     // Send notification via POST request to the user's notification URL
-    // const response = await fetch(notificationUrl, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${token}`
-    //   },
-    //   body: JSON.stringify({
-    //     title: title.substring(0, 64),  // Max 64 chars
-    //     body: body.substring(0, 256),   // Max 256 chars
-    //     url: url || process.env.NEXT_PUBLIC_APP_URL || 'https://bushleague.xyz'
-    //   })
-    // });
-    //
-    // if (!response.ok) {
-    //   throw new Error(`Failed to send notification: ${response.statusText}`);
-    // }
+    const response = await fetch(notification.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${notification.token}`
+      },
+      body: JSON.stringify({
+        title: title.substring(0, 64),  // Max 64 chars
+        body: body.substring(0, 256),   // Max 256 chars
+        url: url || process.env.NEXT_PUBLIC_APP_URL || 'https://bushleague.xyz'
+      })
+    });
 
-    // Temporary response until database is set up
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to send notification: ${response.status} ${errorText}`);
+    }
+
     return NextResponse.json({
-      success: false,
-      error: 'Notification storage not implemented yet',
-      message: 'Please set up database storage for notification tokens via webhook endpoint'
-    }, { status: 501 });
-
-    // Once database is set up, return this instead:
-    // return NextResponse.json({
-    //   success: true,
-    //   message: 'Notification sent successfully'
-    // });
+      success: true,
+      message: 'Notification sent successfully'
+    });
   } catch (error: any) {
     console.error('❌ Send notification error:', error);
     return NextResponse.json(

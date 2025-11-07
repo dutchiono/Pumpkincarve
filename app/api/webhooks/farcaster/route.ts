@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseAdmin } from '@/lib/supabase';
 
 /**
  * POST /api/webhooks/farcaster
@@ -28,13 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Store notification tokens and URLs in database
-    // For now, we'll log them. In production, store in your database:
-    // - fid: user's Farcaster ID
-    // - token: notification token (for sending notifications)
-    // - url: notification URL (for sending notifications)
-    // - enabled: boolean (whether notifications are enabled)
-    // - updatedAt: timestamp
+    const supabase = createSupabaseAdmin();
 
     if (event === 'notification.enabled') {
       if (!token || !url) {
@@ -45,12 +40,25 @@ export async function POST(request: NextRequest) {
       }
 
       // Store notification token and URL for this user
-      // Example database operation:
-      // await db.notifications.upsert({
-      //   where: { fid },
-      //   update: { token, url, enabled: true, updatedAt: new Date() },
-      //   create: { fid, token, url, enabled: true, createdAt: new Date(), updatedAt: new Date() }
-      // });
+      const { error: dbError } = await supabase
+        .from('notifications')
+        .upsert({
+          fid: fid.toString(),
+          token,
+          url,
+          enabled: true,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'fid',
+        });
+
+      if (dbError) {
+        console.error('❌ Error storing notification:', dbError);
+        return NextResponse.json(
+          { error: 'Failed to store notification settings' },
+          { status: 500 }
+        );
+      }
 
       console.log(`✅ Notifications enabled for FID ${fid}`);
 
@@ -61,11 +69,24 @@ export async function POST(request: NextRequest) {
       });
     } else if (event === 'notification.disabled') {
       // Mark notifications as disabled for this user
-      // Example database operation:
-      // await db.notifications.update({
-      //   where: { fid },
-      //   data: { enabled: false, updatedAt: new Date() }
-      // });
+      const { error: dbError } = await supabase
+        .from('notifications')
+        .update({
+          enabled: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('fid', fid.toString());
+
+      if (dbError) {
+        console.error('❌ Error updating notification:', dbError);
+        // Don't fail if record doesn't exist
+        if (dbError.code !== 'PGRST116') {
+          return NextResponse.json(
+            { error: 'Failed to update notification settings' },
+            { status: 500 }
+          );
+        }
+      }
 
       console.log(`❌ Notifications disabled for FID ${fid}`);
 
