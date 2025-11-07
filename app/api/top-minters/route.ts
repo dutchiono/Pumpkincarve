@@ -31,17 +31,18 @@ export async function GET() {
     }
 
     // Sort by count and get top 10
-    const topMinters = Object.entries(mintCounts)
+    const topMintersArray = Object.entries(mintCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([address, count]) => ({ address, count }));
+      .slice(0, 10);
+    
+    const topMinters = topMintersArray.map(([address, count]) => ({ address, count }));
 
     // Look up usernames from Neynar for each address
     if (process.env.NEYNAR_API_KEY && topMinters.length > 0) {
       const neynarConfig = new Configuration({ apiKey: process.env.NEYNAR_API_KEY });
       const neynarClient = new NeynarAPIClient(neynarConfig);
 
-      const addresses = topMinters.map(([address]) => address);
+      const addresses = topMinters.map(({ address }) => address);
 
       try {
         const usersResponse = await neynarClient.fetchBulkUsersByEthOrSolAddress({
@@ -50,7 +51,7 @@ export async function GET() {
 
         // Map addresses to usernames
         const topMintersWithUsernames: CachedMinter[] = await Promise.all(
-          topMinters.map(async ([address, count]): Promise<CachedMinter> => {
+          topMinters.map(async ({ address, count }): Promise<CachedMinter> => {
             const matchingKey = Object.keys(usersResponse).find(
               key => key.toLowerCase() === address.toLowerCase()
             );
@@ -74,12 +75,12 @@ export async function GET() {
       } catch (neynarError) {
         console.error('[Top Minters] Error fetching usernames:', neynarError);
         // Fall back to addresses only if username lookup fails
-        const fallback = topMinters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
+        const fallback = topMinters.map(({ address, count }) => ({ address, count, username: null, fid: null, pfp: null }));
         return NextResponse.json(fallback);
       }
     }
 
-    const result = topMinters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
+    const result = topMinters.map(({ address, count }) => ({ address, count, username: null, fid: null, pfp: null }));
     return NextResponse.json(result);
   } catch (error: any) {
     console.error('[Top Minters] Error:', error);
