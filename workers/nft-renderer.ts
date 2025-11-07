@@ -85,6 +85,7 @@ const worker = new Worker('nft-render', async (job: Job<RenderJobData>) => {
 
   return {
     imageUrl,
+    videoUrl: imageUrl, // For now, use GIF as video (MP4 generation can be added later)
     metadataUrl,
     gifCid,
     metadataCid,

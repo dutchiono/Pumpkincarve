@@ -23,10 +23,11 @@ function Gen1AppContent() {
 
   // Mint state
   const [isMinting, setIsMinting] = useState(false);
-  const [mintProgress, setMintProgress] = useState(0);
-  const [contractMintPrice, setContractMintPrice] = useState<bigint | null>(null);
-  const [totalSupply, setTotalSupply] = useState<bigint | null>(null);
-  const MAX_SUPPLY = 1111;
+      const [mintProgress, setMintProgress] = useState(0);
+      const [contractMintPrice, setContractMintPrice] = useState<bigint | null>(null);
+      const [totalSupply, setTotalSupply] = useState<bigint | null>(null);
+      const [mintedImageUrl, setMintedImageUrl] = useState<string | null>(null); // Store image URL for cast sharing
+      const MAX_SUPPLY = 1111;
 
   const hasInitializedWallet = useRef(false);
   const providerRef = useRef<any>(null);
@@ -251,6 +252,9 @@ function Gen1AppContent() {
           clearInterval(interval);
           setLoadingMessage('📝 Minting on-chain...');
 
+          // Store image URL for cast sharing
+          setMintedImageUrl(status.result.imageUrl || status.result.videoUrl || null);
+
           // Step 3: Mint on-chain
           writeContract({
             address: GEN1_CONTRACT_ADDRESS,
@@ -280,43 +284,198 @@ function Gen1AppContent() {
 
   // Handle mint confirmation
   useEffect(() => {
-    if (isConfirmed) {
-      alert('✅ Mint successful!');
-      setIsMinting(false);
-      setLoadingMessage('');
-      setMintProgress(0);
+    if (isConfirmed && hash && publicClient) {
+      const handleMintSuccess = async () => {
+        try {
+          // Get transaction receipt to extract token ID from Gen1Minted event
+          const receipt = await publicClient.getTransactionReceipt({ hash });
 
-      // Send notification if user is in Farcaster miniapp
-      if (isInFarcaster) {
-        const sendMintNotification = async () => {
-          try {
-            // Get user's FID from Farcaster context
-            const context = await sdk.context;
-            const fid = context?.user?.fid;
+          let tokenId: bigint | null = null;
+          if (receipt.logs) {
+            // Parse Gen1Minted event to get tokenId
+            for (const log of receipt.logs) {
+              try {
+                const parsedLog = publicClient.decodeEventLog({
+                  abi: gen1ABI,
+                  data: log.data,
+                  topics: log.topics,
+                });
 
-            if (fid) {
-              // Send notification about successful mint
-              await fetch('/api/notifications/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  fid,
-                  title: '🎉 Gen1 NFT Minted!',
-                  body: 'Your animated Gen1 NFT has been successfully minted on Base.',
-                  url: `${window.location.origin}?minted=true`
-                })
-              });
+                if (parsedLog.eventName === 'Gen1Minted' && parsedLog.args.tokenId) {
+                  tokenId = parsedLog.args.tokenId as bigint;
+                  console.log('[Mint] Token ID from event:', tokenId.toString());
+                  break;
+                }
+              } catch (err) {
+                // Not the event we're looking for, continue
+              }
             }
-          } catch (error) {
-            // Silently fail - notifications are optional
-            console.log('Could not send mint notification:', error);
           }
-        };
 
-        sendMintNotification();
-      }
+          alert('✅ Mint successful!');
+          setIsMinting(false);
+          setLoadingMessage('');
+          setMintProgress(0);
+
+          // Track mint in database
+          try {
+            await fetch('/api/webhooks/mint', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                tokenId: tokenId ? tokenId.toString() : null,
+                minterAddress: address?.toLowerCase(),
+                blockNumber: receipt.blockNumber?.toString(),
+                transactionHash: hash,
+                imageUrl: null, // Will be updated when we have it
+                metadataUrl: null, // Will be updated when we have it
+              }),
+            });
+            console.log('[Mint] Mint tracked in database');
+          } catch (error) {
+            console.error('[Mint] Failed to track mint in database:', error);
+            // Don't fail the mint if tracking fails
+          }
+
+          // Auto-save AI mood analysis if user has Farcaster account
+          if (isInFarcaster) {
+            try {
+              const context = await sdk.context;
+              const fid = context?.user?.fid;
+              const username = context?.user?.username;
+
+              if (fid && username) {
+                console.log('[Mint] Auto-triggering AI mood analysis for FID:', fid);
+
+                // Trigger AI mood analysis (auto-trigger, no password required)
+                const moodResponse = await fetch('/api/gen1/farcaster-mood', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: username,
+                    password: '',
+                    autoTrigger: true, // Flag to skip password check for auto-trigger
+                  }),
+                });
+
+                if (moodResponse.ok) {
+                  const moodData = await moodResponse.json();
+
+                  // Save analysis to database
+                  const saveResponse = await fetch('/api/mood-analysis/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      fid,
+                      walletAddress: address?.toLowerCase(),
+                      tokenId: tokenId ? tokenId.toString() : null,
+                      mood: moodData.mood,
+                      personality: moodData.personality,
+                      traits: moodData.traits,
+                      interests: moodData.interests,
+                      reasoning: moodData.reasoning,
+                      color1: moodData.color1,
+                      color2: moodData.color2,
+                      baseFrequency: moodData.baseFrequency,
+                      flowFieldBaseFrequency: moodData.flowFieldBaseFrequency,
+                      flowFieldsBaseFrequency: moodData.flowFieldsBaseFrequency,
+                      flowLineDensity: moodData.flowLineDensity,
+                      postsAnalyzed: moodData.postsAnalyzed,
+                    }),
+                  });
+
+                  if (saveResponse.ok) {
+                    console.log('[Mint] AI mood analysis saved successfully');
+                  } else {
+                    console.error('[Mint] Failed to save mood analysis:', await saveResponse.text());
+                  }
+                } else {
+                  // Password required or analysis failed - skip silently
+                  console.log('[Mint] Mood analysis skipped (password required or unavailable)');
+                }
+              }
+            } catch (error) {
+              // Silently fail - analysis is optional
+              console.log('[Mint] Could not auto-save mood analysis:', error);
+            }
+
+            // Auto-share cast about successful mint
+            try {
+              const context = await sdk.context;
+              const fid = context?.user?.fid;
+
+              if (fid) {
+                const appUrl = typeof window !== 'undefined'
+                  ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin)
+                  : process.env.NEXT_PUBLIC_APP_URL || 'https://bushleague.xyz';
+
+                // Prepare embeds: use image/video if available, otherwise just miniapp URL
+                let embeds: string[] = [];
+                if (mintedImageUrl) {
+                  // Convert IPFS URL to gateway URL for Farcaster
+                  const imageUrl = mintedImageUrl.startsWith('ipfs://')
+                    ? `https://ipfs.io/ipfs/${mintedImageUrl.replace('ipfs://', '')}`
+                    : mintedImageUrl;
+                  embeds = [imageUrl, appUrl];
+                } else {
+                  embeds = [appUrl];
+                }
+
+                // Compose cast with mint message
+                const castResult = await sdk.actions.composeCast({
+                  text: 'I just minted my Mood NFT by @ionoi!',
+                  embeds: embeds as [string, string?],
+                });
+
+                if (castResult?.cast) {
+                  console.log('[Mint] Cast shared successfully');
+                } else {
+                  // User may have cancelled - that's okay
+                  console.log('[Mint] Cast sharing cancelled by user');
+                }
+              }
+            } catch (error) {
+              // Silently fail - cast sharing is optional
+              console.log('[Mint] Could not share cast:', error);
+            }
+
+            // Send notification about successful mint
+            try {
+              const context = await sdk.context;
+              const fid = context?.user?.fid;
+
+              if (fid) {
+                await fetch('/api/notifications/send', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    fid,
+                    title: '🎉 Gen1 NFT Minted!',
+                    body: 'Your animated Gen1 NFT has been successfully minted on Base.',
+                    url: `${window.location.origin}?minted=true`
+                  })
+                });
+              }
+            } catch (error) {
+              // Silently fail - notifications are optional
+              console.log('Could not send mint notification:', error);
+            }
+          }
+
+          // Clear minted image URL after sharing
+          setMintedImageUrl(null);
+        } catch (error) {
+          console.error('[Mint] Error handling mint success:', error);
+          alert('✅ Mint successful! (Note: Some post-mint actions may have failed)');
+          setIsMinting(false);
+          setLoadingMessage('');
+          setMintProgress(0);
+        }
+      };
+
+      handleMintSuccess();
     }
-  }, [isConfirmed, isInFarcaster]);
+  }, [isConfirmed, hash, publicClient, isInFarcaster, address, mintedImageUrl]);
 
 
 

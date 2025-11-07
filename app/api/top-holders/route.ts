@@ -1,124 +1,53 @@
 import { Configuration, NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { NextResponse } from 'next/server';
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
-
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
-
-const ERC721_ABI = [
-  {
-    inputs: [{ internalType: 'uint256', name: 'tokenId', type: 'uint256' }],
-    name: 'ownerOf',
-    outputs: [{ internalType: 'address', name: '', type: 'address' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'totalSupply',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-] as const;
+import { createSupabaseAdmin } from '@/lib/supabase';
 
 type CachedHolder = { address: string; count: number; username: string | null; fid: number | null; pfp: string | null };
-type HolderCacheData = { holders: CachedHolder[]; lastUpdate: number };
-
-const CACHE_DIR = join(process.cwd(), '.cache');
-const CACHE_FILE = join(CACHE_DIR, 'top-holders.json');
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-if (!existsSync(CACHE_DIR)) {
-  mkdirSync(CACHE_DIR, { recursive: true });
-}
-
-function loadHoldersCache(): HolderCacheData | null {
-  try {
-    if (existsSync(CACHE_FILE)) {
-      return JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
-    }
-  } catch (err) {
-    console.error('Error loading holders cache:', err);
-  }
-  return null;
-}
-
-function saveHoldersCache(data: HolderCacheData) {
-  try {
-    writeFileSync(CACHE_FILE, JSON.stringify(data, null, 2));
-  } catch (err) {
-    console.error('Error saving holders cache:', err);
-  }
-}
 
 // Force dynamic, no cache at Next layer
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
-  console.log('Leaderboard[holders] CONTRACT_ADDRESS =', CONTRACT_ADDRESS);
-  if (!CONTRACT_ADDRESS) {
-    return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
-  }
-
-  // Load cache from disk
-  const cachedData = loadHoldersCache();
-  const now = Date.now();
-
-  if (cachedData && cachedData.lastUpdate && (now - cachedData.lastUpdate) < CACHE_TTL) {
-    const age = Math.floor((now - cachedData.lastUpdate) / 1000);
-    console.log(`✅ Returning cached top holders (age: ${age}s)`);
-    return NextResponse.json(cachedData.holders);
-  }
-
   try {
-    const client = createPublicClient({
-      chain: base,
-      transport: http('https://1rpc.io/base'),
-    });
+    const supabase = createSupabaseAdmin();
 
-    // Get total supply
-    const totalSupply = await client.readContract({
-      address: CONTRACT_ADDRESS as `0x${string}`,
-      abi: ERC721_ABI,
-      functionName: 'totalSupply',
-    });
+    // Get all transfers ordered by block number to track current ownership
+    const { data: transfers, error: transfersError } = await supabase
+      .from('transfers')
+      .select('token_id, to_address, block_number')
+      .order('block_number', { ascending: true });
 
-    console.log(`Total supply: ${totalSupply}`);
-
-    // For each token, find its owner
-    const holders: Record<string, number> = {};
-    const tokenIds = Array.from({ length: Number(totalSupply) }, (_, i) => BigInt(i + 1));
-
-    for (const tokenId of tokenIds) {
-      try {
-        const owner = await client.readContract({
-          address: CONTRACT_ADDRESS as `0x${string}`,
-          abi: ERC721_ABI,
-          functionName: 'ownerOf',
-          args: [tokenId],
-        });
-        const address = owner.toLowerCase();
-        holders[address] = (holders[address] || 0) + 1;
-      } catch (err) {
-        console.error(`Error getting owner of token ${tokenId}:`, err);
-      }
+    if (transfersError) {
+      console.error('[Top Holders] Error fetching transfers:', transfersError);
+      return NextResponse.json({ error: 'Failed to fetch transfers' }, { status: 500 });
     }
 
-    // Sort by count
+    // Build a map of current token ownership (last transfer wins)
+    const currentOwnership: Record<string, string> = {};
+    for (const transfer of transfers || []) {
+      currentOwnership[transfer.token_id] = transfer.to_address.toLowerCase();
+    }
+
+    // Count NFTs per address
+    const holders: Record<string, number> = {};
+    for (const tokenId in currentOwnership) {
+      const address = currentOwnership[tokenId];
+      holders[address] = (holders[address] || 0) + 1;
+    }
+
+    // Sort by count and get top 10
     const topHolders = Object.entries(holders)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
+      .slice(0, 10)
+      .map(([address, count]) => ({ address, count }));
 
     // Look up usernames from Neynar
-    if (process.env.NEYNAR_API_KEY) {
+    if (process.env.NEYNAR_API_KEY && topHolders.length > 0) {
       const neynarConfig = new Configuration({ apiKey: process.env.NEYNAR_API_KEY });
       const neynarClient = new NeynarAPIClient(neynarConfig);
 
-      const addresses = topHolders.map(([address]) => address);
+      const addresses = topHolders.map(({ address }) => address);
 
       try {
         const usersResponse = await neynarClient.fetchBulkUsersByEthOrSolAddress({
@@ -126,7 +55,7 @@ export async function GET() {
         });
 
         const topHoldersWithUsernames: CachedHolder[] = await Promise.all(
-          topHolders.map(async ([address, count]): Promise<CachedHolder> => {
+          topHolders.map(async ({ address, count }): Promise<CachedHolder> => {
             const matchingKey = Object.keys(usersResponse).find(
               key => key.toLowerCase() === address.toLowerCase()
             );
@@ -146,22 +75,18 @@ export async function GET() {
           })
         );
 
-        saveHoldersCache({ holders: topHoldersWithUsernames, lastUpdate: Date.now() });
         return NextResponse.json(topHoldersWithUsernames);
       } catch (neynarError) {
-        console.error('Error fetching usernames:', neynarError);
-        const fallback = topHolders.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
-        saveHoldersCache({ holders: fallback, lastUpdate: Date.now() });
+        console.error('[Top Holders] Error fetching usernames:', neynarError);
+        const fallback = topHolders.map(({ address, count }) => ({ address, count, username: null, fid: null, pfp: null }));
         return NextResponse.json(fallback);
       }
     }
 
-  const result = topHolders.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null }));
-  saveHoldersCache({ holders: result, lastUpdate: Date.now() });
-  return NextResponse.json(result);
+    const result = topHolders.map(({ address, count }) => ({ address, count, username: null, fid: null, pfp: null }));
+    return NextResponse.json(result);
   } catch (error: any) {
-    console.error('Error fetching top holders:', error);
+    console.error('[Top Holders] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-

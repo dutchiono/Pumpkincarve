@@ -1,221 +1,84 @@
 import { Configuration, NeynarAPIClient } from '@neynar/nodejs-sdk';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { NextResponse } from 'next/server';
-import { join } from 'path';
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
-
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MAINNET_GEN1_NFT_CONTRACT_ADDRESS || process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
-
-const TRANSFER_ABI = [
-  {
-    type: 'event',
-    name: 'Transfer',
-    inputs: [
-      { name: 'from', type: 'address', indexed: true },
-      { name: 'to', type: 'address', indexed: true },
-      { name: 'tokenId', type: 'uint256', indexed: true },
-    ],
-  },
-] as const;
-
-const ERC721_ABI = [
-  {
-    inputs: [],
-    name: 'totalSupply',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-] as const;
+import { createSupabaseAdmin } from '@/lib/supabase';
 
 type GiftDetail = { recipient: string; tokenId: number; recipientUsername?: string | null };
 type CachedGifter = { address: string; count: number; username: string | null; fid: number | null; pfp: string | null; recipients: string[]; uniqueRecipients: number; gifts: GiftDetail[] };
-type CacheData = { gifters: CachedGifter[]; lastUpdate: number; lastBlock: number };
 
-const CACHE_DIR = join(process.cwd(), '.cache');
-const CACHE_FILE = join(CACHE_DIR, 'top-gifters.json');
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-// Initialize cache directory
-if (!existsSync(CACHE_DIR)) {
-  mkdirSync(CACHE_DIR, { recursive: true });
-}
-
-function loadCache(): CacheData | null {
-  try {
-    if (existsSync(CACHE_FILE)) {
-      const data = readFileSync(CACHE_FILE, 'utf-8');
-      return JSON.parse(data);
-    }
-  } catch (err) {
-    console.error('Error loading cache:', err);
-  }
-  return null;
-}
-
-function saveCache(data: CacheData) {
-  try {
-    writeFileSync(CACHE_FILE, JSON.stringify(data, null, 2));
-  } catch (err) {
-    console.error('Error saving cache:', err);
-  }
-}
-
+// Force dynamic, no cache at Next layer
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
-  console.log('Leaderboard[gifters] CONTRACT_ADDRESS =', CONTRACT_ADDRESS);
-  if (!CONTRACT_ADDRESS) {
-    return NextResponse.json({ error: 'Contract not deployed' }, { status: 400 });
-  }
-
-  // Load cache from disk
-  const cachedData = loadCache();
-  const now = Date.now();
-
-  // Check if cached data is still valid
-  if (cachedData && cachedData.lastUpdate && (now - cachedData.lastUpdate) < CACHE_TTL) {
-    const age = Math.floor((now - cachedData.lastUpdate) / 1000);
-    console.log(`✅ Returning cached top gifters (age: ${age}s, from block ${cachedData.lastBlock})`);
-    return NextResponse.json(cachedData.gifters);
-  }
-
-  const lastProcessedBlock = cachedData?.lastBlock || 0;
-
   try {
-    const client = createPublicClient({
-      chain: base,
-      transport: http('https://1rpc.io/base'),
-    });
+    const supabase = createSupabaseAdmin();
 
-    // Get total supply to limit search
-    const totalSupply = await client.readContract({
-      address: CONTRACT_ADDRESS as `0x${string}`,
-      abi: ERC721_ABI,
-      functionName: 'totalSupply',
-    });
+    // Query transfers table for gifts (is_gift = true)
+    const { data: gifts, error: giftsError } = await supabase
+      .from('transfers')
+      .select('token_id, from_address, to_address')
+      .eq('is_gift', true)
+      .order('block_number', { ascending: false });
 
-    console.log(`Total supply: ${totalSupply}`);
-
-    const currentBlock = await client.getBlockNumber();
-    const MAX_BLOCK_RANGE = BigInt(4000);
-
-    // If we have a cached result, only scan new blocks since last cache
-    // First time: scan 200k blocks to get all historical data
-    // After that: only scan new blocks
-    let fromBlock;
-    if (lastProcessedBlock > 0) {
-      fromBlock = BigInt(lastProcessedBlock);
-      console.log(`📊 Incremental update: scanning from block ${fromBlock} to ${currentBlock}`);
-    } else {
-      fromBlock = currentBlock - BigInt(200000);
-      console.log(`🔄 Initial scan: scanning last 200k blocks from ${fromBlock} to ${currentBlock}`);
+    if (giftsError) {
+      console.error('[Top Gifters] Error fetching gifts:', giftsError);
+      return NextResponse.json({ error: 'Failed to fetch gifts' }, { status: 500 });
     }
 
-    const allLogs = [];
-    console.log(`🔍 Searching Transfer events from block ${fromBlock} to ${currentBlock} (${Number(currentBlock - fromBlock)} blocks)`);
-
-    // Query in batches
-    while (fromBlock < currentBlock) {
-      const toBlock: bigint = fromBlock + MAX_BLOCK_RANGE > currentBlock ? currentBlock : fromBlock + MAX_BLOCK_RANGE;
-
-      const logs = await client.getLogs({
-        address: CONTRACT_ADDRESS as `0x${string}`,
-        event: TRANSFER_ABI[0],
-        fromBlock: fromBlock,
-        toBlock: toBlock,
-      });
-
-      allLogs.push(...logs);
-      if (logs.length > 0) {
-        console.log(`Found ${logs.length} Transfer logs in block range ${fromBlock} to ${toBlock}`);
-      }
-
-      fromBlock = toBlock + BigInt(1);
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-
-    console.log(`📈 Found ${allLogs.length} total Transfer events across all blocks`);
-
-    // Filter out mints (from = 0x0) and track gifts (from != 0x0 and from != to)
+    // Count gifts per gifter
     const giftCounts: Record<string, number> = {};
     const giftRecipients: Record<string, Set<string>> = {};
     const giftDetails: Record<string, Array<{ recipient: string; tokenId: number }>> = {};
 
-    let mintCount = 0;
-    let giftCount = 0;
-    let selfTransferCount = 0;
+    for (const gift of gifts || []) {
+      const gifterAddress = gift.from_address.toLowerCase();
+      const recipientAddress = gift.to_address.toLowerCase();
 
-    for (const log of allLogs) {
-      const from = log.args.from?.toLowerCase() || '';
-      const to = log.args.to?.toLowerCase() || '';
-      const tokenId = log.args.tokenId ? Number(log.args.tokenId) : 0;
+      giftCounts[gifterAddress] = (giftCounts[gifterAddress] || 0) + 1;
 
-      // Categorize the transfer
-      if (!from) {
-        mintCount++;
-      } else if (from === '0x0000000000000000000000000000000000000000') {
-        mintCount++;
-      } else if (from === to) {
-        selfTransferCount++;
-      } else {
-        // This is a gift
-        giftCount++;
-        giftCounts[from] = (giftCounts[from] || 0) + 1;
-
-        if (!giftRecipients[from]) {
-          giftRecipients[from] = new Set();
-          giftDetails[from] = [];
-        }
-        giftRecipients[from].add(to);
-        giftDetails[from].push({ recipient: to, tokenId });
+      if (!giftRecipients[gifterAddress]) {
+        giftRecipients[gifterAddress] = new Set();
+        giftDetails[gifterAddress] = [];
       }
+      giftRecipients[gifterAddress].add(recipientAddress);
+      giftDetails[gifterAddress].push({
+        recipient: recipientAddress,
+        tokenId: parseInt(gift.token_id),
+      });
     }
-
-    console.log(`📊 Transfer breakdown: ${mintCount} mints, ${selfTransferCount} self-transfers, ${giftCount} gifts`);
 
     // Sort by count and get top 10
     const topGifters = Object.entries(giftCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
-
-    console.log(`Top gifters: ${JSON.stringify(topGifters)}`);
+      .slice(0, 10)
+      .map(([address, count]) => ({ address, count }));
 
     // Collect ALL addresses (gifters + all recipients) for a single bulk lookup
     const allRecipientAddresses = new Set<string>();
-    topGifters.forEach(([address]) => {
+    topGifters.forEach(({ address }) => {
       if (giftRecipients[address]) {
         giftRecipients[address].forEach(addr => allRecipientAddresses.add(addr));
       }
     });
 
     // Look up usernames from Neynar - SINGLE BATCH CALL
-    if (process.env.NEYNAR_API_KEY) {
+    if (process.env.NEYNAR_API_KEY && topGifters.length > 0) {
       const neynarConfig = new Configuration({ apiKey: process.env.NEYNAR_API_KEY });
       const neynarClient = new NeynarAPIClient(neynarConfig);
 
-      const addresses = topGifters.map(([address]) => address);
+      const addresses = topGifters.map(({ address }) => address);
       const allAddressesForLookup = [...addresses, ...Array.from(allRecipientAddresses)];
+
       if (allAddressesForLookup.length === 0) {
-        console.log('Top-gifters: no addresses to lookup, skipping Neynar call');
-        saveCache({
-          gifters: [],
-          lastUpdate: Date.now(),
-          lastBlock: Number(currentBlock)
-        });
         return NextResponse.json([]);
       }
-      console.log('Top-gifters: requesting Neynar for address count =', allAddressesForLookup.length);
 
       try {
         const usersResponse = await neynarClient.fetchBulkUsersByEthOrSolAddress({
           addresses: allAddressesForLookup
         });
 
-        const topGiftersWithUsernames: CachedGifter[] = topGifters.map(([address, count]) => {
-          console.log(`📝 Processing gifter: ${address}, count: ${count}, recipients: [${Array.from(giftRecipients[address] || [])}]`);
+        const topGiftersWithUsernames: CachedGifter[] = topGifters.map(({ address, count }) => {
           const matchingKey = Object.keys(usersResponse).find(
             key => key.toLowerCase() === address.toLowerCase()
           );
@@ -256,35 +119,36 @@ export async function GET() {
           };
         });
 
-        const result = topGiftersWithUsernames;
-        saveCache({
-          gifters: result,
-          lastUpdate: Date.now(),
-          lastBlock: Number(currentBlock)
-        });
-        return NextResponse.json(result);
+        return NextResponse.json(topGiftersWithUsernames);
       } catch (neynarError) {
-        console.error('Error fetching usernames:', neynarError);
-        const fallback = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [], uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0, gifts: giftDetails[address] || [] }));
-        saveCache({
-          gifters: fallback,
-          lastUpdate: Date.now(),
-          lastBlock: Number(currentBlock)
-        });
+        console.error('[Top Gifters] Error fetching usernames:', neynarError);
+        const fallback = topGifters.map(({ address, count }) => ({
+          address,
+          count,
+          username: null,
+          fid: null,
+          pfp: null,
+          recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [],
+          uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0,
+          gifts: giftDetails[address] || []
+        }));
         return NextResponse.json(fallback);
       }
     }
 
-  const result = topGifters.map(([address, count]) => ({ address, count, username: null, fid: null, pfp: null, recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [], uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0, gifts: giftDetails[address] || [] }));
-  saveCache({
-    gifters: result,
-    lastUpdate: Date.now(),
-    lastBlock: Number(currentBlock)
-  });
-  return NextResponse.json(result);
+    const result = topGifters.map(({ address, count }) => ({
+      address,
+      count,
+      username: null,
+      fid: null,
+      pfp: null,
+      recipients: giftRecipients[address] ? Array.from(giftRecipients[address]) : [],
+      uniqueRecipients: giftRecipients[address] ? giftRecipients[address].size : 0,
+      gifts: giftDetails[address] || []
+    }));
+    return NextResponse.json(result);
   } catch (error: any) {
-    console.error('Error fetching top gifters:', error);
+    console.error('[Top Gifters] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-

@@ -176,6 +176,12 @@ const Gen1App: React.FC = () => {
   const [currentNFTImageCid, setCurrentNFTImageCid] = useState<string | null>(null);
   const [currentNFTMetadataCid, setCurrentNFTMetadataCid] = useState<string | null>(null);
 
+  // Password modal state
+  const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
+  const [passwordInput, setPasswordInput] = useState<string>('');
+  const [passwordAction, setPasswordAction] = useState<(() => Promise<void>) | null>(null);
+  const [passwordActionLabel, setPasswordActionLabel] = useState<string>('');
+
   // Layer toggles
   const [enableFlowField, setEnableFlowField] = useState(true);
   const [enableFlowFields, setEnableFlowFields] = useState(true);
@@ -260,15 +266,8 @@ const Gen1App: React.FC = () => {
     }
   };
 
-  const handleUpdateOnChain = useCallback(async () => {
-    if (!tokenIdToUpdate) return;
-
-    // Password protection
-    const password = prompt('🔐 Enter password to update NFT:');
-    if (!password) {
-      return; // User cancelled
-    }
-
+  // Password check function
+  const checkPassword = async (password: string): Promise<boolean> => {
     try {
       const response = await fetch('/api/gen1/check-password', {
         method: 'POST',
@@ -279,12 +278,54 @@ const Gen1App: React.FC = () => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
         alert(`❌ ${errorData.error || 'Invalid password'}`);
-        return;
+        return false;
       }
+      return true;
     } catch (error: any) {
       alert(`❌ Error checking password: ${error.message}`);
+      return false;
+    }
+  };
+
+  // Show password modal and execute action if password is correct
+  const showPasswordModalWithAction = useCallback((action: () => Promise<void>, label: string) => {
+    setPasswordAction(() => action);
+    setPasswordActionLabel(label);
+    setPasswordInput('');
+    setShowPasswordModal(true);
+  }, []);
+
+  // Handle password submission
+  const handlePasswordSubmit = useCallback(async () => {
+    if (!passwordInput.trim()) {
+      alert('Please enter a password');
       return;
     }
+
+    const isValid = await checkPassword(passwordInput);
+    if (!isValid) {
+      setPasswordInput('');
+      return;
+    }
+
+    // Close modal and execute action
+    setShowPasswordModal(false);
+    const action = passwordAction;
+    setPasswordAction(null);
+    setPasswordInput('');
+
+    if (action) {
+      await action();
+    }
+  }, [passwordInput, passwordAction, checkPassword]);
+
+  // Wrapper for handleUpdateOnChain that shows password modal
+  const handleUpdateOnChain = useCallback(() => {
+    showPasswordModalWithAction(handleUpdateOnChainInternal, 'Update NFT');
+  }, [showPasswordModalWithAction]);
+
+  const handleUpdateOnChainInternal = useCallback(async () => {
+    if (!tokenIdToUpdate) return;
 
     // Check ownership FIRST before doing any expensive operations
     if (!publicClient) {
@@ -428,34 +469,11 @@ const Gen1App: React.FC = () => {
         alert('Error updating NFT: ' + err.message);
       }
     } finally {
-    setIsUpdatingOnChain(false);
+      setIsUpdatingOnChain(false);
     }
   }, [tokenIdToUpdate, enableFlowField, enableFlowFields, enableContourMapping, flowColor1, flowColor2, flowFieldBaseFreq, flowFieldAmplitude, flowFieldOctaves, flowFieldRotation, flowFieldDirection, flowFieldsBaseFreq, flowFieldsAmplitude, flowFieldsOctaves, flowLineLength, flowLineDensity, flowFieldsRotation, flowFieldsDirection, contourBaseFreq, contourAmplitude, contourOctaves, contourLevels, contourSmoothness, contourAffectsFlow, currentNFTImageCid, currentNFTMetadataCid, address, publicClient, writeContract]);
 
-  const handleRunBatchUpdateScript = useCallback(async () => {
-    // Password protection
-    const password = prompt('🔐 Enter password to run batch script:');
-    if (!password) {
-      return; // User cancelled
-    }
-
-    try {
-      const response = await fetch('/api/gen1/check-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
-        alert(`❌ ${errorData.error || 'Invalid password'}`);
-        return;
-      }
-    } catch (error: any) {
-      alert(`❌ Error checking password: ${error.message}`);
-      return;
-    }
-
+  const handleRunBatchUpdateScriptInternal = useCallback(async () => {
     setIsBatchRunning(true);
     setBatchStatus('Running...');
     // Placeholder for actual batch script execution
@@ -465,33 +483,14 @@ const Gen1App: React.FC = () => {
     setIsBatchRunning(false);
   }, []);
 
+  const handleRunBatchUpdateScript = useCallback(() => {
+    showPasswordModalWithAction(handleRunBatchUpdateScriptInternal, 'Run Batch Script');
+  }, [showPasswordModalWithAction, handleRunBatchUpdateScriptInternal]);
+
   // Handler to save snapshot of current NFT state as child NFT
-  const handleSaveSnapshot = useCallback(async () => {
+  const handleSaveSnapshotInternal = useCallback(async () => {
     if (!parentTokenId || !publicClient || !address || !savePrice) {
       alert('Please connect wallet and enter a valid parent token ID');
-      return;
-    }
-
-    // Password protection
-    const password = prompt('🔐 Enter password to save snapshot:');
-    if (!password) {
-      return; // User cancelled
-    }
-
-    try {
-      const response = await fetch('/api/gen1/check-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
-        alert(`❌ ${errorData.error || 'Invalid password'}`);
-        return;
-      }
-    } catch (error: any) {
-      alert(`❌ Error checking password: ${error.message}`);
       return;
     }
 
@@ -665,7 +664,7 @@ const Gen1App: React.FC = () => {
   }, []);
 
   // Queue-based mint handler
-  const handleQueueMint = useCallback(async () => {
+  const handleQueueMintInternal = useCallback(async () => {
     if (!isConnected || !contractMintPrice || !address) {
       alert('Please connect your wallet first');
       return;
@@ -673,29 +672,6 @@ const Gen1App: React.FC = () => {
 
     if (totalSupply !== null && Number(totalSupply) >= MAX_SUPPLY) {
       alert(`⚠️ Maximum supply of ${MAX_SUPPLY} reached! Minting is disabled.`);
-      return;
-    }
-
-    // Password protection
-    const password = prompt('🔐 Enter password to mint:');
-    if (!password) {
-      return; // User cancelled
-    }
-
-    try {
-      const response = await fetch('/api/gen1/check-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Invalid password' }));
-        alert(`❌ ${errorData.error || 'Invalid password'}`);
-        return;
-      }
-    } catch (error: any) {
-      alert(`❌ Error checking password: ${error.message}`);
       return;
     }
 
@@ -1499,13 +1475,13 @@ const Gen1App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-gray-200 font-sans">
-      <header className="bg-slate-800 p-4 shadow-lg border-b border-slate-700">
-        <div className="flex items-center justify-between">
+      <header className="bg-slate-800 p-3 md:p-4 shadow-lg border-b border-slate-700">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-cyan-400">Gen1 NFT Studio</h1>
-            <p className="text-slate-400 text-sm mt-1">Design animated Mood Ring NFTs - Flow Field, FlowFields, and Contour Mapping</p>
+            <h1 className="text-xl md:text-3xl font-bold text-cyan-400">Gen1 NFT Studio</h1>
+            <p className="text-slate-400 text-xs md:text-sm mt-1">Design animated Mood Ring NFTs - Flow Field, FlowFields, and Contour Mapping</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {!isConnected ? (
               connectors.slice(0, 2).map((connector) => (
                 <button
@@ -1515,20 +1491,20 @@ const Gen1App: React.FC = () => {
                     connect({ connector });
                   }}
                   type="button"
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-3 rounded transition-colors duration-200"
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-bold py-1.5 md:py-2 px-2 md:px-3 rounded transition-colors duration-200"
                 >
                   {connector.name}
                 </button>
               ))
             ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs md:text-sm text-gray-400">
                   {address?.slice(0, 6)}...{address?.slice(-4)}
                 </span>
                 <button
                   onClick={() => disconnect()}
                   type="button"
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded transition-colors duration-200"
+                  className="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm font-bold py-1.5 md:py-2 px-2 md:px-3 rounded transition-colors duration-200"
                 >
                   Disconnect
                 </button>
@@ -1537,19 +1513,19 @@ const Gen1App: React.FC = () => {
           </div>
         </div>
       </header>
-      <main className="p-4">
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem'}}>
+      <main className="p-2 md:p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           {/* Canvas Card */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-4 row-span-2">
-            <h2 className="text-lg font-bold text-cyan-300 mb-3">CANVAS (Live Loop)</h2>
+          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4 md:row-span-2">
+            <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">CANVAS (Live Loop)</h2>
             <div className="bg-slate-900 rounded-lg p-2">
-              <canvas ref={canvasRef} className="rounded-lg shadow-2xl w-full" style={{aspectRatio: '1/1'}} />
+              <canvas ref={canvasRef} className="rounded-lg shadow-2xl w-full max-w-full" style={{aspectRatio: '1/1'}} />
             </div>
           </div>
 
           {/* NFT Viewer Card */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-4 row-span-2">
-            <h2 className="text-lg font-bold text-cyan-300 mb-3">NFT Viewer</h2>
+          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4 md:row-span-2">
+            <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">NFT Viewer</h2>
             <div className="bg-slate-900 rounded-lg p-4 space-y-3">
               <div>
                 <label htmlFor="nft-token-id" className="block text-sm font-medium text-gray-400 mb-2">
@@ -1593,17 +1569,17 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* CARD 3: PLACEHOLDER - TBD */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-4">
-            <h2 className="text-lg font-bold text-cyan-300 mb-3">Card 3 - TBD</h2>
-            <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
+          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+            <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">Card 3 - TBD</h2>
+            <div className="flex items-center justify-center h-24 md:h-32 text-gray-500 text-xs md:text-sm">
               <p>Placeholder for future feature</p>
             </div>
           </div>
 
           {/* CARD 4: Contour Mapping */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-cyan-300">Contour Mapping</h2>
+          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+            <div className="flex items-center justify-between mb-2 md:mb-3">
+              <h2 className="text-base md:text-lg font-bold text-cyan-300">Contour Mapping</h2>
               <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -1653,9 +1629,9 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* Flow Field Parameters Card */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-cyan-300">Flow Field (Background)</h2>
+          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+            <div className="flex items-center justify-between mb-2 md:mb-3">
+              <h2 className="text-base md:text-lg font-bold text-cyan-300">Flow Field (Background)</h2>
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -1764,8 +1740,8 @@ const Gen1App: React.FC = () => {
           </div>
 
           {/* CARD 7: Data Influence Modifiers */}
-          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-4">
-            <h2 className="text-lg font-bold text-cyan-300 mb-3">DATA INFLUENCE MODIFIERS</h2>
+          <div className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl p-3 md:p-4">
+            <h2 className="text-base md:text-lg font-bold text-cyan-300 mb-2 md:mb-3">DATA INFLUENCE MODIFIERS</h2>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
             <div className="flex items-center">

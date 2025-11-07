@@ -15,16 +15,61 @@ interface UserData {
   walletAddress?: string;
 }
 
+interface MoodAnalysis {
+  id: string;
+  mood: string;
+  personality: string;
+  traits: string[];
+  interests: string[];
+  reasoning: string;
+  color1: string;
+  color2: string;
+  base_frequency: number;
+  flow_field_base_frequency: number;
+  flow_fields_base_frequency: number;
+  flow_line_density: number;
+  posts_analyzed: number;
+  created_at: string;
+}
+
 export default function ProfilePage() {
   const { address, isConnected } = useAccount();
   const { isInFarcaster } = useFarcasterContext();
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
+  const [moodAnalysis, setMoodAnalysis] = useState<MoodAnalysis | null>(null);
   const [testNotificationText, setTestNotificationText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const isAdmin = userData?.fid === 474867;
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Fetch user profile and notification status
+  // Check if user is admin (matches REAL_WALLET from env)
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!address) {
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/admin/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setIsAdmin(data.isAdmin || false);
+        }
+      } catch (err) {
+        console.error('Error checking admin status:', err);
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdmin();
+  }, [address]);
+
+  // Fetch user profile and mood analysis
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -55,8 +100,20 @@ export default function ProfilePage() {
               walletAddress: address || undefined,
             });
 
-            // TODO: Fetch notification status from database
-            setNotificationsEnabled(null);
+            // Fetch mood analysis
+            try {
+              const moodResponse = await fetch(`/api/mood-analysis/get?fid=${fid}`);
+              if (moodResponse.ok) {
+                const moodData = await moodResponse.json();
+                if (moodData.analyses && moodData.analyses.length > 0) {
+                  // Get the latest analysis
+                  setMoodAnalysis(moodData.analyses[0]);
+                }
+              }
+            } catch (err) {
+              console.error('Error fetching mood analysis:', err);
+            }
+
             setIsLoading(false);
             return;
           }
@@ -74,7 +131,20 @@ export default function ProfilePage() {
             displayName: `${address.slice(0, 6)}...${address.slice(-4)}`,
             walletAddress: address,
           });
-          setNotificationsEnabled(null);
+
+          // Try to fetch mood analysis by wallet address
+          try {
+            const moodResponse = await fetch(`/api/mood-analysis/get?walletAddress=${address}`);
+            if (moodResponse.ok) {
+              const moodData = await moodResponse.json();
+              if (moodData.analyses && moodData.analyses.length > 0) {
+                setMoodAnalysis(moodData.analyses[0]);
+              }
+            }
+          } catch (err) {
+            console.error('Error fetching mood analysis:', err);
+          }
+
           setIsLoading(false);
           return;
         }
@@ -123,13 +193,43 @@ export default function ProfilePage() {
     }
   };
 
-  // Handle test compose cast
-  const handleTestComposeCast = async () => {
+  // Handle test mint cast (admin only)
+  const handleTestMintCast = async () => {
+    if (!isAdmin) {
+      alert('Admin access required');
+      return;
+    }
+
     try {
-      await sdk.actions.openUrl('https://warpcast.com/~/compose');
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bushleague.xyz';
+      const miniappUrl = appUrl;
+
+      // Try to get a placeholder image if available (optional)
+      let imageUrl: string | null = null;
+      try {
+        // You can add a placeholder/default NFT image URL here if desired
+        // For now, we'll test without an image
+      } catch (err) {
+        console.log('No placeholder image available, testing without image');
+      }
+
+      // Prepare embeds: [imageUrl, miniappUrl] if image exists, else [miniappUrl]
+      const embeds: string[] = imageUrl ? [imageUrl, miniappUrl] : [miniappUrl];
+
+      const result = await sdk.actions.composeCast({
+        text: 'I just minted my Mood NFT by @ionoi!',
+        embeds: embeds as [string, string?],
+      });
+
+      if (result?.cast) {
+        alert('✅ Test cast posted successfully!');
+      } else {
+        // User cancelled
+        console.log('User cancelled test cast');
+      }
     } catch (error: any) {
-      console.error('Failed to open compose cast:', error);
-      alert('Failed to open compose cast: ' + error.message);
+      console.error('Test cast error:', error);
+      alert('Failed to post test cast: ' + (error.message || String(error)));
     }
   };
 
@@ -211,60 +311,6 @@ export default function ProfilePage() {
             <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>@{userData.username}</p>
           </div>
           <div className="space-y-3">
-            {/* Notifications Info */}
-            <div style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '16px',
-              padding: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                <p style={{ color: '#ffffff', fontWeight: '600', marginRight: '8px' }}>🔔 In-App Notifications</p>
-                {notificationsEnabled === true && (
-                  <span style={{
-                    fontSize: '10px',
-                    padding: '2px 8px',
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(34, 197, 94, 0.2)',
-                    color: '#22c55e',
-                    fontWeight: '600'
-                  }}>
-                    Enabled
-                  </span>
-                )}
-                {notificationsEnabled === false && (
-                  <span style={{
-                    fontSize: '10px',
-                    padding: '2px 8px',
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(107, 114, 128, 0.2)',
-                    color: '#9ca3af',
-                    fontWeight: '600'
-                  }}>
-                    Disabled
-                  </span>
-                )}
-                {notificationsEnabled === null && (
-                  <span style={{
-                    fontSize: '10px',
-                    padding: '2px 8px',
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(107, 114, 128, 0.2)',
-                    color: '#9ca3af',
-                    fontWeight: '600'
-                  }}>
-                    Unknown
-                  </span>
-                )}
-              </div>
-              <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
-                Get notified when you mint an NFT
-              </p>
-              <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)', fontStyle: 'italic' }}>
-                💡 Use the hamburger menu (☰) in the miniapp to toggle notifications
-              </p>
-            </div>
-
             {userData.fid > 0 && (
               <div style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -276,25 +322,132 @@ export default function ProfilePage() {
                 <p style={{ color: '#ffffff', fontFamily: 'monospace', fontSize: '16px' }}>{userData.fid}</p>
               </div>
             )}
-            {userData.walletAddress && (
+
+            {/* AI Mood Analysis */}
+            {moodAnalysis ? (
+              <div style={{
+                backgroundColor: 'rgba(147, 51, 234, 0.15)',
+                borderRadius: '16px',
+                padding: '20px',
+                border: '1px solid rgba(147, 51, 234, 0.4)'
+              }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#9333ea', marginBottom: '16px' }}>
+                  🧠 AI Mood Analysis
+                </h3>
+                <div style={{ marginBottom: '12px' }}>
+                  <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '4px' }}>Mood</p>
+                  <p style={{ color: '#ffffff', fontSize: '16px', fontWeight: '600' }}>{moodAnalysis.mood}</p>
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '4px' }}>Personality</p>
+                  <p style={{ color: '#ffffff', fontSize: '16px', fontWeight: '600' }}>{moodAnalysis.personality}</p>
+                </div>
+                {moodAnalysis.traits && moodAnalysis.traits.length > 0 && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>Traits</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {moodAnalysis.traits.map((trait, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            fontSize: '12px',
+                            padding: '4px 12px',
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(147, 51, 234, 0.3)',
+                            color: '#ffffff',
+                            border: '1px solid rgba(147, 51, 234, 0.5)'
+                          }}
+                        >
+                          {trait}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {moodAnalysis.interests && moodAnalysis.interests.length > 0 && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>Interests</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {moodAnalysis.interests.map((interest, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            fontSize: '12px',
+                            padding: '4px 12px',
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(99, 102, 241, 0.3)',
+                            color: '#ffffff',
+                            border: '1px solid rgba(99, 102, 241, 0.5)'
+                          }}
+                        >
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {moodAnalysis.reasoning && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>Analysis</p>
+                    <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', lineHeight: '1.6' }}>
+                      {moodAnalysis.reasoning}
+                    </p>
+                  </div>
+                )}
+                <div style={{ marginBottom: '12px' }}>
+                  <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>Color Palette</p>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '8px',
+                          backgroundColor: moodAnalysis.color1,
+                          border: '2px solid rgba(255, 255, 255, 0.2)'
+                        }}
+                      />
+                      <span style={{ color: '#ffffff', fontSize: '14px', fontFamily: 'monospace' }}>
+                        {moodAnalysis.color1}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '8px',
+                          backgroundColor: moodAnalysis.color2,
+                          border: '2px solid rgba(255, 255, 255, 0.2)'
+                        }}
+                      />
+                      <span style={{ color: '#ffffff', fontSize: '14px', fontFamily: 'monospace' }}>
+                        {moodAnalysis.color2}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{
+                  marginTop: '16px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)' }}>
+                    Analyzed {moodAnalysis.posts_analyzed} posts • {new Date(moodAnalysis.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ) : (
               <div style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
                 borderRadius: '16px',
-                padding: '16px',
-                border: '1px solid rgba(255, 255, 255, 0.1)'
+                padding: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                textAlign: 'center'
               }}>
-                <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '4px' }}>Wallet Address</p>
-                <p style={{ color: '#ffffff', fontFamily: 'monospace', fontSize: '16px' }}>
-                  {userData.walletAddress}
+                <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>
+                  No AI mood analysis yet. Mint an NFT to generate your analysis!
                 </p>
-                <a
-                  href={`https://basescan.org/address/${userData.walletAddress}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'underline', marginTop: '8px', display: 'inline-block' }}
-                >
-                  View on Basescan →
-                </a>
               </div>
             )}
             {userData.bio && (
@@ -354,7 +507,7 @@ export default function ProfilePage() {
               </div>
 
               <button
-                onClick={handleTestComposeCast}
+                onClick={handleTestMintCast}
                 style={{
                   padding: '12px 24px',
                   borderRadius: '8px',
@@ -363,11 +516,15 @@ export default function ProfilePage() {
                   border: '1px solid rgba(168, 85, 247, 0.5)',
                   color: 'white',
                   cursor: 'pointer',
-                  width: '100%'
+                  width: '100%',
+                  marginBottom: '12px'
                 }}
               >
-                🧪 Test ComposeCast
+                🧪 Test Mint Cast
               </button>
+              <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)', textAlign: 'center', marginTop: '8px' }}>
+                Tests the cast that would be posted when someone mints
+              </p>
             </div>
           )}
         </div>

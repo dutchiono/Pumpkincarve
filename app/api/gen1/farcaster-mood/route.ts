@@ -63,23 +63,27 @@ export async function POST(req: NextRequest) {
     const neynarConfig = new Configuration({ apiKey: trimmedKey });
     const neynarClient = new NeynarAPIClient(neynarConfig);
 
-    const { userId, password } = await req.json();
+    const { userId, password, autoTrigger } = await req.json();
 
     if (!userId) {
       console.error('[Farcaster Mood API] userId is required');
       return NextResponse.json({ error: 'Farcaster User ID is required' }, { status: 400 });
     }
 
-    // Password protection - check password
-    const MOOD_ANALYSIS_PASSWORD = getEnvVar('MOOD_ANALYSIS_PASSWORD');
-    if (!MOOD_ANALYSIS_PASSWORD || MOOD_ANALYSIS_PASSWORD.trim() === '') {
-      console.error('[Farcaster Mood API] MOOD_ANALYSIS_PASSWORD not configured in .env file');
-      return NextResponse.json({ error: 'Mood analysis is currently disabled (password not configured)' }, { status: 503 });
-    }
+    // Password protection - check password (skip for auto-trigger from mint flow)
+    if (!autoTrigger) {
+      const MOOD_ANALYSIS_PASSWORD = getEnvVar('MOOD_ANALYSIS_PASSWORD');
+      if (!MOOD_ANALYSIS_PASSWORD || MOOD_ANALYSIS_PASSWORD.trim() === '') {
+        console.error('[Farcaster Mood API] MOOD_ANALYSIS_PASSWORD not configured in .env file');
+        return NextResponse.json({ error: 'Mood analysis is currently disabled (password not configured)' }, { status: 503 });
+      }
 
-    if (!password || password !== MOOD_ANALYSIS_PASSWORD.trim()) {
-      console.error('[Farcaster Mood API] Invalid password attempt');
-      return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
+      if (!password || password !== MOOD_ANALYSIS_PASSWORD.trim()) {
+        console.error('[Farcaster Mood API] Invalid password attempt');
+        return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
+      }
+    } else {
+      console.log('[Farcaster Mood API] Auto-trigger mode (password skipped)');
     }
 
     console.log('[Farcaster Mood API] Analyzing mood for user:', userId);

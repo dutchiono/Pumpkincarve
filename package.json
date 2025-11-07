@@ -10,7 +10,15 @@
     "start": "next start",
     "lint": "next lint",
     "worker": "node workers/start.js",
-    "worker:dev": "nodemon workers/start.js"
+    "worker:dev": "nodemon workers/start.js",
+    "db:setup": "node scripts/setup-database.cjs",
+    "db:migrate": "node scripts/run-migrations.js",
+    "db:verify": "node scripts/setup-database.cjs",
+    "supabase": "npx supabase",
+    "supabase:login": "npx supabase login",
+    "db:push": "npx supabase db push",
+    "db:pull": "npx supabase db pull",
+    "db:link": "npx supabase link"
   },
   "dependencies": {
     "@farcaster/auth-client": "^0.7.0",
@@ -20,10 +28,12 @@
     "@google/generative-ai": "^0.21.0",
     "@neynar/nodejs-sdk": "^2.40.1",
     "@neynar/react": "^1.2.15",
+    "@supabase/supabase-js": "^2.45.4",
     "@tanstack/react-query": "^5.62.15",
     "@types/p5": "^1.7.7",
     "@wagmi/core": "^2.22.1",
     "bullmq": "^5.35.0",
+    "clsx": "^2.1.1",
     "ethers": "^6.15.0",
     "gif.js": "^0.2.0",
     "hardhat": "^2.22.0",
@@ -34,10 +44,9 @@
     "react-dom": "^18.3.1",
     "react-p5": "^1.4.1",
     "sharp": "^0.34.4",
+    "tailwind-merge": "^2.5.5",
     "viem": "^2.22.00",
-    "wagmi": "^2.9.32",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^2.5.5"
+    "wagmi": "^2.9.32"
   },
   "optionalDependencies": {
     "canvas": "^2.11.2"
@@ -51,12 +60,13 @@
     "@types/node": "^22.9.3",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
     "dotenv": "^17.2.3",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.32",
     "nodemon": "^3.1.9",
+    "supabase": "^2.54.11",
     "tailwindcss": "^3.4.17",
-    "autoprefixer": "^10.4.20",
     "typescript": "^5.6.3"
   }
 }
